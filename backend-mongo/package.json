@@ -32,6 +32,7 @@
     "multer": "^2.4.0",
     "nodemon": "^3.1.14",
     "razorpay": "^2.9.6",
+    "school-erp": "file:..",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^4.4.3"

@@ -1,6 +1,5 @@
 // Product modules an organization can license to a client (school).
-// Keep ids in sync with frontend/src/config/navigation.ts (ModuleId) and
-// backend-supabase/src/constants/modules.js.
+// Keep ids in sync with frontend/src/config/navigation.ts (ModuleId).
 export const MODULE_CATALOG = [
   { id: 'FEES', label: 'Fees', description: 'Fee collection, receipts, expenses, dues, WhatsApp reminders' },
   { id: 'ERP', label: 'Academics (ERP)', description: 'Admission, attendance, timetable, results, staff & leave' },
