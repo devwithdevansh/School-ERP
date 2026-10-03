@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+logs/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
+
+# secrets copied over from the old project - delete these files (see README "Cleanup")
+backend-mongo/config/
+*.bak
+*.backup
+*.pem
+*service-account*.json
+
+# Sunrise leftovers (unused)
+frontend/src/assets/
