@@ -40,9 +40,9 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 }
 
 // Icon adapter wrapping SVG or Radix icon to support standard className, size, and styling
-const createRadixWrapper = (IconComponent: React.ComponentType<any>) => {
-  const WrappedIcon: React.FC<IconProps> = ({ className = '', size = 16, strokeWidth, ...props }) => (
-    <IconComponent className={className} width={size} height={size} {...props} />
+const createRadixWrapper = (IconComponent: any) => {
+  const WrappedIcon = ({ className = '', size = 16, strokeWidth, ...props }: IconProps) => (
+    <IconComponent className={className} width={size} height={size} {...(props as any)} />
   );
   return WrappedIcon;
 };
@@ -74,9 +74,9 @@ export const Pencil = createRadixWrapper(Pencil1Icon);
 export const Trash2 = createRadixWrapper(TrashIcon);
 export const BookOpen = createRadixWrapper(ReaderIcon);
 
-// Spinner / Loader with animate-spin
-export const Loader2: React.FC<IconProps> = ({ className = '', size = 16, ...props }) => (
-  <ReloadIcon className={`animate-spin ${className}`} width={size} height={size} {...props} />
+const BaseLoader = createRadixWrapper(ReloadIcon);
+export const Loader2 = ({ className = '', ...props }: IconProps) => (
+  <BaseLoader className={`animate-spin ${className}`} {...(props as any)} />
 );
 
 // High-fidelity custom SVGs for icons not directly matched in Radix
