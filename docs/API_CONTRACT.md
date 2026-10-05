@@ -38,7 +38,6 @@ Every entity has `_id` (string) and camelCase fields. Timestamps are ISO strings
 Route families are licensed per module — **FEES**: ledgers, payments, fee-structures, fee-categories, reports, expenses, notifications, whatsapp, migration. **ERP**: `/erp/*`, attendance, chat. Core (students, parents, users, academic-years, academic-master, dashboard, audit, upload) only needs an ACTIVE client. A blocked call answers 403.
 
 Everything under `/erp/*`, `/attendance`, `/chat`, `/notifications`, `/whatsapp`, `/upload/*` is only needed by the
-matching ERP screens; a backend that has not ported them should answer `501` (backend-supabase does).
+matching ERP screens.
 
-Reference implementation: `backend-mongo`. Field-level shapes: see its `models/`, or the SQL in
-`backend-supabase/supabase/migrations/0001_core.sql` (snake_case there; `utils/case.js` converts).
+Field-level shapes: see `models/` in `backend-mongo`.

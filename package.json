@@ -1,14 +1,13 @@
 {
   "name": "school-erp",
+  "version": "1.0.0",
   "private": true,
-  "description": "Generic School ERP: React admin frontend + interchangeable Mongo / Supabase backends",
+  "description": "Generic School ERP: React admin frontend + Mongo backend",
   "scripts": {
-    "install:all": "npm --prefix frontend install && npm --prefix backend-mongo install && npm --prefix backend-supabase install",
+    "install:all": "npm --prefix frontend install && npm --prefix backend-mongo install",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:mongo": "npm --prefix backend-mongo run dev",
-    "dev:supabase": "npm --prefix backend-supabase run dev",
     "seed:mongo": "npm --prefix backend-mongo run seed",
-    "seed:supabase": "npm --prefix backend-supabase run seed",
     "build:frontend": "npm --prefix frontend run build",
     "dev:mobile": "cd mobile && flutter run",
     "test:mobile": "cd mobile && flutter test"
