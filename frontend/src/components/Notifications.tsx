@@ -7,7 +7,7 @@ import { useApp } from '../store';
 import {
   Bell, Send, Users, BookOpen, User,
   CheckCircle, AlertTriangle, Clock, RefreshCw, X, Trash2
-} from 'lucide-react';
+} from './icons';
 import { brand } from '../config/brand';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://linen-weasel-242678.hostingersite.com';

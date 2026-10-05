@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../store';
-import { Calendar, Tag, Layers, Plus, Check, X, Pencil, Trash2, Info, Loader2 } from 'lucide-react';
+import { Calendar, Tag, Layers, Plus, Check, X, Pencil, Trash2, Info, Loader2 } from './icons';
 import { FeeStructure } from './FeeStructure'; // Reuse existing component for the Fee Structure tab
 
 // ── Edit Academic Year Modal ─────

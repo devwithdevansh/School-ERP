@@ -208,3 +208,18 @@ describe('Parent ownership guard (used by Homework/Timetable/Exam/Attendance/Lea
     await expect(verifyParentOwnsStudent(req, undefined)).rejects.toMatchObject({ statusCode: 400 });
   });
 });
+
+describe('School context in mobile sessions', () => {
+  test('parent login returns the school and its licensed modules (the app hides what is not licensed)', async () => {
+    await Parent.create({ clientId, parentName: 'P Ctx', primaryMobileNumber: '9000000099', passwordHash: await bcrypt.hash('parentPass', 4) });
+    const session = await AuthService.parentLogin({ primaryMobileNumber: '9000000099', password: 'parentPass' });
+    expect(session.client).toMatchObject({ name: 'Test School', code: 'test-school' });
+    expect(session.client.enabledModules.sort()).toEqual(['ERP', 'FEES']);
+  });
+
+  test('teacher login carries it too', async () => {
+    await makeUser({ contactNo1: '9876500001', role: 'TEACHER' });
+    const session = await AuthService.teacherLogin({ last5: '00001', password: 'password123' });
+    expect(session.client.code).toBe('test-school');
+  });
+});

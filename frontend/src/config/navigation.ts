@@ -3,7 +3,7 @@ import {
   LayoutDashboard, CreditCard, AlertTriangle, Layers, Users, FileSpreadsheet, MessageSquare, Bell,
   Smartphone, Receipt, Activity, BarChart3, Settings, Wallet, BookOpen, UserCheck, CalendarDays,
   ClipboardList, Award, ShieldCheck, MessageCircle, GraduationCap, IndianRupee, Building2, ToggleRight,
-} from 'lucide-react';
+} from '../components/icons';
 import type { ScreenType } from '../store';
 
 /**

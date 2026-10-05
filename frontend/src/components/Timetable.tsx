@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../store';
-import { CalendarDays, Plus, Trash2, Clock, MapPin } from 'lucide-react';
+import { CalendarDays, Plus, Trash2, Clock, MapPin } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../store';
 import type { Student, PaymentTransaction } from '../mockData';
 import { isPeriodOverdue } from '../utils';
-import { Plus, Check, X, Loader2 } from 'lucide-react';
+import { Plus, Check, X, Loader2 } from './icons';
 import { buildEduTermConfig, STANDARD_MONTH_PERIODS } from './CollectFee/utils';
 import { PaymentHistoryPanel } from './CollectFee/PaymentHistoryPanel';
 import type { TxItem } from './CollectFee/PaymentHistoryPanel';

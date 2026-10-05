@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { History, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { History, ChevronDown, ChevronUp, RotateCcw } from '../icons';
 
 export interface TxItem {
   id: string; feeType: string; amount: number; concessionAmount?: number;

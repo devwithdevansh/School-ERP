@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X } from '../icons';
 import { useApp } from '../../store';
 import type { Student } from '../../mockData';
 import { isPeriodOverdue, isLedgerPending } from '../../utils';

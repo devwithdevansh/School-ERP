@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../store';
-import { Activity, Search, Filter, Calendar, User as UserIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, Search, Filter, Calendar, User as UserIcon, ChevronDown, ChevronUp } from './icons';
 
 interface AuditLogEntry {
   _id: string;

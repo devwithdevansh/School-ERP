@@ -3,7 +3,7 @@ import { useApp } from '../store';
 import {
   MessageSquare, Send, Users, BookOpen, User,
   CheckCircle, AlertTriangle, Clock, RefreshCw, Trash2
-} from 'lucide-react';
+} from './icons';
 import { brand } from '../config/brand';
 
 // ─── Types ─────────────────────────────────────────────────

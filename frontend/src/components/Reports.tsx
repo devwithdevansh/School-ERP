@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../store';
-import { FileSpreadsheet, Printer, Calendar, Filter, Users, DollarSign, Award, ArrowUpRight, Search, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, Printer, Calendar, Filter, Users, DollarSign, Award, ArrowUpRight, Search, Loader2 } from './icons';
 import * as XLSX from 'xlsx';
 import { isLedgerPending } from '../utils';
 import { formatTransactions } from '../utils/transactionHelpers';

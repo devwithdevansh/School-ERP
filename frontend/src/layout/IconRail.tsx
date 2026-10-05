@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, PanelLeft } from 'lucide-react';
+import { LogOut, PanelLeft } from '../components/icons';
 import { brand } from '../config/brand';
 import type { NavModule, ModuleId } from '../config/navigation';
 

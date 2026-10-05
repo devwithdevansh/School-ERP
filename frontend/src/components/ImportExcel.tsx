@@ -26,7 +26,7 @@ import {
   Database,
   Info,
   Pencil
-} from 'lucide-react';
+} from './icons';
 import * as XLSX from 'xlsx';
 import { getActiveStandards } from '../utils/standardUtils';
 

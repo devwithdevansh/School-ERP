@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../store';
-import { Users, ArrowRight, CheckCircle, Search, ChevronDown, GraduationCap, ShieldAlert, Check, Info, X } from 'lucide-react';
+import { Users, ArrowRight, CheckCircle, Search, ChevronDown, GraduationCap, ShieldAlert, Check, Info, X } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
 
 export const PromoteStudents: React.FC = () => {

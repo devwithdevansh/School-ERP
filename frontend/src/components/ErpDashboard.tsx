@@ -8,17 +8,61 @@ import {
   UserPlus,
   ArrowRight,
   GraduationCap
-} from 'lucide-react';
+} from './icons';
 import { BrandedLoader } from './BrandedLoader';
 import { brand } from '../config/brand';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
 
 const ErpDashboardSkeleton: React.FC = () => {
   return (
-    <div className="flex-1 flex items-center justify-center bg-slate-50/50 min-h-[calc(100vh-2rem)]">
+    <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-2rem)]">
       <BrandedLoader />
     </div>
   );
 };
+
+const TONES = {
+  primary: { border: 'border-t-primary', icon: 'bg-accent text-accent-foreground' },
+  warning: { border: 'border-t-warning', icon: 'bg-warning-soft text-warning-soft-foreground' },
+  success: { border: 'border-t-success', icon: 'bg-success-soft text-success-soft-foreground' },
+  info: { border: 'border-t-info', icon: 'bg-info-soft text-info-soft-foreground' },
+} as const;
+
+const StatCard: React.FC<{
+  title: string;
+  icon: React.ReactNode;
+  value: React.ReactNode;
+  caption: React.ReactNode;
+  muted?: boolean;
+  tone?: 'primary' | 'warning' | 'success' | 'info';
+  onClick?: () => void;
+}> = ({ title, icon, value, caption, muted, tone = 'primary', onClick }) => (
+  <Card
+    onClick={onClick}
+    className={`border-t-4 ${TONES[tone].border} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${muted ? 'opacity-70' : ''}`}
+  >
+    <CardHeader>
+      <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{title}</CardTitle>
+      <CardAction><div className={`p-2 rounded-lg ${TONES[tone].icon}`}>{icon}</div></CardAction>
+    </CardHeader>
+    <CardContent>
+      <div className={`text-3xl font-black ${muted ? 'text-muted-foreground' : ''}`}>{value}</div>
+      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">{caption}</p>
+    </CardContent>
+  </Card>
+);
+
+const QuickModule: React.FC<{ icon: React.ReactNode; title: string; subtitle: string; tone: keyof typeof TONES; onClick: () => void }> = ({ icon, title, subtitle, tone, onClick }) => (
+  <Button variant="ghost" onClick={onClick} className="w-full h-auto justify-start gap-4 p-3 text-left whitespace-normal">
+    <div className={`p-2.5 rounded-lg ${TONES[tone].icon}`}>{icon}</div>
+    <div>
+      <h4 className="font-bold text-sm">{title}</h4>
+      <p className="text-xs font-normal text-muted-foreground">{subtitle}</p>
+    </div>
+  </Button>
+);
 
 export const ErpDashboard: React.FC = () => {
   const { students, authFetch, setScreen, isScreenLoading } = useApp();
@@ -43,133 +87,104 @@ export const ErpDashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 p-6 space-y-6 bg-slate-50/50 min-h-[calc(100vh-2rem)] animate-in fade-in duration-500 overflow-y-auto">
+    <div className="flex-1 p-6 space-y-6 min-h-[calc(100vh-2rem)] animate-in fade-in duration-500 overflow-y-auto">
       {/* Top Header Bar */}
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">ERP Dashboard</h2>
-          <p className="text-sm font-semibold text-slate-500 mt-1">{brand.schoolName}</p>
+          <h2 className="text-3xl font-extrabold tracking-tight">ERP Dashboard</h2>
+          <p className="text-sm text-muted-foreground mt-1">{brand.schoolName}</p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <button
-            onClick={() => setScreen('admission')}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md shadow-blue-500/20 active:scale-[0.98]"
-          >
-            <UserPlus className="h-4 w-4" /> New Admission
-          </button>
-        </div>
+        <Button size="lg" onClick={() => setScreen('admission')} className="w-full md:w-auto">
+          <UserPlus /> New Admission
+        </Button>
       </header>
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Total ERP Students</h3>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Users className="w-5 h-5" /></div>
-          </div>
-          <div className="text-3xl font-black text-slate-800">{activeCount.toLocaleString()}</div>
-          <p className="text-xs text-slate-500 font-semibold mt-2">Active enrollments in ERP</p>
-        </div>
-        
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:shadow-lg transition-shadow border-t-4 border-t-amber-500 cursor-pointer" onClick={() => setScreen('student-leave')}>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Leave Requests</h3>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><CalendarDays className="w-5 h-5" /></div>
-          </div>
-          <div className="text-3xl font-black text-slate-800">{pendingLeaves ?? '—'}</div>
-          <p className="text-xs text-amber-600 font-semibold mt-2 flex items-center gap-1">
-            {pendingLeaves === null ? 'Unable to load' : pendingLeaves === 0 ? 'All caught up' : 'Awaiting review'} <ArrowRight className="h-3 w-3" />
-          </p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500 opacity-70">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Avg Attendance</h3>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Clock className="w-5 h-5" /></div>
-          </div>
-          <div className="text-3xl font-black text-slate-400">—</div>
-          <p className="text-xs text-slate-400 font-semibold mt-2">Analytics pending integration</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:shadow-lg transition-shadow border-t-4 border-t-purple-500 opacity-70">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Active Subjects</h3>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><BookOpen className="w-5 h-5" /></div>
-          </div>
-          <div className="text-3xl font-black text-slate-400">—</div>
-          <p className="text-xs text-slate-400 font-semibold mt-2">Curriculum mapping required</p>
-        </div>
+        <StatCard
+          title="Total ERP Students"
+          icon={<Users className="size-5" />}
+          value={activeCount.toLocaleString()}
+          caption="Active enrollments in ERP"
+          tone="primary"
+        />
+        <StatCard
+          title="Leave Requests"
+          icon={<CalendarDays className="size-5" />}
+          value={pendingLeaves ?? '—'}
+          caption={<>{pendingLeaves === null ? 'Unable to load' : pendingLeaves === 0 ? 'All caught up' : 'Awaiting review'} <ArrowRight className="size-3" /></>}
+          tone="warning"
+          onClick={() => setScreen('student-leave')}
+        />
+        <StatCard
+          title="Avg Attendance"
+          icon={<Clock className="size-5" />}
+          value="—"
+          caption="Analytics pending integration"
+          tone="success"
+          muted
+        />
+        <StatCard
+          title="Active Subjects"
+          icon={<BookOpen className="size-5" />}
+          value="—"
+          caption="Curriculum mapping required"
+          tone="info"
+          muted
+        />
       </div>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Recent Activity Feed */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-extrabold text-slate-800 text-lg">Recent Admissions</h3>
-            <button onClick={() => setScreen('admission')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-              View All <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="p-6">
-             {activeCount > 0 ? (
-                <div className="space-y-4">
-                  {erpStudents.slice(0, 4).map(student => (
-                    <div key={student._id || student.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
-                          {student.studentName.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-800 text-sm">{student.studentName}</h4>
-                          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{student.medium} · Std {student.standard} {student.division}</p>
-                        </div>
+        <Card className="lg:col-span-2">
+          <CardHeader className="border-b">
+            <CardTitle className="text-lg font-bold">Recent Admissions</CardTitle>
+            <CardAction>
+              <Button variant="link" size="sm" onClick={() => setScreen('admission')}>
+                View All <ArrowRight />
+              </Button>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            {activeCount > 0 ? (
+              <div className="space-y-3">
+                {erpStudents.slice(0, 4).map(student => (
+                  <div key={student._id || student.id} className="flex items-center justify-between p-4 bg-muted/40 rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                        {student.studentName.charAt(0)}
                       </div>
-                      <div className="text-right">
-                        <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full border border-emerald-200">Active</span>
+                      <div>
+                        <h4 className="font-bold text-sm">{student.studentName}</h4>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{student.medium} · Std {student.standard} {student.division}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-             ) : (
-                <div className="py-12 flex flex-col items-center justify-center text-slate-400 text-center">
-                  <GraduationCap className="h-12 w-12 mb-3 text-slate-300" />
-                  <p className="text-sm font-bold">No students enrolled yet</p>
-                  <p className="text-xs font-medium mt-1">Start by adding a new admission.</p>
-                </div>
-             )}
-          </div>
-        </div>
+                    <Badge variant="success">Active</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 flex flex-col items-center justify-center text-muted-foreground text-center">
+                <GraduationCap className="size-12 mb-3 opacity-30" />
+                <p className="text-sm font-bold">No students enrolled yet</p>
+                <p className="text-xs mt-1">Start by adding a new admission.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Right Column: Quick Links */}
-        <div className="bg-white border border-slate-200 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
-          <div className="p-6 border-b border-slate-100">
-            <h3 className="font-extrabold text-slate-800 text-lg">Quick Modules</h3>
-          </div>
-          <div className="p-3">
-             <button onClick={() => setScreen('attendance')} className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors text-left group">
-                <div className="bg-indigo-50 text-indigo-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><Clock className="h-5 w-5" /></div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">Mark Attendance</h4>
-                  <p className="text-xs font-medium text-slate-500">Daily student presence</p>
-                </div>
-             </button>
-             <button onClick={() => setScreen('timetable')} className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors text-left group mt-1">
-                <div className="bg-rose-50 text-rose-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><CalendarDays className="h-5 w-5" /></div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">Class Timetable</h4>
-                  <p className="text-xs font-medium text-slate-500">Manage periods & subjects</p>
-                </div>
-             </button>
-             <button onClick={() => setScreen('subjects')} className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-colors text-left group mt-1">
-                <div className="bg-cyan-50 text-cyan-600 p-3 rounded-xl group-hover:scale-110 transition-transform"><BookOpen className="h-5 w-5" /></div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">Curriculum Mapping</h4>
-                  <p className="text-xs font-medium text-slate-500">Global subjects & mapping</p>
-                </div>
-             </button>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="text-lg font-bold">Quick Modules</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <QuickModule icon={<Clock className="size-5" />} title="Mark Attendance" tone="primary" subtitle="Daily student presence" onClick={() => setScreen('attendance')} />
+            <QuickModule icon={<CalendarDays className="size-5" />} title="Class Timetable" tone="warning" subtitle="Manage periods & subjects" onClick={() => setScreen('timetable')} />
+            <QuickModule icon={<BookOpen className="size-5" />} title="Curriculum Mapping" tone="info" subtitle="Global subjects & mapping" onClick={() => setScreen('subjects')} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

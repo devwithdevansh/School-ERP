@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar as CalendarIcon, Save, Loader2, CheckCircle2, XCircle, Clock, BellRing, ArrowLeft,
   ShieldCheck, Users, UserCheck, ClipboardX, Send,
-} from 'lucide-react';
+} from './icons';
 import { useApp } from '../store';
 
 type SheetStatus = 'NOT_SUBMITTED' | 'SUBMITTED' | 'CONFIRMED';

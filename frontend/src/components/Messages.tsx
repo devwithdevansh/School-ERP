@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../store';
-import { MessageCircle, Send, Search, Plus, X, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { MessageCircle, Send, Search, Plus, X, Loader2, ChevronDown, ChevronRight } from './icons';
 
 interface ConversationSummary {
   _id: string;

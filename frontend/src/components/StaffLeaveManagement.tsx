@@ -1,6 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../store';
-import { Calendar, CheckCircle2, XCircle, Clock, FileText } from 'lucide-react';
+import { Calendar, CheckCircle2, XCircle, Clock, FileText } from './icons';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export const StaffLeaveManagement: React.FC = () => {
   const { 
@@ -59,120 +65,102 @@ export const StaffLeaveManagement: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Approved</span>;
+        return <Badge variant="success"><CheckCircle2 /> Approved</Badge>;
       case 'REJECTED':
-        return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold flex items-center gap-1"><XCircle className="w-3 h-3"/> Rejected</span>;
+        return <Badge variant="destructive"><XCircle /> Rejected</Badge>;
       default:
-        return <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Clock className="w-3 h-3"/> Pending</span>;
+        return <Badge variant="warning"><Clock /> Pending</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6 bg-slate-50/50 min-h-[calc(100vh-2rem)] p-6 animate-in fade-in duration-500">
+    <div className="space-y-6 min-h-[calc(100vh-2rem)] p-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-            <Calendar className="w-7 h-7 text-indigo-500" />
+          <h2 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
+            <Calendar className="size-7 text-primary" />
             Staff Leave Approvals
           </h2>
-          <p className="text-sm font-semibold text-slate-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {isAdmin ? 'Review and manage staff leave requests' : 'View your leave requests'}
           </p>
         </div>
       </div>
 
-      <div className="bg-white p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
+      <Card>
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <NativeSelect value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full">
               <option value="All">All</option>
               <option value="Pending">Pending</option>
               <option value="Approved">Approved</option>
               <option value="Rejected">Rejected</option>
-            </select>
+            </NativeSelect>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-200 overflow-hidden">
+      <Card className="p-0 gap-0">
         {filteredLeaves.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 flex flex-col items-center">
-            <FileText className="w-12 h-12 text-slate-300 mb-3" />
+          <div className="p-12 text-center text-muted-foreground flex flex-col items-center">
+            <FileText className="size-12 opacity-30 mb-3" />
             <p>No staff leave requests found.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                  <th className="px-6 py-4">Staff Member</th>
-                  <th className="px-6 py-4">Duration</th>
-                  <th className="px-6 py-4">Type</th>
-                  <th className="px-6 py-4">Reason</th>
-                  <th className="px-6 py-4">Status</th>
-                  {isAdmin && <th className="px-6 py-4 text-right">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="text-sm text-slate-700 divide-y divide-slate-100">
-                {filteredLeaves.map((leave) => (
-                  <tr key={leave._id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{leave.userId?.name || 'Unknown User'}</div>
-                      <div className="text-xs text-slate-500">{leave.userId?.role}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium">{formatDate(leave.startDate)}</div>
-                      <div className="text-xs text-slate-500">to {formatDate(leave.endDate)}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-semibold">
-                        {leave.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs">
-                      <p className="truncate text-slate-600" title={leave.reason}>{leave.reason}</p>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(leave.status)}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-6 py-4 text-right whitespace-nowrap">
-                        {leave.status === 'PENDING' ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleStatusUpdate(leave._id, 'APPROVED')}
-                              disabled={processingId === leave._id}
-                              className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleStatusUpdate(leave._id, 'REJECTED')}
-                              disabled={processingId === leave._id}
-                              className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 font-medium">
-                            Reviewed by {leave.approvedBy?.name || 'Admin'}
-                          </span>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-6">Staff Member</TableHead>
+                <TableHead className="px-6">Duration</TableHead>
+                <TableHead className="px-6">Type</TableHead>
+                <TableHead className="px-6">Reason</TableHead>
+                <TableHead className="px-6">Status</TableHead>
+                {isAdmin && <TableHead className="px-6 text-right">Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredLeaves.map((leave) => (
+                <TableRow key={leave._id}>
+                  <TableCell className="px-6 py-4">
+                    <div className="font-semibold">{leave.userId?.name || 'Unknown User'}</div>
+                    <div className="text-xs text-muted-foreground">{leave.userId?.role}</div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="font-medium">{formatDate(leave.startDate)}</div>
+                    <div className="text-xs text-muted-foreground">to {formatDate(leave.endDate)}</div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Badge variant="info">{leave.type}</Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 max-w-xs">
+                    <p className="truncate text-muted-foreground" title={leave.reason}>{leave.reason}</p>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">{getStatusBadge(leave.status)}</TableCell>
+                  {isAdmin && (
+                    <TableCell className="px-6 py-4 text-right">
+                      {leave.status === 'PENDING' ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90" onClick={() => handleStatusUpdate(leave._id, 'APPROVED')} disabled={processingId === leave._id}>
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleStatusUpdate(leave._id, 'REJECTED')} disabled={processingId === leave._id}>
+                            Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Reviewed by {leave.approvedBy?.name || 'Admin'}
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

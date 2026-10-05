@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../store';
 import type { FeeStructureData, TransportFeeStructureData } from '../store';
-import { AlertCircle, Bus, ChevronDown, Award, Pencil, X, Check, Loader2, Plus, Trash2, Copy } from 'lucide-react';
+import { AlertCircle, Bus, ChevronDown, Award, Pencil, X, Check, Loader2, Plus, Trash2, Copy } from './icons';
 
 /* ─── Create Modal for Standard Fee ───────────────────────────────── */
 interface CreateFeeModalProps {

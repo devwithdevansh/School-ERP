@@ -9,7 +9,7 @@ import {
   Printer,
   Calendar,
   Loader2
-} from 'lucide-react';
+} from './icons';
 import { formatTransactions } from '../utils/transactionHelpers';
 import { getActiveStandards } from '../utils/standardUtils';
 

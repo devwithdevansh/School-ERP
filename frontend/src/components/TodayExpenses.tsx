@@ -23,7 +23,7 @@ import {
   CreditCard,
   RotateCcw,
   AlertCircle
-} from 'lucide-react';
+} from './icons';
 
 
 

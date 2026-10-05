@@ -9,6 +9,7 @@ School-ERP/
 ├─ frontend/          React 19 + Vite + Tailwind 4 admin portal (teal theme, dual-sidebar layout)
 ├─ backend-mongo/     Express + Mongoose   (full port of the Sunrise backend, all modules)   :3000
 ├─ backend-supabase/  Express + supabase-js + SQL migrations (core modules, see status below) :3001
+├─ mobile/            Flutter parent & teacher app (white-label; see mobile/README.md)
 └─ package.json       convenience scripts
 ```
 

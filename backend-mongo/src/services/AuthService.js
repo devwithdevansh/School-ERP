@@ -279,7 +279,7 @@ class AuthService {
       );
       logger.info(`${logLabel}: ${parent._id}`);
       await session.commitTransaction();
-      return { accessToken, refreshToken: refreshPlain };
+      return { accessToken, refreshToken: refreshPlain, client: clientDto(client) };
     } catch (err) {
       await session.abortTransaction();
       throw err;

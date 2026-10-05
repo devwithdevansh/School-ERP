@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Building2, Plus, Search, Pencil, KeyRound, Ban, CheckCircle2, Loader2, X, Users, GraduationCap, Wand2 } from 'lucide-react';
+import { Building2, Plus, Search, Pencil, KeyRound, Ban, CheckCircle2, Loader2, X, Users, GraduationCap, Wand2 } from '../icons';
 import { LICENSABLE_MODULES } from '../../config/navigation';
 import { useOrgClients, type OrgClient, type NewClientInput } from './useOrgClients';
 

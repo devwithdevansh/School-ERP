@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../store';
-import { ClipboardList, Plus, Edit3, Save, Trash2 } from 'lucide-react';
+import { ClipboardList, Plus, Edit3, Save, Trash2 } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
 
 export const Results: React.FC = () => {

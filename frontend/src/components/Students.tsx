@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useApp } from '../store';
-import { Search, ChevronDown, ChevronUp, Plus, X, Trash2, Pencil, Phone, Users, Landmark, History, RotateCcw, Loader2, Camera, Upload } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, Plus, X, Trash2, Pencil, Phone, Users, Landmark, History, RotateCcw, Loader2, Camera, Upload } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
 
 export const Students: React.FC = () => {

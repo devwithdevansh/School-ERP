@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2 } from '../icons';
 import type { Student } from '../../mockData';
 import type { buildEduTermConfig } from './utils';
 

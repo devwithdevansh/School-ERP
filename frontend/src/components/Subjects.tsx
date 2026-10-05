@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../store';
-import { BookOpen, Plus, X, Save, Trash2, Library, BookMarked } from 'lucide-react';
+import { BookOpen, Plus, X, Save, Trash2, Library, BookMarked } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
 
 export const Subjects: React.FC = () => {

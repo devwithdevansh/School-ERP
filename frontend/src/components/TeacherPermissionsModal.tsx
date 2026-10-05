@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, ShieldCheck } from 'lucide-react';
+import { X, Save, ShieldCheck } from './icons';
 import { useApp } from '../store';
 
 interface TeacherPermissionsModalProps {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '../icons';
 import { LICENSABLE_MODULES } from '../../config/navigation';
 import { useOrgClients } from './useOrgClients';
 import { StatusBadge, Toggle } from './OrgClients';

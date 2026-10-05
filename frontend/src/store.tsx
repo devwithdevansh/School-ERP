@@ -47,6 +47,11 @@ export type ScreenType =
 
 /** Roles: ORG_ADMIN = platform owner (manages clients/modules, sees no school data); the rest belong to one school. */
 export type UserRole = 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER';
+
+// Dev-only: set VITE_SKIP_LOGIN=true in .env.local to bypass the login screen (API calls will still need a real token).
+if (import.meta.env.DEV && import.meta.env.VITE_SKIP_LOGIN === 'true' && !localStorage.getItem('currentUser')) {
+  localStorage.setItem('currentUser', JSON.stringify({ name: 'Dev Admin', email: 'dev@local', role: 'ADMIN' }));
+}
 export type PortalId = 'FEES' | 'ERP' | 'ORG';
 
 /** The school (client) the signed-in user belongs to, and the modules the organization enabled for it. */

@@ -12,7 +12,7 @@ import {
   CheckSquare,
   Square,
   Bus
-} from 'lucide-react';
+} from './icons';
 
 export const UnpaidFees: React.FC = () => {
   const { students, unpaidData, feeStructures, academicYears, setScreen, setSelectedStudentIdForFee } = useApp();
