@@ -104,31 +104,33 @@ class _AttendanceViewState extends State<AttendanceView> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SurfaceCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                           child: Row(
                             children: [
                               ProgressRing(
                                 progress: pct,
-                                size: 80,
-                                strokeWidth: 8,
+                                size: 72,
+                                strokeWidth: 7,
                                 color: pct >= 0.85 ? AppColors.teal : AppColors.accentDeep,
                                 center: Text('${(pct * 100).round()}%',
-                                    style: AppTextStyles.mono.copyWith(fontSize: 16, fontWeight: FontWeight.w800)),
+                                    style: AppTextStyles.mono.copyWith(fontSize: 15, fontWeight: FontWeight.w800)),
                               ),
-                              const SizedBox(width: 18),
+                              const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text('This month', style: AppTextStyles.bodySmall),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 2),
                                     Text('${counted.length} school days', style: AppTextStyles.h3),
-                                    const SizedBox(height: 10),
-                                    Row(
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
                                       children: [
                                         _StatChip(label: 'Present', value: present, color: AppColors.teal),
-                                        const SizedBox(width: 8),
                                         _StatChip(label: 'Absent', value: absent, color: AppColors.red),
-                                        const SizedBox(width: 8),
                                         _StatChip(label: 'Leave', value: onLeave, color: AppColors.inkLight),
                                       ],
                                     ),
@@ -166,7 +168,10 @@ class _AttendanceViewState extends State<AttendanceView> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        SurfaceCard(child: _CalendarGrid(month: _month, statuses: statuses)),
+                        SurfaceCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                          child: _CalendarGrid(month: _month, statuses: statuses),
+                        ),
                         const SizedBox(height: 14),
                         Wrap(
                           spacing: 14,
@@ -202,9 +207,17 @@ class _StatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text('$value $label', style: AppTextStyles.labelSmall.copyWith(color: color, fontSize: 10)),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+      child: Text(
+        '$value $label',
+        maxLines: 1,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

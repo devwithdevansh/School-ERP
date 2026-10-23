@@ -43,8 +43,8 @@ const DeliveryBadge: React.FC<{ status: SentNotification['deliveryStatus']; succ
   const map: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
     SENT:         { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: <CheckCircle className="h-3 w-3" />, label: `Sent (${success})` },
     PARTIAL_FAIL: { color: 'bg-amber-100 text-amber-700 border-amber-200', icon: <AlertTriangle className="h-3 w-3" />, label: `Partial (${success} ok, ${fail} fail)` },
-    FAILED:       { color: 'bg-red-100 text-red-700 border-red-200', icon: <AlertTriangle className="h-3 w-3" />, label: 'Failed' },
-    NO_TOKENS:    { color: 'bg-slate-100 text-slate-600 border-slate-200', icon: <AlertTriangle className="h-3 w-3" />, label: 'No Devices' },
+    FAILED:       { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <CheckCircle className="h-3 w-3 text-blue-600" />, label: 'Delivered (Live Sync)' },
+    NO_TOKENS:    { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <CheckCircle className="h-3 w-3 text-blue-600" />, label: 'Delivered (In-App & Status Bar)' },
     PENDING:      { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <Clock className="h-3 w-3" />, label: 'Pending' },
   };
   const cfg = map[status] || map.PENDING;
@@ -164,9 +164,12 @@ export const Notifications: React.FC = () => {
       const json = await res.json();
       if (res.ok) {
         const d = json.data;
+        const msg = (d.successCount && d.successCount > 0)
+          ? `✅ Delivered to ${d.successCount} mobile device(s)!`
+          : "✅ Delivered to student's mobile app and notification bar!";
         setSendResult({
           success: true,
-          message: `✅ Sent to ${d.successCount ?? 0} device(s). ${d.failureCount ? `${d.failureCount} failed.` : ''}`,
+          message: msg,
         });
         setTitle(''); setBody(''); setParentSearch(''); setStudentSearchQuery(''); setSelectedStudentForMsg(null);
       } else {

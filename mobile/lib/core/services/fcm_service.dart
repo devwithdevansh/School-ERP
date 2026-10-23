@@ -54,124 +54,192 @@ class FcmService {
     'school_connect_channel_v1',
     'School Updates',
     description: 'Fee alerts and updates from your school',
-    importance: Importance.high,
+    importance: Importance.max,
     playSound: true,
-    sound: RawResourceAndroidNotificationSound('bell_notification'),
   );
 
   /// Call once from main.dart before runApp().
   static Future<void> init() async {
-    // 1. Initialize Firebase (with try/catch for hot restart safety).
-    //    Push is optional: without a configured Firebase project we just skip it.
+    // 1. ALWAYS initialize Flutter Local Notifications and Android channel first,
+    // so notification bar alerts always work on device even without Firebase!
+    try {
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_androidChannel);
+
+      const initSettings = InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      );
+      await _localNotifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTap,
+      );
+
+      // On Android 13+, request runtime POST_NOTIFICATIONS permission
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    } catch (e) {
+      debugPrint('Local notifications init error: $e');
+    }
+
+    // 2. Initialize Firebase if configured (optional push fallback)
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      isAvailable = true;
+
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        _showLocalNotification(message);
+      });
+
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        _handleNotificationTap(message);
+      });
+
+      final initialMessage = await _messaging.getInitialMessage();
+      if (initialMessage != null) {
+        initialRoute = '/notifications';
+        if (initialMessage.data.containsKey('studentId')) {
+          initialStudentId = initialMessage.data['studentId'].toString();
+        }
+      }
+
+      _messaging.onTokenRefresh.listen((newToken) async {
+        await _sendTokenToBackend(newToken);
+      });
     } on UnsupportedError catch (e) {
-      debugPrint('Push notifications disabled: ${e.message}');
-      return;
+      debugPrint('Firebase push not configured: ${e.message}');
     } catch (e) {
       if (!e.toString().contains('duplicate-app')) {
-        rethrow;
+        debugPrint('Firebase init error: $e');
+      } else {
+        isAvailable = true;
       }
     }
 
-    isAvailable = true;
-
-    // 2. Register background message handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-    // 3. (Removed automatic permission request)
-
-    // 4. Create Android notification channel
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_androidChannel);
-
-    // 5. Initialize flutter_local_notifications
-    const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    );
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTap,
-    );
-
-    // 6. Handle foreground messages — show in-app local notification
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _showLocalNotification(message);
-    });
-
-    // 7. Handle notification tap when app was in background (not terminated)
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _handleNotificationTap(message);
-    });
-
-    // 8. Handle notification tap when app was terminated
-    final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      initialRoute = '/notifications'; // Save for splash screen to handle
-      if (initialMessage.data.containsKey('studentId')) {
-        initialStudentId = initialMessage.data['studentId'].toString();
-      }
-    }
-
-    // 9. Register token with backend & listen for refreshes
+    // 3. Register device token with backend so backend knows this device is active
     await registerToken();
-    _messaging.onTokenRefresh.listen((newToken) async {
-      await _sendTokenToBackend(newToken);
-    });
   }
 
   /// Request permissions manually (usually after showing a custom dialogue)
   static Future<void> requestPermissions() async {
-    await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    await registerToken();
-  }
-
-  /// Get current FCM token and register it with the backend.
-  static Future<void> registerToken() async {
     try {
-      final token = await _messaging.getToken();
-      if (token != null) {
-        await _sendTokenToBackend(token);
+      if (isAvailable) {
+        await _messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
       }
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+      await registerToken();
     } catch (e) {
-      // Token registration is non-critical — don't crash the app
-      print('FCM token registration error: $e');
+      debugPrint('requestPermissions error: $e');
     }
   }
 
-  /// POST the FCM token to the backend /notifications/fcm-token endpoint.
+  /// Get current FCM token or unique persistent device token and register it with the backend.
+  static Future<void> registerToken() async {
+    try {
+      String? token;
+      if (isAvailable) {
+        try {
+          token = await _messaging.getToken();
+        } catch (_) {}
+      }
+      if (token == null || token.isEmpty) {
+        // Fallback: persistent unique device ID so backend registers device for this parent
+        final prefs = await SharedPreferences.getInstance();
+        token = prefs.getString('device_push_token');
+        if (token == null || token.isEmpty) {
+          token = 'device_${DateTime.now().millisecondsSinceEpoch}_${(100000 + (DateTime.now().microsecond % 900000))}';
+          await prefs.setString('device_push_token', token);
+        }
+      }
+      await _sendTokenToBackend(token);
+    } catch (e) {
+      debugPrint('Device token registration error: $e');
+    }
+  }
+
+  /// POST the token to the backend endpoint.
   static Future<void> _sendTokenToBackend(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final isLoggedIn = prefs.getBool(StorageKeys.isLoggedIn) ?? false;
-      if (!isLoggedIn) return; // Don't register if not logged in
+      if (!isLoggedIn) return;
+
+      final role = prefs.getString(StorageKeys.userRole);
+      final endpoint = role == 'teacher'
+          ? '/notifications/staff/fcm-token'
+          : '/notifications/fcm-token';
 
       await ApiClient.post(
-        '/notifications/fcm-token',
+        endpoint,
         {'token': token, 'platform': 'android'},
       );
-      print('FCM token registered with backend');
+      debugPrint('Device token registered with backend: $endpoint');
     } catch (e) {
-      print('Failed to register FCM token with backend: $e');
+      debugPrint('Failed to register device token with backend: $e');
     }
   }
 
   /// Remove the FCM token from the backend on logout.
   static Future<void> removeToken() async {
     try {
-      final token = await _messaging.getToken();
-      if (token != null) {
-        await ApiClient.delete('/notifications/fcm-token', {'token': token});
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('device_push_token');
+      if (token != null && token.isNotEmpty) {
+        final role = prefs.getString(StorageKeys.userRole);
+        final endpoint = role == 'teacher'
+            ? '/notifications/staff/fcm-token'
+            : '/notifications/fcm-token';
+        await ApiClient.delete(endpoint, {'token': token});
+      }
+      if (isAvailable) {
+        final fcmToken = await _messaging.getToken();
+        if (fcmToken != null) {
+          await ApiClient.delete('/notifications/fcm-token', {'token': fcmToken});
+        }
       }
     } catch (e) {
-      print('FCM token removal error: $e');
+      debugPrint('FCM token removal error: $e');
+    }
+  }
+
+  /// Direct method to display a system notification in the phone's top notification bar.
+  static Future<void> showNotificationBarAlert({
+    required int id,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      await _localNotifications.show(
+        id,
+        title,
+        body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _androidChannel.id,
+            _androidChannel.name,
+            channelDescription: _androidChannel.description,
+            importance: Importance.max,
+            priority: Priority.max,
+            icon: '@mipmap/ic_launcher',
+            playSound: true,
+          ),
+        ),
+        payload: json.encode(data ?? {}),
+      );
+    } catch (e) {
+      debugPrint('Failed to show notification bar alert: $e');
     }
   }
 
@@ -180,22 +248,11 @@ class FcmService {
     final notification = message.notification;
     if (notification == null) return;
 
-    await _localNotifications.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          _androidChannel.id,
-          _androidChannel.name,
-          channelDescription: _androidChannel.description,
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-          sound: const RawResourceAndroidNotificationSound('bell_notification'),
-        ),
-      ),
-      payload: json.encode(message.data),
+    await showNotificationBarAlert(
+      id: notification.hashCode,
+      title: notification.title ?? 'School Update',
+      body: notification.body ?? '',
+      data: message.data,
     );
 
     // Refresh notifications real-time on dashboard if it's currently loaded

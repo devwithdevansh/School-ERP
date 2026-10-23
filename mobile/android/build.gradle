@@ -1,0 +1,31 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.set(newBuildDir)
+
+subprojects {
+    def newSubprojectBuildDir = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.set(newSubprojectBuildDir)
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
+}
+
+// Force a newer compileSdk on plugin modules (e.g. audioplayers_android compiles against 33).
+subprojects {
+    if (state.executed) return
+    afterEvaluate {
+        def libExt = extensions.findByType(com.android.build.gradle.LibraryExtension)
+        if (libExt != null) libExt.compileSdk = 35
+    }
+}

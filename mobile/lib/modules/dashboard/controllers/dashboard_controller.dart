@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +38,10 @@ class DashboardController extends GetxController {
   final notifications = <NotificationModel>[].obs;
   final unreadNotificationCount = 0.obs;
 
+  Timer? _notificationPollTimer;
+  final Set<String> _processedNotificationIds = <String>{};
+  bool _isPolling = false;
+
   final totalFees = 0.0.obs;
   final totalPaid = 0.0.obs;
   final totalPending = 0.0.obs;
@@ -70,6 +75,7 @@ class DashboardController extends GetxController {
   void onInit() {
     super.onInit();
     _checkAuthAndLoad();
+    _startNotificationPoller();
   }
 
   @override
@@ -78,8 +84,14 @@ class DashboardController extends GetxController {
     _checkPermissions();
   }
 
+  @override
+  void onClose() {
+    _notificationPollTimer?.cancel();
+    _notificationPollTimer = null;
+    super.onClose();
+  }
+
   Future<void> _checkPermissions() async {
-    if (!FcmService.isAvailable) return; // push not configured: nothing to ask permission for
     final prefs = await SharedPreferences.getInstance();
     final hasAsked = prefs.getBool('has_asked_fcm_permission') ?? false;
     if (hasAsked) return;
@@ -139,10 +151,13 @@ class DashboardController extends GetxController {
     canTakeAttendance.value = false;
     canAssignHomework.value = false;
     isLoading.value = true;
+    _startNotificationPoller();
+    FcmService.registerToken();
     await _checkAuthAndLoad();
   }
 
   Future<void> _checkAuthAndLoad() async {
+    FcmService.registerToken();
     final prefs = await SharedPreferences.getInstance();
 
     final role = prefs.getString(StorageKeys.userRole);
@@ -477,10 +492,94 @@ class DashboardController extends GetxController {
   Future<void> _loadNotifications() async {
     try {
       final notifs = await _notificationRepo.getNotifications();
+      for (final n in notifs) {
+        _processedNotificationIds.add(n.id);
+      }
       _allNotifications.assignAll(notifs);
       _updateVisibleNotifications();
     } catch (e) {
       print('Error loading notifications: $e');
+    }
+  }
+
+  /// Start background poller to fetch updates in real-time (every 5s)
+  void _startNotificationPoller() {
+    _notificationPollTimer?.cancel();
+    _notificationPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _pollForNewNotifications();
+    });
+  }
+
+  /// Poll for new notifications and post them directly to the Android notification bar
+  Future<void> _pollForNewNotifications() async {
+    if (_isPolling) return;
+    _isPolling = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool(StorageKeys.isLoggedIn) ?? false;
+      if (!isLoggedIn) return;
+
+      final sId = student.value?.id;
+      final notifs = await _notificationRepo.getNotifications(page: 1, limit: 10);
+      if (notifs.isEmpty) return;
+
+      // On first poll, initialize cache with existing notifications to avoid re-triggering old ones
+      if (_processedNotificationIds.isEmpty) {
+        for (final n in notifs) {
+          _processedNotificationIds.add(n.id);
+        }
+        _allNotifications.assignAll(notifs);
+        _updateVisibleNotifications();
+        return;
+      }
+
+      bool hasNewForStudent = false;
+      bool hasFeeUpdate = false;
+
+      for (final n in notifs) {
+        if (!_processedNotificationIds.contains(n.id)) {
+          _processedNotificationIds.add(n.id);
+
+          final bool isRelevant = sId == null || _isForStudent(n, sId);
+          if (isRelevant) {
+            hasNewForStudent = true;
+
+            // Trigger notification directly in the phone's top notification bar
+            await FcmService.showNotificationBarAlert(
+              id: n.id.hashCode,
+              title: n.title,
+              body: n.body,
+              data: {
+                'notificationId': n.id,
+                'type': n.type,
+                if (n.targetStudentIds.isNotEmpty) 'studentId': n.targetStudentIds.first,
+              },
+            );
+
+            // Play notification chime
+            SoundService.instance.play(AppSound.success);
+
+            // If fee payment or fee due notification, trigger fee sync
+            final typeLower = n.type.toLowerCase();
+            if (typeLower.contains('pay') || typeLower.contains('fee')) {
+              hasFeeUpdate = true;
+            }
+          }
+        }
+      }
+
+      if (hasNewForStudent) {
+        _allNotifications.assignAll(notifs);
+        _updateVisibleNotifications();
+      }
+
+      if (hasFeeUpdate) {
+        await refreshData();
+      }
+    } catch (e) {
+      // Ignore background poll errors silently
+    } finally {
+      _isPolling = false;
     }
   }
 
@@ -557,6 +656,9 @@ class DashboardController extends GetxController {
       // Sync receipts if controller is registered
       if (Get.isRegistered<ReceiptDetailsController>()) {
         Get.find<ReceiptDetailsController>().loadReceipts(forceRefresh: true);
+      }
+      if (Get.isRegistered<PendingFeesController>()) {
+        Get.find<PendingFeesController>().reloadForStudent();
       }
     }
   }
