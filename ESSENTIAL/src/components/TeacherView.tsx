@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar as CalendarIcon, Save, Loader2, CheckCircle2, Clock,
-  Users, UserCheck, AlertCircle, RefreshCw, AlertTriangle
+  Users, UserCheck, AlertCircle, RefreshCw, AlertTriangle, GraduationCap, Check, X
 } from './icons';
 import { useApp } from '../store';
 
@@ -240,7 +240,7 @@ export const TeacherView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Teacher Workspace</h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
               Essential
             </span>
           </div>
@@ -299,17 +299,20 @@ export const TeacherView: React.FC = () => {
               {/* Class Controls Bar */}
               <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    {/* Class badge or dropdown if multiple classes */}
-                    {assignedClasses.length > 1 ? (
+                  {/* Left: Class Teacher & Assigned Class */}
+                  {assignedClasses.length > 1 ? (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm ring-4 ring-emerald-50">
+                        <GraduationCap className="h-6 w-6" />
+                      </div>
                       <div>
                         <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
-                          Select Assigned Class
+                          Assigned Class
                         </label>
                         <select
                           value={selectedClassIndex}
                           onChange={(e) => setSelectedClassIndex(Number(e.target.value))}
-                          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                         >
                           {assignedClasses.map((cls, idx) => (
                             <option key={cls._id || idx} value={idx}>
@@ -318,64 +321,69 @@ export const TeacherView: React.FC = () => {
                           ))}
                         </select>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-black">
-                          {currentAssignedClass?.standard}
-                        </span>
-                        <div>
-                          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Class Teacher Of</p>
-                          <p className="text-base font-black text-slate-900">
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm ring-4 ring-emerald-50">
+                        <GraduationCap className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">Class Teacher</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-base font-black text-slate-900 tracking-tight">
                             Grade {currentAssignedClass?.standard} - Division {currentAssignedClass?.division}
-                            <span className="ml-2 text-xs font-semibold text-slate-500">
-                              ({currentAssignedClass?.medium} Medium)
+                          </h2>
+                          {currentAssignedClass?.medium && (
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200/60">
+                              {currentAssignedClass.medium} Medium
                             </span>
-                          </p>
+                          )}
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {/* Date Picker */}
-                    <div className="flex items-center gap-2 pl-0 sm:pl-4 sm:border-l sm:border-slate-200">
-                      <CalendarIcon className="h-4 w-4 text-slate-400" />
-                      <div>
-                        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">
+                  {/* Right: Date Picker, Status Indicator, and Refresh */}
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Date Picker Pill */}
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-1.5 shadow-2xs hover:border-slate-300 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all">
+                      <CalendarIcon className="h-4 w-4 text-slate-500 shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 leading-none">
                           Date
-                        </label>
+                        </span>
                         <input
                           type="date"
                           value={attendanceDate}
                           onChange={(e) => setAttendanceDate(e.target.value)}
-                          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer leading-tight pt-0.5"
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Status Indicator */}
-                  <div className="flex items-center gap-2">
+                    {/* Status Indicator */}
                     {sheetStatus === 'CONFIRMED' ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        Confirmed by Office
+                      <span className="inline-flex h-9 items-center gap-1.5 px-3 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                        <span>Confirmed by Office</span>
                       </span>
                     ) : sheetStatus === 'SUBMITTED' ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                        <Clock className="h-3.5 w-3.5 text-amber-600" />
-                        Submitted · Awaiting Admin Confirmation
+                      <span className="inline-flex h-9 items-center gap-1.5 px-3 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                        <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Submitted · Awaiting Admin Confirmation</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                        <AlertCircle className="h-3.5 w-3.5 text-rose-600" />
-                        Not Submitted Today
+                      <span className="inline-flex h-9 items-center gap-1.5 px-3 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+                        <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                        <span>Not Submitted Today</span>
                       </span>
                     )}
 
                     <button
                       type="button"
                       onClick={loadAttendance}
-                      title="Reload"
-                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500"
+                      title="Reload Sheet"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors shadow-2xs cursor-pointer"
                     >
                       <RefreshCw className={`h-4 w-4 ${loadingAttendance ? 'animate-spin' : ''}`} />
                     </button>
@@ -385,20 +393,20 @@ export const TeacherView: React.FC = () => {
                 {/* Quick Roll Call Counters & Actions */}
                 <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="px-2.5 py-1 rounded-lg bg-slate-100 font-bold text-slate-700">
-                      Total: {stats.total}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 font-extrabold text-slate-700">
+                      Total: <span className="font-black text-slate-900">{stats.total}</span>
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 font-bold text-emerald-700 border border-emerald-200">
-                      Present: {stats.present}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 font-bold text-emerald-700 border border-emerald-200/80">
+                      Present: <span className="font-black text-emerald-800">{stats.present}</span>
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-rose-50 font-bold text-rose-700 border border-rose-200">
-                      Absent: {stats.absent}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 font-bold text-rose-700 border border-rose-200/80">
+                      Absent: <span className="font-black text-rose-800">{stats.absent}</span>
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 font-bold text-amber-700 border border-amber-200">
-                      Late: {stats.late}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 font-bold text-amber-700 border border-amber-200/80">
+                      Late: <span className="font-black text-amber-800">{stats.late}</span>
                     </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-purple-50 font-bold text-purple-700 border border-purple-200">
-                      Leave: {stats.leave}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 font-bold text-purple-700 border border-purple-200/80">
+                      Leave: <span className="font-black text-purple-800">{stats.leave}</span>
                     </span>
                   </div>
 
@@ -408,17 +416,19 @@ export const TeacherView: React.FC = () => {
                       type="button"
                       disabled={sheetStatus === 'CONFIRMED'}
                       onClick={() => markAllStatus('PRESENT')}
-                      className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
                     >
-                      Mark All Present
+                      <Check className="h-3.5 w-3.5" />
+                      <span>Mark All Present</span>
                     </button>
                     <button
                       type="button"
                       disabled={sheetStatus === 'CONFIRMED'}
                       onClick={() => markAllStatus('ABSENT')}
-                      className="px-3 py-1 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
                     >
-                      Mark All Absent
+                      <X className="h-3.5 w-3.5" />
+                      <span>Mark All Absent</span>
                     </button>
                   </div>
                 </div>
@@ -474,27 +484,27 @@ export const TeacherView: React.FC = () => {
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2.5">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-bold text-[11px] ring-2 ring-slate-200/60 shrink-0">
                                   {r.studentName.slice(0, 1).toUpperCase()}
                                 </span>
                                 <div>
-                                  <p className="font-bold text-slate-800">{r.studentName}</p>
+                                  <p className="font-bold text-slate-800 text-xs">{r.studentName}</p>
                                   {r.gender && (
                                     <p className="text-[10px] text-slate-400 capitalize">{r.gender}</p>
                                   )}
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center justify-center gap-1.5">
+                            <td className="py-3 px-4 text-center">
+                              <div className="inline-flex items-center rounded-xl bg-slate-100/90 p-1 border border-slate-200/80 gap-0.5">
                                 <button
                                   type="button"
                                   disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'PRESENT')}
-                                  className={`px-3 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
+                                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                                     r.status === 'PRESENT'
                                       ? 'bg-emerald-600 text-white shadow-xs font-extrabold'
-                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                                   }`}
                                 >
                                   Present
@@ -503,10 +513,10 @@ export const TeacherView: React.FC = () => {
                                   type="button"
                                   disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'ABSENT')}
-                                  className={`px-3 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
+                                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                                     r.status === 'ABSENT'
                                       ? 'bg-rose-600 text-white shadow-xs font-extrabold'
-                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                                   }`}
                                 >
                                   Absent
@@ -515,10 +525,10 @@ export const TeacherView: React.FC = () => {
                                   type="button"
                                   disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'LATE')}
-                                  className={`px-2.5 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
+                                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                                     r.status === 'LATE'
                                       ? 'bg-amber-500 text-white shadow-xs font-extrabold'
-                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                                   }`}
                                 >
                                   Late
@@ -527,10 +537,10 @@ export const TeacherView: React.FC = () => {
                                   type="button"
                                   disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'LEAVE')}
-                                  className={`px-2.5 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
+                                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                                     r.status === 'LEAVE'
                                       ? 'bg-purple-600 text-white shadow-xs font-extrabold'
-                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                                   }`}
                                 >
                                   Leave
@@ -544,7 +554,7 @@ export const TeacherView: React.FC = () => {
                                 value={r.remarks}
                                 onChange={(e) => setStudentRemarks(r.studentId, e.target.value)}
                                 placeholder="Add note (e.g. sick, doctor note)..."
-                                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all disabled:opacity-60"
                               />
                             </td>
                           </tr>
@@ -557,22 +567,33 @@ export const TeacherView: React.FC = () => {
                 {/* Footer Save / Submit Action */}
                 {attendanceRows.length > 0 && (
                   <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs text-slate-500">
-                      Summary: <strong className="text-emerald-700">{stats.present} Present</strong> ·{' '}
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <span className="font-semibold text-slate-500">Summary:</span>
+                      <strong className="text-emerald-700">{stats.present} Present</strong> ·{' '}
                       <strong className="text-rose-700">{stats.absent} Absent</strong> ·{' '}
                       <strong className="text-amber-700">{stats.late} Late</strong> ·{' '}
                       <strong className="text-purple-700">{stats.leave} Leave</strong>
-                    </p>
+                    </div>
                     <button
                       type="button"
                       disabled={savingAttendance || sheetStatus === 'CONFIRMED'}
                       onClick={handleSubmitAttendance}
-                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50 cursor-pointer"
                     >
                       {savingAttendance ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span>Saving Attendance...</span>
+                        </>
+                      ) : sheetStatus === 'CONFIRMED' ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Attendance Finalized by Admin</span>
+                        </>
+                      ) : sheetStatus === 'SUBMITTED' ? (
+                        <>
+                          <Save className="h-4 w-4" />
+                          <span>Update Submitted Attendance</span>
                         </>
                       ) : (
                         <>

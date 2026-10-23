@@ -3,6 +3,7 @@ import { Menu, X, LogOut, PanelLeft } from '../components/icons';
 import { useApp } from '../store';
 import { brand } from '../config/brand';
 import { NavList } from './NavList';
+import { findNavItem } from '../config/navigation';
 import { IconRail } from './IconRail';
 import { MergedSidebar } from './MergedSidebar';
 import { useNav } from './useNav';
@@ -93,11 +94,17 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/70 bg-white/80 px-5 backdrop-blur">
           <button onClick={() => setDrawer(true)} className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"><Menu className="h-5 w-5" /></button>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--color-ink-faint)]">{activeModule.label}</span>
-            <span className="text-slate-300">/</span>
-            <span className="font-display text-base font-semibold capitalize text-[var(--color-ink)]">{currentScreen.replace(/-/g, ' ')}</span>
-          </div>
+          {(() => {
+            const currentItem = findNavItem(activeModule.id, currentScreen, ctx);
+            const screenTitle = currentItem?.label || currentScreen.replace(/-/g, ' ');
+            return (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-[var(--color-ink-faint)] font-medium">{activeModule.label}</span>
+                <span className="text-slate-300">/</span>
+                <span className="font-display text-base font-semibold capitalize text-[var(--color-ink)]">{screenTitle}</span>
+              </div>
+            );
+          })()}
           <div className="ml-auto relative flex items-center gap-3" ref={headerMenuRef}>
             <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-xs">
               {brand.editionLabel}
