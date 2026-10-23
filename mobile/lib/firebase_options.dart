@@ -1,18 +1,30 @@
-// PLACEHOLDER — push notifications are OFF until you connect your own Firebase project.
-//
-//   1. Create a Firebase project and run, from the `mobile/` folder:
-//        dart pub global activate flutterfire_cli
-//        flutterfire configure
-//      This REPLACES this file with real options for your project
-//      (and adds android/app/google-services.json + ios/Runner/GoogleService-Info.plist).
-//   2. Android: add the Google services Gradle plugin, see mobile/README.md → "Push notifications".
-//
-// Until then `FcmService.init()` catches the UnsupportedError below and the app
-// simply runs without push (everything else works).
+// File generated from your project: school-erp-12159 (google-services.json)
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 class DefaultFirebaseOptions {
-  static FirebaseOptions get currentPlatform => throw UnsupportedError(
-        'Firebase is not configured for this build. Run `flutterfire configure` (see mobile/README.md).',
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) {
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web',
       );
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      default:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions are not supported for this platform.',
+        );
+    }
+  }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyAebqERp6oAyyCDr5V6OFaHJbELkeerO6s',
+    appId: '1:393684099106:android:35d34c0ad6a68008246a7b',
+    messagingSenderId: '393684099106',
+    projectId: 'school-erp-12159',
+    storageBucket: 'school-erp-12159.firebasestorage.app',
+  );
 }

@@ -16,6 +16,7 @@ backend-mongo/config/
 *.backup
 *.pem
 *service-account*.json
+*firebase-adminsdk*.json
 
 # Sunrise leftovers (unused)
 PROFESSIONAL/src/assets/
