@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useApp } from '../store';
 import { Search, ChevronDown, ChevronUp, Plus, X, Trash2, Pencil, Phone, Users, Landmark, History, RotateCcw, Loader2, Camera, Upload } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
+import { useHasPermission } from '../hooks/usePermission';
 
 export const Students: React.FC = () => {
   const {
@@ -24,6 +25,10 @@ export const Students: React.FC = () => {
     isSuperAdmin,
     setActivePortal,
   } = useApp();
+
+  const canAddStudent = useHasPermission('STUDENTS:ADD');
+  const canEditStudent = useHasPermission('STUDENTS:EDIT');
+  const canDeleteStudent = useHasPermission('STUDENTS:DELETE');
 
   const activeYearName = useMemo(() => academicYears.find(y => y.isActive)?.name || academicYears[0]?.name || '', [academicYears]);
   const activeYearFeeStructures = useMemo(() => {
@@ -638,7 +643,7 @@ export const Students: React.FC = () => {
             </button>
           </div>
 
-          {(currentUser?.role === 'ADMIN' || currentUser?.role === 'STAFF') && (
+          {canAddStudent && (
             <button
               onClick={() => {
                 // Admission lives in the ERP module (super admin only); others keep the quick-add modal.
@@ -840,7 +845,7 @@ export const Students: React.FC = () => {
                               Collect
                             </button>
                           )}
-                          {(currentUser?.role === 'ADMIN' || currentUser?.role === 'STAFF') && (
+                          {canEditStudent && (
                             <button
                               onClick={() => openEditModal(s)}
                               className="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold p-1.5 rounded-xl shadow-sm transition-all"
@@ -849,7 +854,7 @@ export const Students: React.FC = () => {
                               <Pencil className="h-4 w-4" />
                             </button>
                           )}
-                          {currentUser?.role === 'ADMIN' && (
+                          {canDeleteStudent && (
                             <button
                               onClick={async () => {
                                 if (window.confirm("Are you sure you want to delete this student? If they have payments, they will be marked as inactive. If no payments exist, they will be permanently deleted.")) {

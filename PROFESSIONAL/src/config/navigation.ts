@@ -5,6 +5,7 @@ import {
   ClipboardList, Award, ShieldCheck, MessageCircle, GraduationCap, IndianRupee, Building2, ToggleRight,
 } from '../components/icons';
 import type { ScreenType } from '../store';
+import { type PermissionId, hasPermission } from './permissionsRegistry';
 
 /**
  * Navigation registry.
@@ -31,12 +32,14 @@ export interface NavContext {
   /** Modules the organization enabled for this user's school (ignored for ORG_ADMIN). */
   enabledModules: string[];
   unpaidCount: number;
+  permissions?: string[];
 }
 
 export interface NavItem {
   id: ScreenType;
   label: string;
   icon: ComponentType<{ className?: string }>;
+  permission?: PermissionId;
   adminOnly?: boolean;
   disabled?: boolean;
   /** Same screen also lives in the ERP module; hidden here whenever ERP is visible to the user. */
@@ -114,33 +117,33 @@ export const NAV_MODULES: NavModule[] = [
     icon: IndianRupee,
     isVisible: (c) => !c.isOrgAdmin && c.enabledModules.includes('FEES'),
     groups: [
-      { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }] },
+      { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'SCREEN_DASHBOARD' }] },
       { title: 'Fees', items: [
-        { id: 'collect-fee', label: 'Collect Fee', icon: CreditCard },
-        { id: 'today-expenses', label: "Today's Expenses", icon: Wallet },
-        { id: 'unpaid-fees', label: 'Unpaid Fees', icon: AlertTriangle, badge: (c) => c.unpaidCount || undefined },
-        { id: 'fee-structure', label: 'Fee Structure', icon: Layers, adminOnly: true },
+        { id: 'collect-fee', label: 'Collect Fee', icon: CreditCard, permission: 'SCREEN_COLLECT_FEE' },
+        { id: 'today-expenses', label: "Today's Expenses", icon: Wallet, permission: 'SCREEN_TODAY_EXPENSES' },
+        { id: 'unpaid-fees', label: 'Unpaid Fees', icon: AlertTriangle, permission: 'SCREEN_UNPAID_FEES', badge: (c) => c.unpaidCount || undefined },
+        { id: 'fee-structure', label: 'Fee Structure', icon: Layers, permission: 'SCREEN_FEE_STRUCTURE', adminOnly: true },
       ] },
       // Group titles match the ERP module so both sidebars read the same.
       // Items flagged `inErp` are the ERP module's screens; they only show here for users without ERP access.
       { title: 'Students', items: [
-        { id: 'students', label: 'All Students', icon: Users, inErp: true },
-        { id: 'promote-students', label: 'Promote', icon: Layers, adminOnly: true },
-        { id: 'import-excel', label: 'Import Excel', icon: FileSpreadsheet, adminOnly: true },
+        { id: 'students', label: 'All Students', icon: Users, permission: 'SCREEN_STUDENTS', inErp: true },
+        { id: 'promote-students', label: 'Promote', icon: Layers, permission: 'SCREEN_PROMOTE', adminOnly: true },
+        { id: 'import-excel', label: 'Import Excel', icon: FileSpreadsheet, permission: 'SCREEN_IMPORT_EXCEL', adminOnly: true },
       ] },
       { title: 'Communication', items: [
-        { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, adminOnly: true },
-        { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, permission: 'SCREEN_WHATSAPP' },
+        { id: 'notifications', label: 'Notifications', icon: Bell, permission: 'SCREEN_NOTIFICATIONS' },
         { id: 'messages', label: 'Messages', icon: MessageCircle, inErp: true },
       ] },
       { title: 'Reports', items: [
-        { id: 'receipts', label: 'Receipts', icon: Receipt },
-        { id: 'reports', label: 'Reports', icon: BarChart3, adminOnly: true },
+        { id: 'receipts', label: 'Receipts', icon: Receipt, permission: 'SCREEN_RECEIPTS' },
+        { id: 'reports', label: 'Reports', icon: BarChart3, permission: 'SCREEN_REPORTS' },
       ] },
       { title: 'Settings', items: [
-        { id: 'setup', label: 'Setup', icon: Settings, adminOnly: true, inErp: true },
-        { id: 'staff-management', label: 'Staff Directory', icon: Users, adminOnly: true, inErp: true },
-        { id: 'audit-log', label: 'Audit Log', icon: Activity, adminOnly: true, inErp: true },
+        { id: 'setup', label: 'Setup', icon: Settings, permission: 'SCREEN_SETUP', adminOnly: true, inErp: true },
+        { id: 'staff-management', label: 'Staff Directory', icon: Users, permission: 'SCREEN_STAFF', adminOnly: true, inErp: true },
+        { id: 'audit-log', label: 'Audit Log', icon: Activity, permission: 'SCREEN_AUDIT', adminOnly: true, inErp: true },
         { id: 'parent-app', label: 'Parent App Preview', icon: Smartphone, disabled: true },
       ] },
     ],
@@ -155,10 +158,25 @@ export function getVisibleModules(ctx: NavContext): NavModule[] {
     groups: m.groups
       .map((g) => ({
         ...g,
-        items: g.items.filter((i) =>
-          (!i.adminOnly || ctx.role === 'ADMIN' || ctx.role === 'ORG_ADMIN') &&
-          // shared screens live in ERP when the user can see it; otherwise they stay reachable under Fees
-          !(m.id === 'FEES' && i.inErp && erpVisible)),
+        items: g.items.filter((i) => {
+          // If ERP is visible, hide shared items under FEES
+          if (m.id === 'FEES' && i.inErp && erpVisible) return false;
+
+          // Super Admin or ORG_ADMIN sees all allowed items
+          if (ctx.isSuperAdmin || ctx.isOrgAdmin) return true;
+
+          // If the item requires a specific permission, evaluate hasPermission
+          if (i.permission) {
+            return hasPermission(i.permission, ctx.permissions, ctx.role, ctx.isSuperAdmin);
+          }
+
+          // Fallback adminOnly check
+          if (i.adminOnly && ctx.role !== 'ADMIN') {
+            return false;
+          }
+
+          return true;
+        }),
       }))
       .filter((g) => g.items.length > 0),
   }));

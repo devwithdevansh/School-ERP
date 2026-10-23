@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../store';
+import { useHasPermission } from '../hooks/usePermission';
 import {
   Plus,
   Search,
@@ -29,6 +30,8 @@ import {
 
 export const TodayExpenses: React.FC = () => {
   const { expenses, transactions, addExpense, deleteExpense, reverseExpense } = useApp();
+  const canAddExpense = useHasPermission('EXPENSES:ADD');
+  const canDeleteExpense = useHasPermission('EXPENSES:DELETE');
 
   const todayString = useMemo(() => {
     return new Date().toISOString().split('T')[0];
@@ -248,13 +251,15 @@ export const TodayExpenses: React.FC = () => {
           </div>
 
           {/* Add Expense Button */}
-          <button
-            onClick={handleOpenModal}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 hover:shadow"
-          >
-            <Plus className="h-4 w-4" />
-            Add Expense
-          </button>
+          {canAddExpense && (
+            <button
+              onClick={handleOpenModal}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 hover:shadow"
+            >
+              <Plus className="h-4 w-4" />
+              Add Expense
+            </button>
+          )}
         </div>
       </div>
 
@@ -437,18 +442,20 @@ export const TodayExpenses: React.FC = () => {
                           <RotateCcw className="h-4 w-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => handleDelete(exp._id)}
-                        disabled={deletingId === exp._id}
-                        className="text-slate-300 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
-                        title="Delete Permanently"
-                      >
-                        {deletingId === exp._id ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-rose-600" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </button>
+                      {canDeleteExpense && (
+                        <button
+                          onClick={() => handleDelete(exp._id)}
+                          disabled={deletingId === exp._id}
+                          className="text-slate-300 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                          title="Delete Permanently"
+                        >
+                          {deletingId === exp._id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-rose-600" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -546,18 +553,20 @@ export const TodayExpenses: React.FC = () => {
                             <RotateCcw className="h-4 w-4" />
                           </button>
                         )}
-                        <button
-                          onClick={() => handleDelete(exp._id)}
-                          disabled={deletingId === exp._id}
-                          className="text-slate-300 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
-                          title="Delete Permanently"
-                        >
-                          {deletingId === exp._id ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-rose-600 mx-auto" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 mx-auto" />
-                          )}
-                        </button>
+                        {canDeleteExpense && (
+                          <button
+                            onClick={() => handleDelete(exp._id)}
+                            disabled={deletingId === exp._id}
+                            className="text-slate-300 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                            title="Delete Permanently"
+                          >
+                            {deletingId === exp._id ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-rose-600 mx-auto" />
+                            ) : (
+                              <Trash2 className="h-4 w-4 mx-auto" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

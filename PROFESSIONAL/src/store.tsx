@@ -191,6 +191,12 @@ export interface UserData {
   email: string;
   role: string;
   isActive: boolean;
+  permissions?: string[];
+  contactNo1?: string;
+  phone?: string;
+  branchId?: string;
+  staffId?: string;
+  designation?: string;
 }
 
 export interface RoleData {

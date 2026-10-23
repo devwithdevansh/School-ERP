@@ -15,8 +15,8 @@ export function useNav() {
   // No client info (a backend without multi-tenancy) = everything licensed, as before.
   const enabledModules = useMemo(() => client?.enabledModules ?? ['FEES', 'ERP'], [client]);
   const ctx: NavContext = useMemo(
-    () => ({ role: currentUser?.role, isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount }),
-    [currentUser?.role, isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount],
+    () => ({ role: currentUser?.role, isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount, permissions: currentUser?.permissions }),
+    [currentUser?.role, currentUser?.permissions, isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount],
   );
   const modules = useMemo(() => getVisibleModules(ctx), [ctx]);
   const activeModule = modules.find((m) => m.id === activePortal) ?? modules[0];

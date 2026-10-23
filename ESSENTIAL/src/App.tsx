@@ -39,6 +39,8 @@ import { OrgLicences } from './components/org/OrgLicences';
 import { generateReceiptHTML, generateReportHTML, printHTML, fetchAsBase64 } from './utils/printUtils';
 import { brand } from './config/brand';
 import { parseExamRoute } from './utils/examRouteUtils';
+import { hasPermission } from './config/permissionsRegistry';
+import { ShieldAlert } from './components/icons';
 
 const logoPath = brand.logo;
 const watermarkPath = brand.logo;
@@ -80,7 +82,7 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
 }
 
 const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPrintReport: (report: any) => void }> = ({ onPrint, onPrintReport }) => {
-  const { currentScreen, activePortal } = useApp();
+  const { currentScreen, activePortal, currentUser, isSuperAdmin, setScreen } = useApp();
 
   // Organization admin console (platform owner)
   if (activePortal === 'ORG') {
@@ -146,8 +148,53 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
     case 'students':
       return <Students />;
     case 'promote-students':
+      if (!hasPermission('SCREEN_PROMOTE', currentUser?.permissions, currentUser?.role, isSuperAdmin)) {
+        return (
+          <div className="flex flex-col items-center justify-center p-12 text-center min-h-[60vh]">
+            <div className="max-w-md rounded-3xl bg-white p-8 shadow-xl border border-slate-200 animate-in fade-in">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 mb-4">
+                <ShieldAlert className="h-7 w-7" />
+              </div>
+              <h3 className="text-lg font-black text-slate-800">Feature Strictly Restricted</h3>
+              <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                Student Cohort Promotion permanently advances grades and generates new academic year fee ledgers. By default, it is locked for client and staff roles. Contact your Super Administrator to authorize access.
+              </p>
+              <button
+                type="button"
+                onClick={() => setScreen('dashboard')}
+                className="mt-6 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 transition-all"
+              >
+                Return to Dashboard
+              </button>
+            </div>
+          </div>
+        );
+      }
       return <PromoteStudents />;
+
     case 'import-excel':
+      if (!hasPermission('SCREEN_IMPORT_EXCEL', currentUser?.permissions, currentUser?.role, isSuperAdmin)) {
+        return (
+          <div className="flex flex-col items-center justify-center p-12 text-center min-h-[60vh]">
+            <div className="max-w-md rounded-3xl bg-white p-8 shadow-xl border border-slate-200 animate-in fade-in">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 mb-4">
+                <ShieldAlert className="h-7 w-7" />
+              </div>
+              <h3 className="text-lg font-black text-slate-800">Bulk Ingestion Restricted</h3>
+              <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                Bulk spreadsheet importing can overwrite student profiles and fee structures. By default, it is restricted for staff accounts. Contact your Super Administrator to unlock this capability.
+              </p>
+              <button
+                type="button"
+                onClick={() => setScreen('dashboard')}
+                className="mt-6 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 transition-all"
+              >
+                Return to Dashboard
+              </button>
+            </div>
+          </div>
+        );
+      }
       return <ImportExcel />;
     case 'staff-management':
       return <StaffManagement />;
