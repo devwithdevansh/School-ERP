@@ -427,6 +427,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
   const clientRef = useRef(client);
   clientRef.current = client;
+  const currentUserRef = useRef(currentUser);
+  currentUserRef.current = currentUser;
   const isOrgAdmin = currentUser?.role === 'ORG_ADMIN';
   const isSuperAdmin = currentUser?.role === 'ADMIN' && (brand.superAdminEmails.length === 0 || brand.superAdminEmails.includes(String(currentUser.email).toLowerCase()));
   const [activePortal, setActivePortal] = useState<PortalId>('FEES');
@@ -573,14 +575,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // No client info (a backend without multi-tenancy) = everything.
       const mods = clientRef.current?.enabledModules ?? ['FEES', 'ERP'];
       const hasFees = mods.includes('FEES');
-      const hasErp = mods.includes('ERP');
+      const isStaffOrClerk = currentUserRef.current?.role === 'STAFF';
+      // Staff / Clerks only have access to daily FEES operations; ERP academic endpoints require ADMIN or TEACHER.
+      const hasErp = mods.includes('ERP') && !isStaffOrClerk;
       const skipped = () => Promise.resolve(new Response(JSON.stringify({ data: [] }), { status: 200 }));
       try {
         const [initRes, unpaidRes, subjectsRes, curriculumsRes] = await Promise.all([
           authFetch('/api/v1/dashboard/init'),
           hasFees ? authFetch(`/api/v1/reports/unpaid?_t=${Date.now()}`) : skipped(),
-          authFetch('/api/v1/academic-master/subjects'),
-          authFetch('/api/v1/academic-master/curriculum')
+          hasErp ? authFetch('/api/v1/academic-master/subjects') : skipped(),
+          hasErp ? authFetch('/api/v1/academic-master/curriculum') : skipped()
         ]);
         
         if (!initRes.ok) {
@@ -644,6 +648,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (rawAuditLogs.length > 0) {
           const latestTime = new Date(rawAuditLogs[0].createdAt).getTime();
           setLastSyncTimestamp(latestTime);
+        } else {
+          setLastSyncTimestamp(Date.now());
         }
 
         setAcademicYears(data.academicYears || []);
@@ -664,6 +670,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (activeDbUser && Array.isArray(activeDbUser.permissions)) {
           setCurrentUser((prev) => {
             if (!prev) return null;
+            const permsChanged = JSON.stringify(prev.permissions || []) !== JSON.stringify(activeDbUser.permissions || []);
+            const roleChanged = prev.role !== activeDbUser.role;
+            const nameChanged = prev.name !== activeDbUser.name;
+            if (!permsChanged && !roleChanged && !nameChanged) {
+              return prev; // Do not return a new reference if nothing changed!
+            }
             const updated = {
               ...prev,
               name: activeDbUser.name || prev.name,
@@ -815,11 +827,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [currentUser, lastSyncTimestamp, authFetch, fetchAll]);
 
+  const userEmail = currentUser?.email;
   useEffect(() => {
-    if (currentUser) {
+    if (userEmail) {
       fetchAll();
     }
-  }, [currentUser, fetchAll]);
+  }, [userEmail, fetchAll]);
 
   useEffect(() => {
     if (!currentUser || currentUser.role === 'ORG_ADMIN') return;
@@ -841,6 +854,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (!isSubscribed) return;
 
         if (data.data?.timestamp && data.data.timestamp > lastSyncTimestamp) {
+          setLastSyncTimestamp(data.data.timestamp);
           await fetchAll();
         }
       } catch (err) {
@@ -981,6 +995,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (freshUser && Array.isArray(freshUser.permissions)) {
           setCurrentUser((prev) => {
             if (!prev) return null;
+            const permsChanged = JSON.stringify(prev.permissions || []) !== JSON.stringify(freshUser.permissions || []);
+            const roleChanged = prev.role !== freshUser.role;
+            const nameChanged = prev.name !== freshUser.name;
+            if (!permsChanged && !roleChanged && !nameChanged) {
+              return prev; // Do not return a new reference if nothing changed!
+            }
             const updated = {
               ...prev,
               name: freshUser.name || prev.name,
