@@ -24,7 +24,6 @@ export type ScreenType =
   | 'staff-management'
   | 'whatsapp'
   | 'login'
-  | 'parent-app'
   | 'notifications'
   | 'reports'
   | 'receipts'
@@ -42,6 +41,8 @@ export type ScreenType =
   | 'teacher-allocation'
   | 'student-leave'
   | 'staff-leave'
+  | 'teacher-attendance'
+  | 'teacher-timetable'
   | 'org-clients'
   | 'org-licences';
 
@@ -52,7 +53,7 @@ export type UserRole = 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER';
 if (import.meta.env.DEV && import.meta.env.VITE_SKIP_LOGIN === 'true' && !localStorage.getItem('currentUser')) {
   localStorage.setItem('currentUser', JSON.stringify({ name: 'Dev Admin', email: 'dev@local', role: 'ADMIN' }));
 }
-export type PortalId = 'FEES' | 'ERP' | 'ORG';
+export type PortalId = 'FEES' | 'ERP' | 'ORG' | 'TEACHER';
 
 /** The school (client) the signed-in user belongs to, and the modules the organization enabled for it. */
 export interface ClientInfo {
@@ -922,7 +923,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const name = userInfo?.name || email.split('@')[0];
       const actualRole = userInfo?.role || role;
 
-      const userObj = { name, email: email.toLowerCase().trim(), role: actualRole, permissions: userInfo?.permissions || permissions || [] };
+      const userObj = { id: userId, _id: userId, name, email: email.toLowerCase().trim(), role: actualRole, permissions: userInfo?.permissions || permissions || [] };
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('userId', userId);
@@ -932,7 +933,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setClient(clientInfo || null);
       setCurrentUser(userObj);
-      setScreen(userObj.role === 'ORG_ADMIN' ? 'org-clients' : 'dashboard');
+      if (userObj.role === 'TEACHER') {
+        setActivePortal('TEACHER');
+        setScreen('teacher-attendance');
+      } else {
+        setScreen(userObj.role === 'ORG_ADMIN' ? 'org-clients' : 'dashboard');
+      }
       return { success: true };
     } catch (err: any) {
       console.error('Login error:', err);

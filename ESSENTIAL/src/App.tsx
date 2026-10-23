@@ -32,6 +32,7 @@ import { RolesPermissions } from './components/RolesPermissions';
 import { TeacherAllocationDashboard } from './components/TeacherAllocationDashboard';
 import { StudentLeaveManagement } from './components/StudentLeaveManagement';
 import { StaffLeaveManagement } from './components/StaffLeaveManagement';
+import { TeacherView } from './components/TeacherView';
 import { ErpPlaceholder } from './components/ErpPlaceholder';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
@@ -86,6 +87,11 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
   // Organization admin console (platform owner)
   if (activePortal === 'ORG') {
     return currentScreen === 'org-licences' ? <OrgLicences /> : <OrgClients />;
+  }
+
+  // Teacher Workspace (Essential edition only)
+  if (activePortal === 'TEACHER' || currentScreen === 'teacher-attendance' || currentScreen === 'teacher-timetable') {
+    return <TeacherView />;
   }
 
   // If we are in ERP mode, route ERP screens
@@ -202,62 +208,6 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
 
     case 'notifications':
       return <Notifications />;
-
-    case 'parent-app':
-      return (
-        <div className="flex-1 p-6 flex items-center justify-center bg-slate-50">
-          <div className="bg-white border border-slate-200 rounded-[32px] p-6 shadow-2xl max-w-sm w-full border-t-8 border-t-slate-800 border-b-8 border-b-slate-800 relative">
-            {/* Phone speaker/camera bar */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 h-4 w-24 bg-slate-800 rounded-full"></div>
-
-            <div className="pt-4 space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="shrink-0">
-                  <img src={watermarkPath} alt={brand.productName} className="h-6 w-6 object-contain" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-800">{brand.schoolName} Parent App</h4>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Demo Preview</p>
-                </div>
-              </div>
-
-              {/* Student info */}
-              <div className="bg-blue-50/50 border border-blue-100/50 rounded-xl p-3 text-left">
-                <h5 className="font-bold text-xs text-slate-800">Priya Shah</h5>
-                <p className="text-[10px] text-slate-500">English Medium · Std 5</p>
-
-                <div className="mt-3 pt-2 border-t border-blue-100/50 flex justify-between">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">Pending Due</span>
-                  <span className="text-xs font-bold text-red-500">₹5,600</span>
-                </div>
-              </div>
-
-              {/* Invoices list stub */}
-              <div className="space-y-2 text-left">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Pending Invoices</span>
-                <div className="border border-slate-100 rounded-lg p-2.5 flex justify-between items-center text-xs">
-                  <div>
-                    <strong className="block text-slate-800 font-bold text-[11px]">Education Fee - June</strong>
-                    <span className="text-[9px] text-slate-400">Due: June 15, 2026</span>
-                  </div>
-                  <span className="font-bold text-red-500 text-xs">₹2,800</span>
-                </div>
-                <div className="border border-slate-100 rounded-lg p-2.5 flex justify-between items-center text-xs">
-                  <div>
-                    <strong className="block text-slate-800 font-bold text-[11px]">Education Fee - July</strong>
-                    <span className="text-[9px] text-slate-400">Due: July 15, 2026</span>
-                  </div>
-                  <span className="font-bold text-red-500 text-xs">₹2,800</span>
-                </div>
-              </div>
-
-              <button className="w-full bg-[#115e59] text-white font-bold py-2 rounded-xl text-xs shadow-md shadow-blue-500/10 transition-all">
-                Pay Now via UPI
-              </button>
-            </div>
-          </div>
-        </div>
-      );
 
     case 'receipts':
       return <Receipts onPrint={onPrint} />;
