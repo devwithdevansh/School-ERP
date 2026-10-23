@@ -26,12 +26,33 @@ const examSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    type: {
+      type: String,
+      enum: ['WEEKLY', 'FINAL'],
+      default: 'FINAL',
+    },
+    status: {
+      type: String,
+      enum: ['DRAFT', 'SCHEDULED', 'MARKS_ENTRY', 'READY', 'PUBLISHED', 'LOCKED'],
+      default: 'SCHEDULED',
+    },
+    allowTeacherPublish: {
+      type: Boolean,
+      default: false,
+    },
+    publishedAt: Date,
+    publishedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
     subjects: [{
       subjectId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Subject',
       },
       examDate: Date,
+      startTime: String,
+      endTime: String,
       gradingSystem: {
         type: String,
         enum: ['Marks', 'Grades'],
@@ -44,6 +65,16 @@ const examSchema = new mongoose.Schema(
       passingMarks: {
         type: Number,
         default: 35, // Only applicable if gradingSystem is Marks
+      },
+      entryStatus: {
+        type: String,
+        enum: ['PENDING', 'IN_PROGRESS', 'SUBMITTED'],
+        default: 'PENDING',
+      },
+      submittedAt: Date,
+      submittedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
       }
     }],
     isPublished: {

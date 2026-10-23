@@ -17,6 +17,11 @@ const examResultSchema = new mongoose.Schema(
       ref: 'Subject',
       required: true,
     },
+    attendance: {
+      type: String,
+      enum: ['PRESENT', 'ABSENT', 'EXEMPT'],
+      default: 'PRESENT',
+    },
     marksObtained: {
       type: Number, // If gradingSystem is Marks
     },

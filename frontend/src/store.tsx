@@ -35,6 +35,7 @@ export type ScreenType =
   | 'attendance'
   | 'subjects'
   | 'timetable'
+  | 'exams'
   | 'results'
   | 'certificates'
   | 'roles'
@@ -393,7 +394,7 @@ interface AppContextType {
   copyFeeStructures: (fromYear: string, toYear: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   selectedStudentIdForFee: string | null;
   setSelectedStudentIdForFee: (id: string | null) => void;
-  currentUser: { name: string; email: string; role: UserRole } | null;
+  currentUser: { name: string; email: string; role: UserRole; permissions?: string[] } | null;
   isSuperAdmin: boolean;
   isOrgAdmin: boolean;
   client: ClientInfo | null;
@@ -407,7 +408,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role: UserRole } | null>(() => {
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role: UserRole; permissions?: string[] } | null>(() => {
     const saved = localStorage.getItem('currentUser');
     return saved ? JSON.parse(saved) : null;
   });
@@ -863,6 +864,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       let userId = '';
       let role = '';
+      let permissions: string[] = [];
       try {
         const payloadBase64 = accessToken.split('.')[1];
         let base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
@@ -872,6 +874,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const payload = JSON.parse(atob(base64));
         userId = payload.id;
         role = payload.role;
+        permissions = payload.permissions || [];
       } catch (decodeErr) {
         console.error('Failed to decode token:', decodeErr);
         return { success: false, error: 'Invalid token format returned by server' };
@@ -880,7 +883,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const name = userInfo?.name || email.split('@')[0];
       const actualRole = userInfo?.role || role;
 
-      const userObj = { name, email: email.toLowerCase().trim(), role: actualRole };
+      const userObj = { name, email: email.toLowerCase().trim(), role: actualRole, permissions: userInfo?.permissions || permissions || [] };
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('userId', userId);

@@ -91,7 +91,8 @@ export const NAV_MODULES: NavModule[] = [
       { title: 'Academic Operations', items: [
         { id: 'attendance', label: 'Attendance', icon: UserCheck },
         { id: 'student-leave', label: 'Student Leave', icon: CalendarDays },
-        { id: 'results', label: 'Results', icon: ClipboardList },
+        { id: 'exams', label: 'Exams', icon: ClipboardList },
+        { id: 'results', label: 'Results', icon: Award },
         { id: 'certificates', label: 'Certificates', icon: Award },
       ] },
       { title: 'Staff', items: [

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from './store';
 import type { PaymentTransaction } from './mockData';
 import { ScreenSkeleton } from './components/ScreenSkeleton';
@@ -26,6 +26,7 @@ import { Admission } from './components/Admission';
 import { Attendance } from './components/Attendance';
 import { Subjects } from './components/Subjects';
 import { Timetable } from './components/Timetable';
+import { Exams } from './components/Exams';
 import { Results } from './components/Results';
 import { RolesPermissions } from './components/RolesPermissions';
 import { TeacherAllocationDashboard } from './components/TeacherAllocationDashboard';
@@ -37,6 +38,7 @@ import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
 import { generateReceiptHTML, generateReportHTML, printHTML, fetchAsBase64 } from './utils/printUtils';
 import { brand } from './config/brand';
+import { parseExamRoute } from './utils/examRouteUtils';
 
 const logoPath = brand.logo;
 const watermarkPath = brand.logo;
@@ -62,6 +64,8 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
         return <Subjects />;
       case 'timetable':
         return <Timetable />;
+      case 'exams':
+        return <Exams />;
       case 'results':
         return <Results />;
       case 'certificates':
@@ -183,7 +187,28 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
 };
 
 const MainAppLayout: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPrintReport: (report: any) => void }> = ({ onPrint, onPrintReport }) => {
-  const { currentScreen, isScreenLoading, isLoadingDetails } = useApp();
+  const { currentScreen, isScreenLoading, isLoadingDetails, activePortal, setActivePortal, setScreen } = useApp();
+
+  useEffect(() => {
+    const handleUrlSync = () => {
+      const route = parseExamRoute();
+      if (route.screen === 'exams') {
+        setActivePortal('ERP');
+        setScreen('exams');
+      } else if (route.screen === 'results') {
+        setActivePortal('ERP');
+        setScreen('results');
+      }
+    };
+
+    const route = parseExamRoute();
+    if (route.screen === 'exams' || route.screen === 'results') {
+      handleUrlSync();
+    }
+
+    window.addEventListener('popstate', handleUrlSync);
+    return () => window.removeEventListener('popstate', handleUrlSync);
+  }, [setActivePortal, setScreen]);
 
   if (currentScreen === 'login') {
     return <Login />;

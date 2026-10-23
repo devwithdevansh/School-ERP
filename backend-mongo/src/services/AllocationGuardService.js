@@ -47,6 +47,36 @@ class AllocationGuardService {
     }
     return true;
   }
+
+  /**
+   * Validates if a teacher is allocated to an exam's standard/divisions.
+   * Admins and staff bypass this.
+   */
+  static async verifyExamTeacherAccess(user, academicYearId, standard, divisions, medium) {
+    if (user.role === 'ADMIN' || user.role === 'STAFF') return true;
+
+    const divQuery = divisions && divisions.length > 0 ? { $in: divisions } : { $exists: true };
+
+    const isClassTeacher = await ClassTeacherAllocation.findOne({
+      academicYearId,
+      standard,
+      division: divQuery,
+      medium,
+      teacherId: user._id
+    });
+    if (isClassTeacher) return true;
+
+    const isSubjectTeacher = await TeacherAllocation.findOne({
+      academicYearId,
+      standard,
+      division: divQuery,
+      medium,
+      teacherId: user._id
+    });
+    if (isSubjectTeacher) return true;
+
+    throw new AppError('You are not allocated as a teacher for this class.', 403);
+  }
 }
 
 export default AllocationGuardService;
