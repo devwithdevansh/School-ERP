@@ -147,11 +147,11 @@ export const NAV_MODULES: NavModule[] = [
   },
   {
     id: 'TEACHER',
-    label: 'Teacher View',
+    label: 'Teacher Portal',
     short: 'Teacher',
     icon: UserCheck,
-    // Visible to teachers (their only workspace) and to admins/super-admins (for inspection/taking attendance)
-    isVisible: (c) => !c.isOrgAdmin && (c.role === 'TEACHER' || c.role === 'ADMIN' || c.isSuperAdmin),
+    // Strictly role-based: visible ONLY to users with the TEACHER role (like Clerk/Reception)
+    isVisible: (c) => !c.isOrgAdmin && c.role === 'TEACHER',
     groups: [
       {
         title: 'Classroom',

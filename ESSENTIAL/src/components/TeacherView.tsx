@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar as CalendarIcon, Save, Loader2, CheckCircle2, Clock,
-  Users, UserCheck, AlertCircle, RefreshCw,
-  Info, AlertTriangle
+  Users, UserCheck, AlertCircle, RefreshCw, AlertTriangle
 } from './icons';
 import { useApp } from '../store';
 
@@ -32,8 +31,6 @@ interface StudentAttendanceRow {
 export const TeacherView: React.FC = () => {
   const {
     currentUser,
-    isSuperAdmin,
-    users,
     students,
     classTeacherAllocations,
     academicYears,
@@ -44,33 +41,7 @@ export const TeacherView: React.FC = () => {
     setScreen,
   } = useApp();
 
-  const isAdmin = currentUser?.role === 'ADMIN' || isSuperAdmin;
-  const teachers = useMemo(() => users.filter((u) => u.role === 'TEACHER'), [users]);
-
-  // Selected teacher state (for Admin inspection or current teacher)
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string>(() => {
-    if (!isAdmin && currentUser) {
-      return (currentUser as any)._id || (currentUser as any).id || '';
-    }
-    return '';
-  });
-
-  // Keep selectedTeacherId updated if currentUser loads
-  useEffect(() => {
-    if (!isAdmin && currentUser) {
-      const myId = (currentUser as any)._id || (currentUser as any).id;
-      if (myId && !selectedTeacherId) {
-        setSelectedTeacherId(myId);
-      }
-    } else if (isAdmin && !selectedTeacherId && teachers.length > 0) {
-      setSelectedTeacherId(teachers[0]._id);
-    }
-  }, [currentUser, isAdmin, teachers, selectedTeacherId]);
-
-  const activeTeacher = useMemo(() => {
-    if (!isAdmin) return currentUser;
-    return teachers.find((t) => t._id === selectedTeacherId) || currentUser;
-  }, [isAdmin, currentUser, teachers, selectedTeacherId]);
+  const activeTeacher = currentUser;
 
   // Active academic year
   const activeYear = useMemo(() => academicYears.find((y) => y.isActive), [academicYears]);
@@ -163,21 +134,21 @@ export const TeacherView: React.FC = () => {
   }, [activeTab, loadAttendance]);
 
   const setStudentStatus = (studentId: string, status: 'PRESENT' | 'ABSENT' | 'LATE' | 'LEAVE') => {
-    if (sheetStatus === 'CONFIRMED' && !isAdmin) return;
+    if (sheetStatus === 'CONFIRMED') return;
     setAttendanceRows((prev) =>
       prev.map((r) => (r.studentId === studentId ? { ...r, status } : r))
     );
   };
 
   const setStudentRemarks = (studentId: string, remarks: string) => {
-    if (sheetStatus === 'CONFIRMED' && !isAdmin) return;
+    if (sheetStatus === 'CONFIRMED') return;
     setAttendanceRows((prev) =>
       prev.map((r) => (r.studentId === studentId ? { ...r, remarks } : r))
     );
   };
 
   const markAllStatus = (status: 'PRESENT' | 'ABSENT') => {
-    if (sheetStatus === 'CONFIRMED' && !isAdmin) return;
+    if (sheetStatus === 'CONFIRMED') return;
     setAttendanceRows((prev) => prev.map((r) => ({ ...r, status })));
   };
 
@@ -264,40 +235,6 @@ export const TeacherView: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Top Banner for Admin Inspection Mode */}
-      {isAdmin && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 px-4 py-3 shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700">
-              <Info className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-xs font-bold text-amber-900">Administrator Teacher View Preview</p>
-              <p className="text-[11px] text-amber-700">
-                You are inspecting the simplified Teacher Workspace. Select a teacher to view their assigned class attendance and timetable.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-amber-800">Teacher:</label>
-            <select
-              value={selectedTeacherId}
-              onChange={(e) => {
-                setSelectedTeacherId(e.target.value);
-                setSelectedClassIndex(0);
-              }}
-              className="rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
-            >
-              {teachers.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name} {t.designation ? `(${t.designation})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
-
       {/* Main Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -354,9 +291,7 @@ export const TeacherView: React.FC = () => {
               </div>
               <h3 className="text-lg font-bold text-slate-900">No Class Assigned Yet</h3>
               <p className="text-sm text-slate-500 max-w-md mx-auto mt-1.5">
-                {isAdmin
-                  ? 'This teacher is not currently allocated as a Class Teacher for any standard. Allocate them via Staff Management or Teacher Allocation.'
-                  : 'You have not been assigned as a Class Teacher for the active academic year. Please contact your school administration office.'}
+                You have not been assigned as a Class Teacher for the active academic year. Please contact your school administration office.
               </p>
             </div>
           ) : (
@@ -471,7 +406,7 @@ export const TeacherView: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      disabled={sheetStatus === 'CONFIRMED' && !isAdmin}
+                      disabled={sheetStatus === 'CONFIRMED'}
                       onClick={() => markAllStatus('PRESENT')}
                       className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold transition-colors disabled:opacity-50"
                     >
@@ -479,7 +414,7 @@ export const TeacherView: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      disabled={sheetStatus === 'CONFIRMED' && !isAdmin}
+                      disabled={sheetStatus === 'CONFIRMED'}
                       onClick={() => markAllStatus('ABSENT')}
                       className="px-3 py-1 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold transition-colors disabled:opacity-50"
                     >
@@ -498,7 +433,7 @@ export const TeacherView: React.FC = () => {
               )}
 
               {/* Lock notification if confirmed */}
-              {sheetStatus === 'CONFIRMED' && !isAdmin && (
+              {sheetStatus === 'CONFIRMED' && (
                 <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-xs font-semibold text-amber-800 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
                   <span>
@@ -554,7 +489,7 @@ export const TeacherView: React.FC = () => {
                               <div className="flex items-center justify-center gap-1.5">
                                 <button
                                   type="button"
-                                  disabled={sheetStatus === 'CONFIRMED' && !isAdmin}
+                                  disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'PRESENT')}
                                   className={`px-3 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
                                     r.status === 'PRESENT'
@@ -566,7 +501,7 @@ export const TeacherView: React.FC = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  disabled={sheetStatus === 'CONFIRMED' && !isAdmin}
+                                  disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'ABSENT')}
                                   className={`px-3 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
                                     r.status === 'ABSENT'
@@ -578,7 +513,7 @@ export const TeacherView: React.FC = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  disabled={sheetStatus === 'CONFIRMED' && !isAdmin}
+                                  disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'LATE')}
                                   className={`px-2.5 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
                                     r.status === 'LATE'
@@ -590,7 +525,7 @@ export const TeacherView: React.FC = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  disabled={sheetStatus === 'CONFIRMED' && !isAdmin}
+                                  disabled={sheetStatus === 'CONFIRMED'}
                                   onClick={() => setStudentStatus(r.studentId, 'LEAVE')}
                                   className={`px-2.5 py-1.5 rounded-xl font-bold transition-all text-[11px] ${
                                     r.status === 'LEAVE'
@@ -605,7 +540,7 @@ export const TeacherView: React.FC = () => {
                             <td className="py-3 px-4">
                               <input
                                 type="text"
-                                disabled={sheetStatus === 'CONFIRMED' && !isAdmin}
+                                disabled={sheetStatus === 'CONFIRMED'}
                                 value={r.remarks}
                                 onChange={(e) => setStudentRemarks(r.studentId, e.target.value)}
                                 placeholder="Add note (e.g. sick, doctor note)..."
@@ -630,7 +565,7 @@ export const TeacherView: React.FC = () => {
                     </p>
                     <button
                       type="button"
-                      disabled={savingAttendance || (sheetStatus === 'CONFIRMED' && !isAdmin)}
+                      disabled={savingAttendance || sheetStatus === 'CONFIRMED'}
                       onClick={handleSubmitAttendance}
                       className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
                     >
