@@ -43,13 +43,12 @@ beforeEach(async () => {
   await Student.deleteMany({});
 });
 
-describe('Teacher web-portal lockout', () => {
-  test('portalLogin rejects a TEACHER with a 403, even with correct credentials', async () => {
+describe('Teacher web-portal login', () => {
+  test('portalLogin succeeds for a TEACHER with correct credentials', async () => {
     await makeUser({ email: 'teach@school.com', role: 'TEACHER' });
 
-    await expect(
-      AuthService.portalLogin({ email: 'teach@school.com', password: 'password123' })
-    ).rejects.toMatchObject({ statusCode: 403 });
+    const result = await AuthService.portalLogin({ email: 'teach@school.com', password: 'password123' });
+    expect(result.user.role).toBe('TEACHER');
   });
 
   test('portalLogin still succeeds for STAFF and ADMIN', async () => {

@@ -157,9 +157,7 @@ class AuthService {
   }
 
   /* ----------------------------------------------------------------
-   * 1. Portal login – admin / staff only (no audit – application event)
-   *    Teachers are mobile-only and are rejected here even with valid
-   *    credentials; they must use teacherLogin() instead.
+   * 1. Portal login – admin / staff / teachers (no audit – application event)
    * ---------------------------------------------------------------- */
   static async portalLogin({ email, password }) {
     // email can be an email string OR a phone string
@@ -168,9 +166,6 @@ class AuthService {
     if (!user.isActive) throw new AppError('Your account has been deactivated. Contact the administrator.', 403);
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) throw new AppError('Invalid credentials', 401);
-    if (user.role === 'TEACHER') {
-      throw new AppError('Teachers must use the school mobile app to sign in.', 403);
-    }
 
     return AuthService._issueUserSession(user, { logLabel: 'Portal login' });
   }
