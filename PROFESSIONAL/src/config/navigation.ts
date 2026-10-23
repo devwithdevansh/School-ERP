@@ -103,7 +103,7 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
         { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen },
       ] },
-      { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle }] },
+      { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP' }] },
       { title: 'Settings', items: [
         { id: 'setup', label: 'Setup', icon: Settings },
         { id: 'audit-log', label: 'Audit Log', icon: Activity },
@@ -134,7 +134,7 @@ export const NAV_MODULES: NavModule[] = [
       { title: 'Communication', items: [
         { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, permission: 'SCREEN_WHATSAPP' },
         { id: 'notifications', label: 'Notifications', icon: Bell, permission: 'SCREEN_NOTIFICATIONS' },
-        { id: 'messages', label: 'Messages', icon: MessageCircle, inErp: true },
+        { id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP', inErp: true },
       ] },
       { title: 'Reports', items: [
         { id: 'receipts', label: 'Receipts', icon: Receipt, permission: 'SCREEN_RECEIPTS' },

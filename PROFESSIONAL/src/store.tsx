@@ -401,6 +401,7 @@ interface AppContextType {
   selectedStudentIdForFee: string | null;
   setSelectedStudentIdForFee: (id: string | null) => void;
   currentUser: { name: string; email: string; role: UserRole; permissions?: string[] } | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<{ name: string; email: string; role: UserRole; permissions?: string[] } | null>>;
   isSuperAdmin: boolean;
   isOrgAdmin: boolean;
   client: ClientInfo | null;
@@ -648,6 +649,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setAcademicYears(data.academicYears || []);
         setFeeCategories(data.feeCategories || []);
         setUsers(data.users || []);
+
+        // Live permission synchronization: keep currentUser permissions updated with latest server state
+        const storedUserId = localStorage.getItem('userId');
+        const storedUser = localStorage.getItem('currentUser');
+        let currentEmail = '';
+        if (storedUser) {
+          try { currentEmail = JSON.parse(storedUser)?.email?.toLowerCase().trim() || ''; } catch {}
+        }
+        const activeDbUser = (data.users || []).find((u: any) => 
+          (storedUserId && String(u._id) === String(storedUserId)) ||
+          (currentEmail && u.email?.toLowerCase().trim() === currentEmail)
+        );
+        if (activeDbUser && Array.isArray(activeDbUser.permissions)) {
+          setCurrentUser((prev) => {
+            if (!prev) return null;
+            const updated = {
+              ...prev,
+              name: activeDbUser.name || prev.name,
+              role: (activeDbUser.role as UserRole) || prev.role,
+              permissions: activeDbUser.permissions,
+            };
+            localStorage.setItem('currentUser', JSON.stringify(updated));
+            return updated;
+          });
+        }
         
         if (subjectsRes.ok) {
           const subjectsData = await subjectsRes.json();
@@ -949,7 +975,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (cancelled) return;
         if (res.status === 403) { logoutRef.current(); return; }
         if (!res.ok) return; // older backend without tenancy: keep whatever we have
-        const next: ClientInfo | null = (await res.json()).data?.client ?? null;
+        const resJson = await res.json();
+        const next: ClientInfo | null = resJson.data?.client ?? null;
+        const freshUser = resJson.data?.user;
+        if (freshUser && Array.isArray(freshUser.permissions)) {
+          setCurrentUser((prev) => {
+            if (!prev) return null;
+            const updated = {
+              ...prev,
+              name: freshUser.name || prev.name,
+              role: (freshUser.role as UserRole) || prev.role,
+              permissions: freshUser.permissions,
+            };
+            localStorage.setItem('currentUser', JSON.stringify(updated));
+            return updated;
+          });
+        }
         if (!next) return;
         setClient((prev) => {
           const same = prev && prev.id === next.id && prev.name === next.name
@@ -1786,6 +1827,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         selectedStudentIdForFee,
         setSelectedStudentIdForFee,
         currentUser,
+        setCurrentUser,
         isSuperAdmin,
         isOrgAdmin,
         client,

@@ -364,9 +364,6 @@ export const DEFAULT_CLIENT_STAFF_PERMISSIONS: PermissionId[] = [
   'RECEIPTS:PRINT',
   'SCREEN_STUDENTS',
   'STUDENTS:VIEW', // Note: Only view by default! No add/edit/delete/promote/import.
-  'SCREEN_WHATSAPP',
-  'SCREEN_NOTIFICATIONS',
-  'SCREEN_REPORTS',
 ];
 
 /**
@@ -402,6 +399,9 @@ export const PRESET_PROFILES: { id: string; name: string; description: string; p
     description: 'Daily fees, student enrolling & editing, expense voucher approvals, and reports.',
     permissions: [
       ...DEFAULT_CLIENT_STAFF_PERMISSIONS,
+      'SCREEN_WHATSAPP',
+      'SCREEN_NOTIFICATIONS',
+      'SCREEN_REPORTS',
       'STUDENTS:ADD',
       'STUDENTS:EDIT',
       'EXPENSES:DELETE',
@@ -428,13 +428,17 @@ export function hasPermission(
   if (isSuperAdmin || role === 'ORG_ADMIN') return true;
 
   // If user has specific explicit permissions array in database
-  if (Array.isArray(userPerms) && userPerms.length > 0) {
-    return userPerms.includes(perm);
+  if (Array.isArray(userPerms)) {
+    if (userPerms.length > 0) {
+      return userPerms.includes(perm);
+    }
+    // Explicitly empty permissions list means no permissions granted
+    return false;
   }
 
   // If user is ADMIN role without custom restrictions, grant full
   if (role === 'ADMIN') return true;
 
-  // Default fallback for STAFF / CLIENT users
+  // Default fallback for STAFF / CLIENT users who have unconfigured (undefined) permissions
   return DEFAULT_CLIENT_STAFF_PERMISSIONS.includes(perm);
 }

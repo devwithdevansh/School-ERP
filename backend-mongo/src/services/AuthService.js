@@ -36,7 +36,16 @@ class AuthService {
     const user = await userRepository.findById(reqUser.id);
     if (!user || !user.isActive) throw new AppError('Account not found or deactivated', 401);
     const client = user.role === ORG_ADMIN_ROLE ? null : clientDto(await requireActiveClient(user.clientId));
-    return { user: { name: user.name, email: user.email, role: user.role }, client };
+    return { 
+      user: { 
+        id: user._id.toString(),
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        permissions: user.permissions || [] 
+      }, 
+      client 
+    };
   }
 
   /** Shared token/refresh-token issuance for any User (ORG_ADMIN/ADMIN/STAFF/TEACHER),
@@ -45,7 +54,12 @@ class AuthService {
   static async _issueUserSession(user, { logLabel }) {
     const isOrgAdmin = user.role === ORG_ADMIN_ROLE;
     const client = isOrgAdmin ? null : await requireActiveClient(user.clientId);
-    const payload = { id: user._id.toString(), role: user.role, ...(client ? { clientId: String(client._id) } : {}) };
+    const payload = { 
+      id: user._id.toString(), 
+      role: user.role, 
+      permissions: user.permissions || [], 
+      ...(client ? { clientId: String(client._id) } : {}) 
+    };
     const accessToken = jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
 
     // Clean expired refresh tokens first
@@ -71,7 +85,18 @@ class AuthService {
     await userRepository.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
 
     logger.info(`${logLabel}: ${user._id}`);
-    return { accessToken, refreshToken: refreshPlain, user: { name: user.name, role: user.role }, client: client ? clientDto(client) : null };
+    return { 
+      accessToken, 
+      refreshToken: refreshPlain, 
+      user: { 
+        id: user._id.toString(),
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        permissions: user.permissions || [] 
+      }, 
+      client: client ? clientDto(client) : null 
+    };
   }
 
   /**

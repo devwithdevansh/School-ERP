@@ -14,7 +14,7 @@ import {
 } from '../config/permissionsRegistry';
 
 export const RolesPermissions: React.FC = () => {
-  const { users, authFetch, refreshData, currentUser } = useApp();
+  const { users, authFetch, refreshData, currentUser, setCurrentUser } = useApp();
 
   // Search & staff selection
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,6 +110,19 @@ export const RolesPermissions: React.FC = () => {
       });
       if (res.ok) {
         await refreshData();
+        const activeUserId = localStorage.getItem('userId');
+        const activeEmail = currentUser?.email?.toLowerCase().trim();
+        if (
+          (selectedUser._id && String(selectedUser._id) === String(activeUserId)) ||
+          (selectedUser.email && selectedUser.email.toLowerCase().trim() === activeEmail)
+        ) {
+          setCurrentUser((prev) => {
+            if (!prev) return null;
+            const updated = { ...prev, permissions: tempPermissions };
+            localStorage.setItem('currentUser', JSON.stringify(updated));
+            return updated;
+          });
+        }
         setSuccessMsg(`Permissions successfully updated for ${selectedUser.name}!`);
         setTimeout(() => setSuccessMsg(''), 4000);
       } else {
