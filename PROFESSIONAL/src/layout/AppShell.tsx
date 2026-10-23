@@ -58,7 +58,12 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <aside className="flex h-full min-h-0 w-60 shrink-0 flex-col border-l border-white/5 bg-[var(--color-side)]">
         <div className="border-b border-white/5 px-5 py-5 shrink-0">
           <p className="truncate text-sm font-bold text-white">{title}</p>
-          <p className="text-[11px] font-medium text-slate-500">{activeModule.label} · {roleLabel}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <p className="text-[11px] font-medium text-slate-500">{activeModule.label} · {roleLabel}</p>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">
+              {brand.edition}
+            </span>
+          </div>
         </div>
         <div className="side-scroll min-h-0 flex-1 overflow-y-auto px-3 py-4">
           <NavList moduleId={activeModule.id} groups={activeModule.groups} currentScreen={currentScreen} ctx={ctx} onNavigate={nav} />
@@ -94,6 +99,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <span className="font-display text-base font-semibold capitalize text-[var(--color-ink)]">{currentScreen.replace(/-/g, ' ')}</span>
           </div>
           <div className="ml-auto relative flex items-center gap-3" ref={headerMenuRef}>
+            <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-violet-50 text-violet-700 border border-violet-200/80 shadow-xs">
+              {brand.editionLabel}
+            </span>
             <span className="hidden rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 px-3 py-1 text-[11px] font-semibold text-white shadow-sm sm:inline">{roleLabel}</span>
             <span className="hidden text-xs font-medium text-[var(--color-ink-soft)] md:inline">{currentUser.name}</span>
             <button

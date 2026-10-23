@@ -32,9 +32,9 @@ export const Login: React.FC = () => {
   };
 
   const features = [
-    { icon: Wallet, text: 'Fees, receipts and dues in one place' },
-    { icon: GraduationCap, text: 'Students, staff and academics' },
-    { icon: CalendarCheck, text: 'Attendance, timetable and results' },
+    { icon: GraduationCap, text: 'Full ERP suite & academic masters' },
+    { icon: CalendarCheck, text: 'Live attendance, timetable & exams' },
+    { icon: Wallet, text: 'Fee collection, receipts & WhatsApp reminders' },
   ];
 
   return (
@@ -42,24 +42,31 @@ export const Login: React.FC = () => {
       {/* Brand panel */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-[var(--color-rail)] p-12 text-white lg:flex">
         <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-indigo-500/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-violet-500/30 blur-3xl" />
         <div className="relative flex items-center gap-3">
-          <img src={brand.logo} alt="" className="h-11 w-11 rounded-xl" />
-          <span className="text-lg font-semibold tracking-wide">{brand.productName}</span>
+          <img src={brand.logo} alt="" className="h-11 w-11 rounded-xl shadow-lg ring-1 ring-white/10" />
+          <div className="flex flex-col">
+            <span className="text-lg font-bold tracking-wide leading-none">{brand.baseName}</span>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-violet-500/25 text-violet-300 border border-violet-500/40 shadow-xs">
+                {brand.editionLabel}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="relative space-y-6">
           <h1 className="text-4xl font-bold leading-tight">{brand.schoolName}</h1>
-          <p className="max-w-md text-slate-400">Everything your school runs on, from admissions to fee collection.</p>
+          <p className="max-w-md text-slate-300 font-medium">{brand.editionTagline}</p>
           <ul className="space-y-3">
             {features.map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3 text-sm text-slate-200">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10"><Icon className="h-4 w-4" /></span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/20"><Icon className="h-4 w-4" /></span>
                 {text}
               </li>
             ))}
           </ul>
         </div>
-        <p className="relative text-xs text-slate-600">© {new Date().getFullYear()} {brand.productName}</p>
+        <p className="relative text-xs text-slate-500">© {new Date().getFullYear()} {brand.productName}</p>
       </div>
 
       {/* Form panel */}
@@ -69,10 +76,20 @@ export const Login: React.FC = () => {
           <div className="flex flex-col space-y-2">
             <div className="mb-4 flex items-center gap-3 lg:hidden">
               <img src={brand.logo} alt="" className="h-10 w-10 rounded-xl" />
-              <span className="font-semibold text-foreground">{brand.productName}</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-foreground leading-none">{brand.baseName}</span>
+                <span className="inline-flex items-center self-start mt-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                  {brand.editionLabel}
+                </span>
+              </div>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
-            <p className="text-sm text-muted-foreground">Sign in to continue to your dashboard.</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
+              <span className="hidden lg:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                {brand.edition}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">Sign in to your {brand.productName} dashboard.</p>
           </div>
 
           {error && (

@@ -15,7 +15,12 @@ interface Props {
 /** Slim dark rail: one button per module + layout/user actions. */
 export const IconRail: React.FC<Props> = ({ modules, activeId, onSwitch, onMerge, onLogout, userInitials }) => (
   <nav className="side-scroll flex h-full w-[76px] shrink-0 flex-col items-center gap-2 overflow-y-auto bg-[var(--color-rail)] py-4">
-    <img src={brand.logo} alt={brand.productName} className="mb-3 h-10 w-10 rounded-xl ring-1 ring-white/10" />
+    <div className="mb-2 flex flex-col items-center">
+      <img src={brand.logo} alt={brand.productName} className="h-10 w-10 rounded-xl ring-1 ring-white/10" />
+      <span className="mt-1 text-[8px] font-extrabold uppercase tracking-widest text-emerald-400">
+        {brand.edition}
+      </span>
+    </div>
     {modules.map((m) => {
       const Icon = m.icon;
       const active = m.id === activeId;

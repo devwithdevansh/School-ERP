@@ -6,7 +6,12 @@
 const env = import.meta.env;
 
 export const brand = {
-  productName: env.VITE_PRODUCT_NAME || 'School ERP',
+  productName: env.VITE_PRODUCT_NAME || 'School ERP (Professional Edition)',
+  baseName: 'School ERP',
+  edition: 'Professional' as const,
+  editionLabel: 'Professional Edition',
+  editionTagline: 'Complete School Operations & Academic ERP Suite',
+  editionBadgeColor: 'purple' as const,
   schoolName: env.VITE_SCHOOL_NAME || 'Your School Name',
   medium: env.VITE_SCHOOL_MEDIUM || '',
   address: env.VITE_SCHOOL_ADDRESS || 'School address line, City, State',

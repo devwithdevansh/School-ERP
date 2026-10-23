@@ -11,7 +11,12 @@ export const BrandedLoader: React.FC<{ label?: string; compact?: boolean }> = ({
         className={`${compact ? 'h-10 w-10' : 'h-16 w-16'} rounded-2xl object-contain animate-[pulse_1.8s_ease-in-out_infinite]`}
       />
       {!compact && (
-        <span className="text-lg font-bold tracking-wide text-[var(--color-ink)]">{brand.productName}</span>
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-lg font-bold tracking-wide text-[var(--color-ink)]">{brand.baseName}</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-violet-50 text-violet-700 border border-violet-200">
+            {brand.editionLabel}
+          </span>
+        </div>
       )}
       <p className={`text-slate-400 ${compact ? 'text-[10px]' : 'text-xs'}`}>{label || 'Loading…'}</p>
     </div>

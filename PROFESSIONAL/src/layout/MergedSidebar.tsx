@@ -78,7 +78,12 @@ export const MergedSidebar: React.FC<Props> = ({
         <img src={brand.logo} alt="" className="h-10 w-10 rounded-xl ring-1 ring-white/10 shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-white">{title}</p>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{brand.productName}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{brand.baseName}</p>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">
+              {brand.edition}
+            </span>
+          </div>
         </div>
         <button
           type="button"
