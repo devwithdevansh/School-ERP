@@ -131,7 +131,6 @@ export const Square = createRadixWrapper(SquareIcon);
 export const Menu = createRadixWrapper(HamburgerMenuIcon);
 export const BarChart3 = createRadixWrapper(BarChartIcon);
 export const User = createRadixWrapper(PersonIcon);
-export const Sparkles = createRadixWrapper(MagicWandIcon);
 
 const BaseLoader = createRadixWrapper(ReloadIcon);
 export const Loader2 = ({ className = '', ...props }: IconProps) => (
@@ -313,7 +312,6 @@ export const ShieldCheck = createCustomIcon(
     <path d="m9 12 2 2 4-4" />
   </>
 );
-export const Shield = ShieldCheck;
 
 export const ShieldAlert = createCustomIcon(
   <>

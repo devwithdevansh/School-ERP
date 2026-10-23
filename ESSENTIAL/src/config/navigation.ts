@@ -31,7 +31,6 @@ export interface NavContext {
   /** Modules the organization enabled for this user's school (ignored for ORG_ADMIN). */
   enabledModules: string[];
   unpaidCount: number;
-  planTier?: 'BASIC' | 'STANDARD';
 }
 
 export interface NavItem {
@@ -43,8 +42,6 @@ export interface NavItem {
   /** Same screen also lives in the ERP module; hidden here whenever ERP is visible to the user. */
   inErp?: boolean;
   badge?: (ctx: NavContext) => number | undefined;
-  /** When in BASIC plan, marked as locked / standard-only */
-  planRequired?: 'STANDARD';
 }
 
 export interface NavGroup { title: string; items: NavItem[] }
@@ -78,8 +75,8 @@ export const NAV_MODULES: NavModule[] = [
     label: 'Academics',
     short: 'ERP',
     icon: GraduationCap,
-    // licensed for the school and visible to admins and teachers
-    isVisible: (c) => !c.isOrgAdmin && c.enabledModules.includes('ERP') && (c.isSuperAdmin || c.role === 'ADMIN' || c.role === 'TEACHER'),
+    // licensed for the school AND (optionally, via SUPER_ADMIN_EMAILS) restricted to super admins
+    isVisible: (c) => !c.isOrgAdmin && c.enabledModules.includes('ERP') && c.isSuperAdmin,
     groups: [
       { title: 'Overview', items: [{ id: 'dashboard', label: 'ERP Dashboard', icon: LayoutDashboard }] },
       { title: 'Students', items: [
@@ -87,25 +84,26 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'admission', label: 'Admission', icon: Users },
       ] },
       { title: 'Curriculum', items: [
-        { id: 'subjects', label: 'Subjects', icon: BookOpen, planRequired: 'STANDARD' },
-        { id: 'teacher-allocation', label: 'Teacher Allocation', icon: Users, planRequired: 'STANDARD' },
-        { id: 'timetable', label: 'Timetable', icon: CalendarDays, planRequired: 'STANDARD' },
+        { id: 'subjects', label: 'Subjects', icon: BookOpen },
+        { id: 'teacher-allocation', label: 'Teacher Allocation', icon: Users },
+        { id: 'timetable', label: 'Timetable', icon: CalendarDays },
       ] },
       { title: 'Academic Operations', items: [
         { id: 'attendance', label: 'Attendance', icon: UserCheck },
-        { id: 'student-leave', label: 'Student Leave', icon: CalendarDays, planRequired: 'STANDARD' },
-        { id: 'results', label: 'Results', icon: ClipboardList },
-        { id: 'certificates', label: 'Certificates', icon: Award, planRequired: 'STANDARD' },
+        { id: 'student-leave', label: 'Student Leave', icon: CalendarDays },
+        { id: 'exams', label: 'Exams', icon: ClipboardList },
+        { id: 'results', label: 'Results', icon: Award },
+        { id: 'certificates', label: 'Certificates', icon: Award },
       ] },
       { title: 'Staff', items: [
         { id: 'staff-management', label: 'Staff Directory', icon: Users },
-        { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck, planRequired: 'STANDARD' },
-        { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen, planRequired: 'STANDARD' },
+        { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
+        { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen },
       ] },
       { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle }] },
       { title: 'Settings', items: [
         { id: 'setup', label: 'Setup', icon: Settings },
-        { id: 'audit-log', label: 'Audit Log', icon: Activity, planRequired: 'STANDARD' },
+        { id: 'audit-log', label: 'Audit Log', icon: Activity },
       ] },
     ],
   },
@@ -121,7 +119,7 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'collect-fee', label: 'Collect Fee', icon: CreditCard },
         { id: 'today-expenses', label: "Today's Expenses", icon: Wallet },
         { id: 'unpaid-fees', label: 'Unpaid Fees', icon: AlertTriangle, badge: (c) => c.unpaidCount || undefined },
-        { id: 'fee-structure', label: 'Fee Structure', icon: Layers, adminOnly: true, planRequired: 'STANDARD' },
+        { id: 'fee-structure', label: 'Fee Structure', icon: Layers, adminOnly: true },
       ] },
       // Group titles match the ERP module so both sidebars read the same.
       // Items flagged `inErp` are the ERP module's screens; they only show here for users without ERP access.
@@ -131,7 +129,7 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'import-excel', label: 'Import Excel', icon: FileSpreadsheet, adminOnly: true },
       ] },
       { title: 'Communication', items: [
-        { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, adminOnly: true, planRequired: 'STANDARD' },
+        { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, adminOnly: true },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'messages', label: 'Messages', icon: MessageCircle, inErp: true },
       ] },
@@ -142,8 +140,8 @@ export const NAV_MODULES: NavModule[] = [
       { title: 'Settings', items: [
         { id: 'setup', label: 'Setup', icon: Settings, adminOnly: true, inErp: true },
         { id: 'staff-management', label: 'Staff Directory', icon: Users, adminOnly: true, inErp: true },
-        { id: 'audit-log', label: 'Audit Log', icon: Activity, adminOnly: true, inErp: true, planRequired: 'STANDARD' },
-        { id: 'parent-app', label: 'Parent App Preview', icon: Smartphone, disabled: true, planRequired: 'STANDARD' },
+        { id: 'audit-log', label: 'Audit Log', icon: Activity, adminOnly: true, inErp: true },
+        { id: 'parent-app', label: 'Parent App Preview', icon: Smartphone, disabled: true },
       ] },
     ],
   },

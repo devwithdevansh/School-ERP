@@ -7,8 +7,6 @@ import { IconRail } from './IconRail';
 import { MergedSidebar } from './MergedSidebar';
 import { useNav } from './useNav';
 import { useLayoutMode } from './useLayoutMode';
-import { PlanSwitcher } from '../components/PlanSwitcher';
-import { usePlan } from '../context/PlanContext';
 
 /**
  * Application chrome. Two interchangeable layouts share one navigation registry:
@@ -60,8 +58,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     />
   );
 
-  const { isBasic, plan } = usePlan();
-
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-canvas)] text-[var(--color-ink-soft)]">
       <div className="hidden lg:block">{sidebars}</div>
@@ -75,45 +71,19 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/70 bg-white/80 px-4 sm:px-5 backdrop-blur">
+        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/70 bg-white/80 px-5 backdrop-blur">
           <button onClick={() => setDrawer(true)} className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"><Menu className="h-5 w-5" /></button>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-[var(--color-ink-faint)]">{activeModule.label}</span>
             <span className="text-slate-300">/</span>
             <span className="font-display text-base font-semibold capitalize text-[var(--color-ink)]">{currentScreen.replace(/-/g, ' ')}</span>
           </div>
-
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <PlanSwitcher />
+          <div className="ml-auto flex items-center gap-3">
             <span className="hidden rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 px-3 py-1 text-[11px] font-semibold text-white shadow-sm sm:inline">{roleLabel}</span>
             <span className="hidden text-xs font-medium text-[var(--color-ink-soft)] md:inline">{currentUser.name}</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[11px] font-bold text-[var(--color-brand-strong)]">{initials}</span>
           </div>
         </header>
-
-        {/* Live Plan Banner */}
-        <div className={`flex items-center justify-between px-5 py-1.5 text-xs transition-colors border-b ${
-          isBasic
-            ? 'bg-teal-50/90 border-teal-200/70 text-teal-900'
-            : 'bg-indigo-50/80 border-indigo-200/60 text-indigo-900'
-        }`}>
-          <div className="flex items-center gap-2">
-            <span className={`flex h-2 w-2 rounded-full ${isBasic ? 'bg-teal-500' : 'bg-indigo-500'} animate-pulse`} />
-            <span>
-              {isBasic ? (
-                <><strong>Basic Plan (Essential)</strong>: Teacher-assisted workflows active. Single-page attendance sheet & read-only records.</>
-              ) : (
-                <><strong>Standard Plan (Professional)</strong>: Full interactive ERP active across attendance, exams, timetable and fees.</>
-              )}
-            </span>
-          </div>
-          <div className="text-[11px] opacity-80 hidden md:block">
-            {isBasic
-              ? 'Click Standard at top to compare with full ERP suite'
-              : 'Click Basic at top to see simplified teacher workflow'}
-          </div>
-        </div>
-
         <main className="relative min-h-0 flex-1 overflow-auto">{children}</main>
       </div>
     </div>

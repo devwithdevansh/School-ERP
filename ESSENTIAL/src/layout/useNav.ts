@@ -3,12 +3,10 @@ import { useApp } from '../store';
 import type { ScreenType } from '../store';
 import { getVisibleModules } from '../config/navigation';
 import type { ModuleId, NavContext } from '../config/navigation';
-import { usePlan } from '../context/PlanContext';
 
 /** Single adapter between the app store and the navigation registry. */
 export function useNav() {
   const { currentUser, isSuperAdmin, isOrgAdmin, client, activePortal, setActivePortal, currentScreen, setScreen, activeStudents } = useApp();
-  const { demoRole, isBasic, plan } = usePlan();
 
   const unpaidCount = useMemo(
     () => activeStudents.filter((s) => s.status !== 'PAID' && s.status !== 'RTE').length,
@@ -16,10 +14,9 @@ export function useNav() {
   );
   // No client info (a backend without multi-tenancy) = everything licensed, as before.
   const enabledModules = useMemo(() => client?.enabledModules ?? ['FEES', 'ERP'], [client]);
-  const effectiveRole = demoRole || currentUser?.role;
   const ctx: NavContext = useMemo(
-    () => ({ role: effectiveRole, isSuperAdmin: effectiveRole === 'ADMIN' && isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount, planTier: plan }),
-    [effectiveRole, isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount, plan],
+    () => ({ role: currentUser?.role, isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount }),
+    [currentUser?.role, isSuperAdmin, isOrgAdmin, enabledModules, unpaidCount],
   );
   const modules = useMemo(() => getVisibleModules(ctx), [ctx]);
   const activeModule = modules.find((m) => m.id === activePortal) ?? modules[0];
@@ -46,8 +43,9 @@ export function useNav() {
   }, [modules, navigate]);
 
   const roleLabel = isOrgAdmin ? 'Organization Admin'
-    : effectiveRole === 'ADMIN' ? 'Administrator'
-    : effectiveRole === 'TEACHER' ? 'Class Teacher' : 'Staff Member';
+    : isSuperAdmin ? 'Super Admin'
+    : currentUser?.role === 'ADMIN' ? 'Administrator'
+    : currentUser?.role === 'TEACHER' ? 'Teacher' : 'Staff Member';
 
   return { ctx, modules, activeModule, currentScreen, navigate, switchModule, roleLabel };
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from './store';
 import type { PaymentTransaction } from './mockData';
 import { ScreenSkeleton } from './components/ScreenSkeleton';
@@ -24,10 +24,9 @@ import { Whatsapp } from './components/Whatsapp';
 import { ErpDashboard } from './components/ErpDashboard';
 import { Admission } from './components/Admission';
 import { Attendance } from './components/Attendance';
-import { TeacherSimpleAttendance } from './components/TeacherSimpleAttendance';
-import { usePlan } from './context/PlanContext';
 import { Subjects } from './components/Subjects';
 import { Timetable } from './components/Timetable';
+import { Exams } from './components/Exams';
 import { Results } from './components/Results';
 import { RolesPermissions } from './components/RolesPermissions';
 import { TeacherAllocationDashboard } from './components/TeacherAllocationDashboard';
@@ -39,37 +38,17 @@ import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
 import { generateReceiptHTML, generateReportHTML, printHTML, fetchAsBase64 } from './utils/printUtils';
 import { brand } from './config/brand';
-import { PlanLockedFeature } from './components/PlanLockedFeature';
+import { parseExamRoute } from './utils/examRouteUtils';
 
 const logoPath = brand.logo;
 const watermarkPath = brand.logo;
 
-const STANDARD_ONLY_SCREENS = new Set([
-  'subjects',
-  'teacher-allocation',
-  'timetable',
-  'student-leave',
-  'staff-leave',
-  'roles',
-  'certificates',
-  'whatsapp',
-  'fee-structure',
-  'audit-log',
-  'parent-app',
-]);
-
 const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPrintReport: (report: any) => void }> = ({ onPrint, onPrintReport }) => {
   const { currentScreen, activePortal } = useApp();
-  const { isBasic } = usePlan();
 
   // Organization admin console (platform owner)
   if (activePortal === 'ORG') {
     return currentScreen === 'org-licences' ? <OrgLicences /> : <OrgClients />;
-  }
-
-  // Basic Plan module guard: display showcase screen for Standard-only features
-  if (isBasic && STANDARD_ONLY_SCREENS.has(currentScreen)) {
-    return <PlanLockedFeature screen={currentScreen} />;
   }
 
   // If we are in ERP mode, route ERP screens
@@ -77,16 +56,16 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
     switch (currentScreen) {
       case 'dashboard':
         return <ErpDashboard />;
-      case 'students':
-        return <Students />;
       case 'admission':
         return <Admission />;
       case 'attendance':
-        return isBasic ? <TeacherSimpleAttendance /> : <Attendance />;
+        return <Attendance />;
       case 'subjects':
         return <Subjects />;
       case 'timetable':
         return <Timetable />;
+      case 'exams':
+        return <Exams />;
       case 'results':
         return <Results />;
       case 'certificates':
@@ -112,8 +91,6 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
       return <CollectFee />;
     case 'today-expenses':
       return <TodayExpenses />;
-    case 'attendance':
-      return isBasic ? <TeacherSimpleAttendance /> : <Attendance />;
     case 'unpaid-fees':
       return <UnpaidFees />;
     case 'fee-structure':
@@ -210,7 +187,28 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
 };
 
 const MainAppLayout: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPrintReport: (report: any) => void }> = ({ onPrint, onPrintReport }) => {
-  const { currentScreen, isScreenLoading, isLoadingDetails } = useApp();
+  const { currentScreen, isScreenLoading, isLoadingDetails, activePortal, setActivePortal, setScreen } = useApp();
+
+  useEffect(() => {
+    const handleUrlSync = () => {
+      const route = parseExamRoute();
+      if (route.screen === 'exams') {
+        setActivePortal('ERP');
+        setScreen('exams');
+      } else if (route.screen === 'results') {
+        setActivePortal('ERP');
+        setScreen('results');
+      }
+    };
+
+    const route = parseExamRoute();
+    if (route.screen === 'exams' || route.screen === 'results') {
+      handleUrlSync();
+    }
+
+    window.addEventListener('popstate', handleUrlSync);
+    return () => window.removeEventListener('popstate', handleUrlSync);
+  }, [setActivePortal, setScreen]);
 
   if (currentScreen === 'login') {
     return <Login />;
