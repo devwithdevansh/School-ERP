@@ -43,6 +43,42 @@ import { parseExamRoute } from './utils/examRouteUtils';
 const logoPath = brand.logo;
 const watermarkPath = brand.logo;
 
+class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('AppErrorBoundary caught error:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-200">
+            <h3 className="text-base font-bold text-slate-800">Something went wrong in this view</h3>
+            <p className="mt-2 text-xs text-slate-500">{this.state.error?.message || 'An unexpected error occurred.'}</p>
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+              className="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition-colors"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPrintReport: (report: any) => void }> = ({ onPrint, onPrintReport }) => {
   const { currentScreen, activePortal } = useApp();
 
@@ -80,6 +116,16 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
         return <StaffLeaveManagement />;
       case 'messages':
         return <Messages />;
+      case 'students':
+        return <Students />;
+      case 'staff-management':
+        return <StaffManagement />;
+      case 'setup':
+        return <Setup />;
+      case 'audit-log':
+        return <AuditLogs />;
+      default:
+        return <ErpDashboard />;
     }
   }
 
@@ -224,7 +270,9 @@ const MainAppLayout: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
       {isScreenLoading ? (
         <ScreenSkeleton />
       ) : (
-        <ScreenContent onPrint={onPrint} onPrintReport={onPrintReport} />
+        <AppErrorBoundary>
+          <ScreenContent onPrint={onPrint} onPrintReport={onPrintReport} />
+        </AppErrorBoundary>
       )}
     </AppShell>
   );

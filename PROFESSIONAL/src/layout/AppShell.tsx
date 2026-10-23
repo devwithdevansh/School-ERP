@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Menu, X } from '../components/icons';
+import React, { useState, useRef, useEffect } from 'react';
+import { Menu, X, LogOut, PanelLeft } from '../components/icons';
 import { useApp } from '../store';
 import { brand } from '../config/brand';
 import { NavList } from './NavList';
@@ -19,6 +19,21 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { ctx, modules, activeModule, currentScreen, navigate, switchModule, roleLabel } = useNav();
   const [mode, setMode] = useLayoutMode();
   const [drawer, setDrawer] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const headerMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close header menu on click outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
+        setHeaderMenuOpen(false);
+      }
+    };
+    if (headerMenuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [headerMenuOpen]);
 
   if (!currentUser) return <>{children}</>;
   if (!activeModule) {
@@ -35,17 +50,17 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const title = isOrgAdmin ? brand.productName : (client?.name ?? brand.schoolName);
 
   const nav: typeof navigate = (m, s) => { navigate(m, s); setDrawer(false); };
-  const initials = currentUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2);
+  const initials = currentUser.name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   const sidebars = mode === 'split' ? (
-    <div className="flex h-full">
+    <div className="flex h-full min-h-0">
       <IconRail modules={modules} activeId={activeModule.id} onSwitch={switchModule} onMerge={() => setMode('merged')} onLogout={logout} userInitials={initials} />
-      <aside className="flex h-full w-60 shrink-0 flex-col border-l border-white/5 bg-[var(--color-side)]">
-        <div className="border-b border-white/5 px-5 py-5">
+      <aside className="flex h-full min-h-0 w-60 shrink-0 flex-col border-l border-white/5 bg-[var(--color-side)]">
+        <div className="border-b border-white/5 px-5 py-5 shrink-0">
           <p className="truncate text-sm font-bold text-white">{title}</p>
           <p className="text-[11px] font-medium text-slate-500">{activeModule.label} · {roleLabel}</p>
         </div>
-        <div className="side-scroll flex-1 overflow-y-auto px-3 py-4">
+        <div className="side-scroll min-h-0 flex-1 overflow-y-auto px-3 py-4">
           <NavList moduleId={activeModule.id} groups={activeModule.groups} currentScreen={currentScreen} ctx={ctx} onNavigate={nav} />
         </div>
       </aside>
@@ -54,18 +69,18 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     <MergedSidebar
       modules={modules} activeId={activeModule.id} currentScreen={currentScreen} ctx={ctx}
       onNavigate={nav} onSplit={() => setMode('split')} onLogout={logout}
-      userName={currentUser.name} roleLabel={roleLabel} title={title}
+      userName={currentUser.name} userEmail={currentUser.email} roleLabel={roleLabel} title={title}
     />
   );
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-canvas)] text-[var(--color-ink-soft)]">
-      <div className="hidden lg:block">{sidebars}</div>
+      <div className="hidden lg:block h-full min-h-0">{sidebars}</div>
 
       {drawer && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setDrawer(false)} />
-          <div className="absolute inset-y-0 left-0 shadow-2xl">{sidebars}</div>
+          <div className="absolute inset-y-0 left-0 shadow-2xl h-full">{sidebars}</div>
           <button onClick={() => setDrawer(false)} className="absolute right-3 top-3 rounded-full bg-white p-2 shadow"><X className="h-5 w-5" /></button>
         </div>
       )}
@@ -78,10 +93,49 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <span className="text-slate-300">/</span>
             <span className="font-display text-base font-semibold capitalize text-[var(--color-ink)]">{currentScreen.replace(/-/g, ' ')}</span>
           </div>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto relative flex items-center gap-3" ref={headerMenuRef}>
             <span className="hidden rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 px-3 py-1 text-[11px] font-semibold text-white shadow-sm sm:inline">{roleLabel}</span>
             <span className="hidden text-xs font-medium text-[var(--color-ink-soft)] md:inline">{currentUser.name}</span>
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[11px] font-bold text-[var(--color-brand-strong)]">{initials}</span>
+            <button
+              type="button"
+              onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[11px] font-bold text-[var(--color-brand-strong)] hover:ring-2 hover:ring-[var(--color-brand-strong)]/30 transition-all cursor-pointer"
+              title="Account options"
+            >
+              {initials}
+            </button>
+
+            {/* Header profile dropdown */}
+            {headerMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-2xl z-50 text-left">
+                <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                  <p className="text-xs font-bold text-slate-800 truncate">{currentUser.name}</p>
+                  <p className="text-[10px] text-slate-400 truncate">{currentUser.email || roleLabel}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    setMode(mode === 'split' ? 'merged' : 'split');
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  <PanelLeft className="h-4 w-4 text-slate-400" />
+                  <span>Switch to {mode === 'split' ? 'Merged' : 'Split'} sidebar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    logout();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
           </div>
         </header>
         <main className="relative min-h-0 flex-1 overflow-auto">{children}</main>
