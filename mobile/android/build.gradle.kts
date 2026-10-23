@@ -22,3 +22,11 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+// Force a newer compileSdk on plugin modules (e.g. audioplayers_android compiles against 33).
+subprojects {
+    if (state.executed) return@subprojects
+    afterEvaluate {
+        extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.compileSdk = 36
+    }
+}

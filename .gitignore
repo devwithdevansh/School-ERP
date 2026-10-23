@@ -19,3 +19,4 @@ backend-mongo/config/
 
 # Sunrise leftovers (unused)
 frontend/src/assets/
+frontend-demo/src/assets/
