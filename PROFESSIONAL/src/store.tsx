@@ -1673,7 +1673,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const autoPromoteBatch = async (studentIds: string[]) => {
     try {
-      const res = await authFetch(`${API_BASE}/api/v1/students/auto-promote-batch`, {
+      const res = await authFetch('/api/v1/students/auto-promote-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentIds })
