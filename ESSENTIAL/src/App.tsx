@@ -32,7 +32,6 @@ import { RolesPermissions } from './components/RolesPermissions';
 import { TeacherAllocationDashboard } from './components/TeacherAllocationDashboard';
 import { StudentLeaveManagement } from './components/StudentLeaveManagement';
 import { StaffLeaveManagement } from './components/StaffLeaveManagement';
-import { Messages } from './components/Messages';
 import { ErpPlaceholder } from './components/ErpPlaceholder';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
@@ -116,8 +115,6 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
         return <StudentLeaveManagement />;
       case 'staff-leave':
         return <StaffLeaveManagement />;
-      case 'messages':
-        return <Messages />;
       case 'students':
         return <Students />;
       case 'staff-management':
@@ -205,9 +202,6 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
 
     case 'notifications':
       return <Notifications />;
-
-    case 'messages':
-      return <Messages />;
 
     case 'parent-app':
       return (

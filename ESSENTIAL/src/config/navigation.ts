@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import {
   LayoutDashboard, CreditCard, AlertTriangle, Layers, Users, FileSpreadsheet, MessageSquare, Bell,
   Smartphone, Receipt, Activity, BarChart3, Settings, Wallet, BookOpen, UserCheck, CalendarDays,
-  ClipboardList, Award, ShieldCheck, MessageCircle, GraduationCap, IndianRupee, Building2, ToggleRight,
+  ClipboardList, Award, ShieldCheck, GraduationCap, IndianRupee, Building2, ToggleRight,
 } from '../components/icons';
 import type { ScreenType } from '../store';
 import { type PermissionId, hasPermission } from './permissionsRegistry';
@@ -103,7 +103,6 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
         { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen },
       ] },
-      { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP' }] },
       { title: 'Settings', items: [
         { id: 'setup', label: 'Setup', icon: Settings },
         { id: 'audit-log', label: 'Audit Log', icon: Activity },
@@ -134,7 +133,6 @@ export const NAV_MODULES: NavModule[] = [
       { title: 'Communication', items: [
         { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, permission: 'SCREEN_WHATSAPP' },
         { id: 'notifications', label: 'Notifications', icon: Bell, permission: 'SCREEN_NOTIFICATIONS' },
-        { id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP', inErp: true },
       ] },
       { title: 'Reports', items: [
         { id: 'receipts', label: 'Receipts', icon: Receipt, permission: 'SCREEN_RECEIPTS' },

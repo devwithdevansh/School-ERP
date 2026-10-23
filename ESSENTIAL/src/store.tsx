@@ -42,7 +42,6 @@ export type ScreenType =
   | 'teacher-allocation'
   | 'student-leave'
   | 'staff-leave'
-  | 'messages'
   | 'org-clients'
   | 'org-licences';
 
