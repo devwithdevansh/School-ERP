@@ -4,12 +4,16 @@
   "private": true,
   "description": "Generic School ERP: React admin frontend + Mongo backend",
   "scripts": {
-    "install:all": "npm --prefix frontend install && npm --prefix backend-mongo install",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "dev:demo": "npm --prefix frontend-demo run dev",
+    "install:all": "npm --prefix PROFESSIONAL install && npm --prefix ESSENTIAL install && npm --prefix backend-mongo install",
+    "dev:professional": "npm --prefix PROFESSIONAL run dev",
+    "dev:essential": "npm --prefix ESSENTIAL run dev",
+    "dev:frontend": "npm --prefix PROFESSIONAL run dev",
+    "dev:demo": "npm --prefix ESSENTIAL run dev",
     "dev:mongo": "npm --prefix backend-mongo run dev",
     "seed:mongo": "npm --prefix backend-mongo run seed",
-    "build:frontend": "npm --prefix frontend run build",
+    "build:professional": "npm --prefix PROFESSIONAL run build",
+    "build:essential": "npm --prefix ESSENTIAL run build",
+    "build:frontend": "npm --prefix PROFESSIONAL run build",
     "dev:mobile": "cd mobile && flutter run",
     "test:mobile": "cd mobile && flutter test"
   }

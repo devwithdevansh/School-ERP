@@ -5,7 +5,8 @@ The backend uses **MongoDB**.
 
 ```
 School-ERP/
-├─ frontend/          React 19 + Vite + Tailwind 4 admin portal (teal theme, dual-sidebar layout)
+├─ PROFESSIONAL/      React 19 + Vite + Tailwind 4 admin portal (teal theme, dual-sidebar layout)
+├─ ESSENTIAL/         Essential edition (simplified ERP + fees)
 ├─ backend-mongo/     Express + Mongoose (full port of the Sunrise backend, all modules) :3000
 ├─ mobile/            Flutter parent & teacher app (white-label; see mobile/README.md)
 └─ package.json       convenience scripts
@@ -19,9 +20,9 @@ npm run install:all
 cp backend-mongo/.env.example    backend-mongo/.env      # set MONGODB_URI, JWT_SECRET
 npm run seed:mongo && npm run dev:mongo
 
-cp frontend/.env.example frontend/.env
+cp PROFESSIONAL/.env.example PROFESSIONAL/.env
 #   VITE_API_PROXY_TARGET=http://127.0.0.1:3000
-npm run dev:frontend        # http://localhost:5173
+npm run dev:professional        # http://localhost:5173
 ```
 
 Seeded logins (change them; override with `SEED_*` env vars):

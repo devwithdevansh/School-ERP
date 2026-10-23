@@ -18,5 +18,7 @@ backend-mongo/config/
 *service-account*.json
 
 # Sunrise leftovers (unused)
+PROFESSIONAL/src/assets/
+ESSENTIAL/src/assets/
 frontend/src/assets/
 frontend-demo/src/assets/
