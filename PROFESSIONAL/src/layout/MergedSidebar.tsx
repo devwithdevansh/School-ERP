@@ -36,12 +36,19 @@ export const MergedSidebar: React.FC<Props> = ({ modules, activeId, currentScree
 
   return (
     <aside className="flex h-full w-72 shrink-0 flex-col bg-[var(--color-side)] border-r border-white/5">
-      <div className="flex items-center gap-3 px-5 py-5">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
         <img src={brand.logo} alt="" className="h-10 w-10 rounded-xl ring-1 ring-white/10" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-white">{title}</p>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{brand.productName}</p>
         </div>
+        <button
+          onClick={onSplit}
+          title="Switch to split layout (rail + menu)"
+          className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors shrink-0"
+        >
+          <Columns2 className="h-4 w-4" />
+        </button>
       </div>
       
       <ScrollArea className="flex-1 px-3 pb-4">
@@ -81,35 +88,45 @@ export const MergedSidebar: React.FC<Props> = ({ modules, activeId, currentScree
         </div>
       </ScrollArea>
 
-      <div className="border-t border-white/5 p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="w-full">
-            <button className="flex w-full items-center gap-2 rounded-lg p-2 text-left hover:bg-white/5 transition-colors">
-              <Avatar className="h-9 w-9 rounded-full bg-gradient-to-br from-amber-300 to-orange-400 flex items-center justify-center">
-                <AvatarFallback className="bg-transparent text-xs font-bold text-slate-900">
-                  {userName.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-white">{userName}</p>
-                <p className="truncate text-[10px] text-slate-500">{roleLabel}</p>
-              </div>
-              <MoreVertical className="h-4 w-4 text-slate-500" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-[var(--color-side)] border-white/10 text-white">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
-            <DropdownMenuItem onClick={onSplit} className="hover:bg-white/10 focus:bg-white/10 cursor-pointer">
-              <Columns2 className="mr-2 h-4 w-4" />
-              <span>Switch to split layout</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onLogout} className="text-rose-400 hover:bg-rose-500/10 focus:bg-rose-500/10 cursor-pointer">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="border-t border-white/5 p-3 flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="w-full">
+              <button className="flex w-full items-center gap-2 rounded-lg p-2 text-left hover:bg-white/5 transition-colors">
+                <Avatar className="h-9 w-9 rounded-full bg-gradient-to-br from-amber-300 to-orange-400 flex items-center justify-center">
+                  <AvatarFallback className="bg-transparent text-xs font-bold text-slate-900">
+                    {userName.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-semibold text-white">{userName}</p>
+                  <p className="truncate text-[10px] text-slate-500">{roleLabel}</p>
+                </div>
+                <MoreVertical className="h-4 w-4 text-slate-500" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-[var(--color-side)] border-white/10 text-white">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuItem onClick={onSplit} className="hover:bg-white/10 focus:bg-white/10 cursor-pointer">
+                <Columns2 className="mr-2 h-4 w-4" />
+                <span>Switch to split layout</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onLogout} className="text-rose-400 hover:bg-rose-500/10 focus:bg-rose-500/10 cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <button
+          onClick={onSplit}
+          title="Switch to split layout"
+          className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors shrink-0"
+        >
+          <Columns2 className="h-5 w-5" />
+        </button>
       </div>
     </aside>
   );
