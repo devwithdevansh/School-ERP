@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { History, ChevronDown, ChevronUp, RotateCcw } from '../icons';
+import { useHasPermission } from '../../hooks/usePermission';
 
 export interface TxItem {
   id: string; feeType: string; amount: number; concessionAmount?: number;
@@ -41,6 +42,7 @@ export const PaymentHistoryPanel: React.FC<{
   allTxs: TxItem[];
   reversePayment: (txId: string) => void;
 }> = ({ allTxs, reversePayment }) => {
+  const canVoidReceipt = useHasPermission('RECEIPTS:VOID');
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('All');
 
@@ -177,7 +179,7 @@ export const PaymentHistoryPanel: React.FC<{
                           <th className="py-1.5 px-2 text-right">Amount</th>
                           <th className="py-1.5 px-2 text-center">Method</th>
                           <th className="py-1.5 px-2 text-center">Status</th>
-                          <th className="py-1.5 pl-2 text-right">Action</th>
+                          {canVoidReceipt && <th className="py-1.5 pl-2 text-right">Action</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -207,25 +209,27 @@ export const PaymentHistoryPanel: React.FC<{
                                   isReversed ? 'bg-red-50 text-red-500 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                 }`}>{tx.status}</span>
                               </td>
-                              <td className="py-2 pl-2 text-right">
-                                {!isReversed && tx.method !== 'GOVT' ? (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (window.confirm(`Reverse ₹${tx.amount.toLocaleString('en-IN')} for ${tx.feeType}?\nThis will restore the balance.`)) {
-                                        reversePayment(tx.id);
-                                      }
-                                    }}
-                                    className="inline-flex items-center gap-1 text-red-400 hover:text-red-600 hover:bg-red-50 border border-red-100 hover:border-red-200 font-bold px-2 py-1 rounded-lg text-[9px] transition-all"
-                                  >
-                                    <RotateCcw className="h-2.5 w-2.5" />
-                                    Reverse
-                                  </button>
-                                ) : (
-                                  <span className="text-slate-300 text-[9px] italic">—</span>
-                                )}
-                              </td>
+                              {canVoidReceipt && (
+                                <td className="py-2 pl-2 text-right">
+                                  {!isReversed && tx.method !== 'GOVT' ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (window.confirm(`Reverse ₹${tx.amount.toLocaleString('en-IN')} for ${tx.feeType}?\nThis will restore the balance.`)) {
+                                          reversePayment(tx.id);
+                                        }
+                                      }}
+                                      className="inline-flex items-center gap-1 text-red-400 hover:text-red-600 hover:bg-red-50 border border-red-100 hover:border-red-200 font-bold px-2 py-1 rounded-lg text-[9px] transition-all"
+                                    >
+                                      <RotateCcw className="h-2.5 w-2.5" />
+                                      Reverse
+                                    </button>
+                                  ) : (
+                                    <span className="text-slate-300 text-[9px] italic">—</span>
+                                  )}
+                                </td>
+                              )}
                             </tr>
                           );
                         })}

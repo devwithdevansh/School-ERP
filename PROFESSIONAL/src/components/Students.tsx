@@ -29,6 +29,7 @@ export const Students: React.FC = () => {
   const canAddStudent = useHasPermission('STUDENTS:ADD');
   const canEditStudent = useHasPermission('STUDENTS:EDIT');
   const canDeleteStudent = useHasPermission('STUDENTS:DELETE');
+  const canVoidReceipt = useHasPermission('RECEIPTS:VOID');
 
   const activeYearName = useMemo(() => academicYears.find(y => y.isActive)?.name || academicYears[0]?.name || '', [academicYears]);
   const activeYearFeeStructures = useMemo(() => {
@@ -1136,7 +1137,7 @@ export const Students: React.FC = () => {
                                                       <th className="py-1.5 px-2 text-right">Concession (₹)</th>
                                                       <th className="py-1.5 px-2 text-center">Method</th>
                                                       <th className="py-1.5 px-2 text-center">Status</th>
-                                                      <th className="py-1.5 px-2 text-right">Reversal Action</th>
+                                                      {canVoidReceipt && <th className="py-1.5 px-2 text-right">Reversal Action</th>}
                                                     </tr>
                                                   </thead>
                                                   <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
@@ -1156,7 +1157,8 @@ export const Students: React.FC = () => {
                                                             {sub.status}
                                                           </span>
                                                         </td>
-                                                        <td className="py-2 px-2 text-right">
+                                                        {canVoidReceipt && (
+                                                          <td className="py-2 px-2 text-right">
                                                           {sub.status !== 'REVERSED' && sub.method !== 'GOVT' ? (
                                                             <button
                                                               onClick={async () => {
@@ -1180,6 +1182,7 @@ export const Students: React.FC = () => {
                                                             <span className="text-slate-300 text-[9px] italic pr-2 font-medium">Not reversible</span>
                                                           )}
                                                         </td>
+                                                        )}
                                                       </tr>
                                                     ))}
                                                   </tbody>

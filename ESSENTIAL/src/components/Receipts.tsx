@@ -12,6 +12,7 @@ import {
 } from './icons';
 import { formatTransactions } from '../utils/transactionHelpers';
 import { getActiveStandards } from '../utils/standardUtils';
+import { useHasPermission } from '../hooks/usePermission';
 
 interface ReceiptsProps {
   onPrint: (tx: PaymentTransaction) => void;
@@ -19,6 +20,7 @@ interface ReceiptsProps {
 
 export const Receipts: React.FC<ReceiptsProps> = ({ onPrint }) => {
   const { reversePayment, feeStructures, academicYears, students, transactions: globalTransactions, isLoadingDetails } = useApp();
+  const canVoidReceipt = useHasPermission('RECEIPTS:VOID');
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
 
   // Format transactions whenever raw data or students change
@@ -448,7 +450,7 @@ export const Receipts: React.FC<ReceiptsProps> = ({ onPrint }) => {
                                     <th className="py-2 px-3 text-right">Concession (₹)</th>
                                     <th className="py-2 px-3 text-center">Method</th>
                                     <th className="py-2 px-3 text-center">Status</th>
-                                    <th className="py-2 px-3 text-right">Reversal Action</th>
+                                    {canVoidReceipt && <th className="py-2 px-3 text-right">Reversal Action</th>}
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
@@ -471,30 +473,32 @@ export const Receipts: React.FC<ReceiptsProps> = ({ onPrint }) => {
                                           {sub.status}
                                         </span>
                                       </td>
-                                      <td className="py-3 px-3 text-right">
-                                        {sub.status !== 'REVERSED' && sub.method !== 'GOVT' ? (
-                                          <button
-                                            onClick={async () => {
-                                              if (window.confirm(`Are you sure you want to reverse payment of ₹${sub.amount.toLocaleString('en-IN')} for ${sub.description}? This will restore the balance back to the ledger.`)) {
-                                                setIsReversing(sub.id);
-                                                await reversePayment(sub.id);
-                                                setIsReversing(null);
-                                              }
-                                            }}
-                                            disabled={isReversing === sub.id}
-                                            className={`inline-flex items-center gap-1 font-bold px-2.5 py-1 rounded-lg text-[9px] tracking-wide transition-all shadow-sm active:scale-[0.98] ${
-                                              isReversing === sub.id
-                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200'
-                                                : 'text-red-500 hover:text-red-750 hover:bg-red-50 border border-red-200/50 hover:border-red-300'
-                                            }`}
-                                          >
-                                            <RotateCcw className={`h-2.5 w-2.5 ${isReversing === sub.id ? 'animate-spin' : ''}`} />
-                                            {isReversing === sub.id ? 'Reversing...' : 'Reverse Item'}
-                                          </button>
-                                        ) : (
-                                          <span className="text-slate-350 text-[9px] italic pr-2 font-medium">Not reversible</span>
-                                        )}
-                                      </td>
+                                      {canVoidReceipt && (
+                                        <td className="py-3 px-3 text-right">
+                                          {sub.status !== 'REVERSED' && sub.method !== 'GOVT' ? (
+                                            <button
+                                              onClick={async () => {
+                                                if (window.confirm(`Are you sure you want to reverse payment of ₹${sub.amount.toLocaleString('en-IN')} for ${sub.description}? This will restore the balance back to the ledger.`)) {
+                                                  setIsReversing(sub.id);
+                                                  await reversePayment(sub.id);
+                                                  setIsReversing(null);
+                                                }
+                                              }}
+                                              disabled={isReversing === sub.id}
+                                              className={`inline-flex items-center gap-1 font-bold px-2.5 py-1 rounded-lg text-[9px] tracking-wide transition-all shadow-sm active:scale-[0.98] ${
+                                                isReversing === sub.id
+                                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200'
+                                                  : 'text-red-500 hover:text-red-750 hover:bg-red-50 border border-red-200/50 hover:border-red-300'
+                                              }`}
+                                            >
+                                              <RotateCcw className={`h-2.5 w-2.5 ${isReversing === sub.id ? 'animate-spin' : ''}`} />
+                                              {isReversing === sub.id ? 'Reversing...' : 'Reverse Item'}
+                                            </button>
+                                          ) : (
+                                            <span className="text-slate-350 text-[9px] italic pr-2 font-medium">Not reversible</span>
+                                          )}
+                                        </td>
+                                      )}
                                     </tr>
                                   ))}
                                 </tbody>

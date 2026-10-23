@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import PaymentController from '../controllers/PaymentController.js';
 import authenticate from '../middlewares/auth.middleware.js';
-import authorize from '../middlewares/authorize.middleware.js';
+import authorize, { requirePermission } from '../middlewares/authorize.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import idempotency from '../middlewares/idempotency.middleware.js';
 import {
@@ -27,6 +27,6 @@ router.post('/razorpay/verify', authorize('ADMIN', 'STAFF', 'parent'), idempoten
 router.post('/', authorize('ADMIN', 'STAFF'), idempotency, validate(createPaymentSchema), PaymentController.createPayment);
 router.get('/', authorize('ADMIN', 'STAFF', 'parent'), validate(listPaymentsSchema), PaymentController.listPayments);
 router.get('/:id', authorize('ADMIN', 'STAFF'), PaymentController.getPayment);
-router.post('/:id/reverse', authorize('ADMIN', 'STAFF'), validate(reversePaymentSchema), PaymentController.reversePayment);
+router.post('/:id/reverse', authorize('ADMIN', 'STAFF'), requirePermission('RECEIPTS:VOID'), validate(reversePaymentSchema), PaymentController.reversePayment);
 
 export default router;
