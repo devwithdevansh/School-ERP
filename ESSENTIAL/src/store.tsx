@@ -431,10 +431,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   currentUserRef.current = currentUser;
   const isOrgAdmin = currentUser?.role === 'ORG_ADMIN';
   const isSuperAdmin = currentUser?.role === 'ADMIN' && (brand.superAdminEmails.length === 0 || brand.superAdminEmails.includes(String(currentUser.email).toLowerCase()));
-  const [activePortal, setActivePortal] = useState<PortalId>('FEES');
+  const [activePortal, setActivePortal] = useState<PortalId>(() => {
+    const saved = localStorage.getItem('currentUser');
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u.role === 'TEACHER') return 'TEACHER';
+        if (u.role === 'ORG_ADMIN') return 'ORG';
+      } catch {}
+    }
+    return 'FEES';
+  });
   const [currentScreen, setScreenState] = useState<ScreenType>(() => {
     const saved = localStorage.getItem('currentUser');
-    return saved ? 'dashboard' : 'login';
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u.role === 'TEACHER') return 'teacher-attendance';
+        if (u.role === 'ORG_ADMIN') return 'org-clients';
+      } catch {}
+      return 'dashboard';
+    }
+    return 'login';
   });
   const [students, setStudents] = useState<Student[]>([]);
   const [unpaidData, setGlobalUnpaidData] = useState<any[]>([]);
