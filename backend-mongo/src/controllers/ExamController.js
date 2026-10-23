@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Exam from '../models/Exam.js';
 import ExamResult from '../models/ExamResult.js';
 import AcademicYear from '../models/AcademicYear.js';
@@ -194,6 +195,9 @@ class ExamController {
    */
   static getExamById = catchAsync(async (req, res) => {
     const { examId } = req.params;
+    if (!mongoose.isValidObjectId(examId)) {
+      throw new AppError('Exam not found', 404);
+    }
     const exam = await Exam.findById(examId)
       .populate('subjects.subjectId', 'subjectName subjectCode')
       .populate('createdBy', 'name email role')

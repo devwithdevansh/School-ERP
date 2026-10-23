@@ -746,19 +746,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setExams(ex.data || []);
           }
 
-          const resultsRes = hasErp ? await authFetch('/api/v1/erp/exams/results') : null;
-          if (resultsRes?.ok) {
-            const resData = await resultsRes.json();
-            setResults(resData.data || []);
-          }
-
           const hwRes = hasErp ? await authFetch('/api/v1/erp/homework') : null;
           if (hwRes?.ok) {
             const hw = await hwRes.json();
             setHomework(hw.data || []);
           }
 
-          const convRes = hasErp ? await authFetch('/api/v1/erp/chat/conversations') : null;
+          const convRes = hasErp ? await authFetch('/api/v1/chat/conversations') : null;
           if (convRes?.ok) {
             const cv = await convRes.json();
             setConversations(cv.data || []);
