@@ -541,7 +541,7 @@ export const StudentView: React.FC<StudentViewProps> = ({ onPrint }) => {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 1: PAY PENDING FEES (NO ADVANCE PAYMENT)                               */}
+      {/* TAB 1: PAY PENDING FEES                                                   */}
       {/* ========================================================================= */}
       {activeTab === 'fees' && (
         <div className="space-y-6">
@@ -593,15 +593,13 @@ export const StudentView: React.FC<StudentViewProps> = ({ onPrint }) => {
             </div>
           </div>
 
-          {/* Strict "NO ADVANCE PAYMENT" Notice */}
-          <div className="rounded-2xl bg-amber-50/60 border border-amber-200/80 p-4 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-2.5">
-              <ShieldCheck className="h-5 w-5 text-amber-600 shrink-0" />
-              <span>
-                <strong>Strict Policy · No Advance Payment:</strong> In accordance with school accounting rules, only actual pending fee dues can be settled. Advance payments for future periods or custom random amounts are strictly disabled.
-              </span>
-            </div>
-            {pendingLedgers.length > 0 && (
+          {/* Installment Selection Bar */}
+          {pendingLedgers.length > 0 && (
+            <div className="rounded-2xl bg-slate-100/80 border border-slate-200/80 px-4 py-3 text-xs text-slate-600 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>Select the pending fee installments you wish to clear online.</span>
+              </div>
               <button
                 type="button"
                 onClick={toggleSelectAll}
@@ -609,8 +607,8 @@ export const StudentView: React.FC<StudentViewProps> = ({ onPrint }) => {
               >
                 {selectedLedgerIds.size === pendingLedgers.length ? 'Deselect All' : 'Select All'}
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Pending Fees Table */}
           <div className="rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
