@@ -66,8 +66,15 @@ app.use('/api', (_req, res, next) => {
 });
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
+// Lightweight health check endpoint used by uptime monitoring services such as
+// cron-job.org and Render health checks to monitor availability and keep free-tier
+// instances warm without hitting the database or loading tenant contexts.
 app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'UP', message: `${env.APP_NAME} backend (mongo) is running` });
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 import erpRoutes              from './routes/erp.routes.js';
