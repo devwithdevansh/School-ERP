@@ -4,6 +4,7 @@ import Curriculum from '../models/Curriculum.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/AppError.js';
 import sendResponse from '../utils/response.js';
+import { canonicalStandard, canonicalMedium } from './AcademicMasterController.js';
 
 class AllocationController {
   // ==========================================
@@ -28,23 +29,34 @@ class AllocationController {
     }
 
     // 1. Ensure the subject is linked in the curriculum for this standard/medium
-    let curriculum = await Curriculum.findOne({ academicYearId, standard, medium });
+    const normStandard = canonicalStandard(standard);
+    const normMedium = canonicalMedium(medium);
+
+    let curriculum = await Curriculum.findOne({
+      academicYearId,
+      standard: { $regex: new RegExp(`^${normStandard.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      medium: { $regex: new RegExp(`^${normMedium.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+    });
     if (!curriculum) {
       curriculum = await Curriculum.create({
         academicYearId,
-        standard,
-        medium,
+        standard: normStandard,
+        medium: normMedium,
         subjects: [subjectId]
       });
     } else {
+      if (curriculum.standard !== normStandard || curriculum.medium !== normMedium) {
+        curriculum.standard = normStandard;
+        curriculum.medium = normMedium;
+      }
       const subjectExists = curriculum.subjects.some(id => {
         const rawId = typeof id === 'object' && id?._id ? id._id.toString() : id.toString();
         return rawId === subjectId.toString();
       });
       if (!subjectExists) {
         curriculum.subjects.push(subjectId);
-        await curriculum.save();
       }
+      await curriculum.save();
     }
 
     // 2. Upsert allocation with teacherIds array & primary teacherId

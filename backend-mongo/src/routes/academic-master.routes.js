@@ -18,5 +18,6 @@ router.delete('/subjects/:id', authorize('ADMIN'), AcademicMasterController.dele
 // Curriculum
 router.post('/curriculum', authorize('ADMIN'), AcademicMasterController.createOrUpdateCurriculum);
 router.get('/curriculum', AcademicMasterController.getCurriculums);
+router.delete('/curriculum/:id', authorize('ADMIN'), AcademicMasterController.deleteCurriculum);
 
 export default router;

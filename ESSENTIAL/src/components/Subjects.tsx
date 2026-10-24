@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../store';
 import { BookOpen, Plus, X, Save, Trash2, Library, BookMarked } from './icons';
-import { getActiveStandards } from '../utils/standardUtils';
+import { getActiveStandards, canonicalStandard, canonicalMedium } from '../utils/standardUtils';
 
 export const Subjects: React.FC = () => {
   const { subjects, curriculums, academicYears, authFetch, refreshData, feeStructures } = useApp();
@@ -9,8 +9,6 @@ export const Subjects: React.FC = () => {
   const activeYear = academicYears.find(y => y.isActive) || academicYears[0];
 
   const activeStandards = React.useMemo(() => {
-    // English is the default medium state unless changed, but curriculum form uses Capitalized medium, actually "ENGLISH". 
-    // We can just use the mapped value from activeStandards.
     return getActiveStandards(feeStructures, activeYear?.name, undefined); 
   }, [feeStructures, activeYear?.name]);
   
@@ -25,6 +23,34 @@ export const Subjects: React.FC = () => {
   const [curriculumForm, setCurriculumForm] = useState({ standard: '', medium: 'English', subjects: [] as string[] });
   
   const [saving, setSaving] = useState(false);
+
+  const displayCurriculums = React.useMemo(() => {
+    const current = curriculums.filter(c => c.academicYearId === activeYear?._id);
+    const map = new Map<string, any>();
+    for (const curr of current) {
+      const std = canonicalStandard(curr.standard);
+      const med = canonicalMedium(curr.medium);
+      const key = `${std}:${med}`.toLowerCase();
+      if (!map.has(key)) {
+        map.set(key, { ...curr, standard: std, medium: med, subjects: [...(curr.subjects || [])] });
+      } else {
+        const existing = map.get(key);
+        const existingSubjectIds = new Set(existing.subjects.map((s: any) => (s._id || s).toString()));
+        for (const s of curr.subjects || []) {
+          const sid = (s._id || s).toString();
+          if (!existingSubjectIds.has(sid)) {
+            existing.subjects.push(s);
+            existingSubjectIds.add(sid);
+          }
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => {
+      const stdDiff = a.standard.localeCompare(b.standard, undefined, { numeric: true });
+      if (stdDiff !== 0) return stdDiff;
+      return a.medium.localeCompare(b.medium);
+    });
+  }, [curriculums, activeYear?._id]);
 
   // --- Handlers for Subject Master ---
   const handleSaveSubject = async () => {
@@ -87,8 +113,8 @@ export const Subjects: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           academicYearId: activeYear._id,
-          standard: curriculumForm.standard,
-          medium: curriculumForm.medium,
+          standard: canonicalStandard(curriculumForm.standard),
+          medium: canonicalMedium(curriculumForm.medium),
           subjects: curriculumForm.subjects
         })
       });
@@ -105,6 +131,20 @@ export const Subjects: React.FC = () => {
       alert(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteCurriculum = async (id: string, standardName: string, mediumName: string) => {
+    if (!confirm(`Are you sure you want to delete the curriculum for Standard ${standardName} (${mediumName} Medium)?`)) return;
+    try {
+      const res = await authFetch(`/api/v1/academic-master/curriculum/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to delete curriculum');
+      }
+      await refreshData();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -247,7 +287,7 @@ export const Subjects: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {curriculums.filter(c => c.academicYearId === activeYear?._id).length === 0 ? (
+                  {displayCurriculums.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="px-6 py-16 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center">
@@ -258,41 +298,48 @@ export const Subjects: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    curriculums
-                      .filter(c => c.academicYearId === activeYear?._id)
-                      .map((curr) => (
-                        <tr key={curr._id} className="hover:bg-slate-50/80 transition-colors group">
-                          <td className="px-6 py-6">
-                            <div className="font-black text-slate-800 text-lg">Standard {curr.standard}</div>
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">{curr.medium} Medium</div>
-                          </td>
-                          <td className="px-6 py-6">
-                            <div className="flex flex-wrap gap-2.5">
-                              {curr.subjects.map((sub: any) => (
-                                <span key={sub._id} className="px-3.5 py-1.5 bg-blue-50/50 text-blue-700 rounded-xl text-sm font-bold border border-blue-100 flex items-center gap-1.5 shadow-sm">
-                                  <BookOpen className="w-3.5 h-3.5 opacity-50" />
-                                  {sub.subjectName}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-6 py-6 text-right">
+                    displayCurriculums.map((curr) => (
+                      <tr key={curr._id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-6 py-6">
+                          <div className="font-black text-slate-800 text-lg">Standard {curr.standard}</div>
+                          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">{curr.medium} Medium</div>
+                        </td>
+                        <td className="px-6 py-6">
+                          <div className="flex flex-wrap gap-2.5">
+                            {curr.subjects.map((sub: any) => (
+                              <span key={sub._id || sub} className="px-3.5 py-1.5 bg-blue-50/50 text-blue-700 rounded-xl text-sm font-bold border border-blue-100 flex items-center gap-1.5 shadow-sm">
+                                <BookOpen className="w-3.5 h-3.5 opacity-50" />
+                                {sub.subjectName || sub}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
                             <button 
                               onClick={() => {
                                 setCurriculumForm({
                                   standard: curr.standard,
                                   medium: curr.medium,
-                                  subjects: curr.subjects.map((s: any) => s._id)
+                                  subjects: curr.subjects.map((s: any) => s._id || s)
                                 });
                                 setShowCurriculumModal(true);
                               }}
-                              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors opacity-0 group-hover:opacity-100"
+                              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
                             >
                               Edit Mapping
                             </button>
-                          </td>
-                        </tr>
-                      ))
+                            <button 
+                              onClick={() => handleDeleteCurriculum(curr._id, curr.standard, curr.medium)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100"
+                              title="Delete Mapping"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
@@ -394,11 +441,11 @@ export const Subjects: React.FC = () => {
                     <select
                       value={curriculumForm.standard}
                       onChange={e => setCurriculumForm({ ...curriculumForm, standard: e.target.value })}
-                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors uppercase"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     >
-                      <option value="">SELECT STANDARD...</option>
+                      <option value="">Select Standard...</option>
                       {activeStandards.map(s => (
-                        <option key={s} value={s.toUpperCase()}>{s.toUpperCase()}</option>
+                        <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
                   </div>
@@ -407,10 +454,10 @@ export const Subjects: React.FC = () => {
                     <select
                       value={curriculumForm.medium}
                       onChange={e => setCurriculumForm({ ...curriculumForm, medium: e.target.value })}
-                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors uppercase"
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
                     >
-                      <option value="ENGLISH">ENGLISH</option>
-                      <option value="GUJARATI">GUJARATI</option>
+                      <option value="English">English Medium</option>
+                      <option value="Gujarati">Gujarati Medium</option>
                     </select>
                   </div>
                 </div>
