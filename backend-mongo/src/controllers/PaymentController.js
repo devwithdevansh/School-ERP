@@ -7,6 +7,7 @@ import AppError from '../utils/AppError.js';
 import ledgerRepository from '../repositories/ledgerRepository.js';
 import studentRepository from '../repositories/studentRepository.js';
 import GatewayLog from '../models/GatewayLog.js';
+import env from '../config/env.js';
 
 class PaymentController {
   /** POST /api/v1/payments */
@@ -117,7 +118,10 @@ class PaymentController {
       amount, 
       receipt: `receipt_${Date.now()}` 
     });
-    sendResponse(res, 201, order);
+    sendResponse(res, 201, {
+      ...order,
+      key_id: env.RAZORPAY_KEY_ID
+    });
   });
 
   /** POST /api/v1/payments/razorpay/verify */

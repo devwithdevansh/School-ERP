@@ -17,16 +17,16 @@ import { type PermissionId, hasPermission } from './permissionsRegistry';
  * role / super-admin; later swap it for per-school enabled modules + role permissions
  * without touching any layout component.
  */
-export type ModuleId = 'ERP' | 'FEES' | 'ORG' | 'TEACHER';
+export type ModuleId = 'ERP' | 'FEES' | 'ORG' | 'TEACHER' | 'STUDENT';
 
 /** Modules an organization can license to a client. Keep in sync with the backends' constants/modules.js. */
-export const LICENSABLE_MODULES: { id: Exclude<ModuleId, 'ORG' | 'TEACHER'>; label: string; description: string }[] = [
+export const LICENSABLE_MODULES: { id: Exclude<ModuleId, 'ORG' | 'TEACHER' | 'STUDENT'>; label: string; description: string }[] = [
   { id: 'FEES', label: 'Fees', description: 'Fee collection, receipts, expenses, dues, WhatsApp reminders' },
   { id: 'ERP', label: 'Academics (ERP)', description: 'Admission, attendance, timetable, results, staff & leave' },
 ];
 
 export interface NavContext {
-  role?: 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER';
+  role?: 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER' | 'parent';
   isSuperAdmin: boolean;
   isOrgAdmin: boolean;
   /** Modules the organization enabled for this user's school (ignored for ORG_ADMIN). */
@@ -158,6 +158,23 @@ export const NAV_MODULES: NavModule[] = [
         items: [
           { id: 'teacher-attendance', label: 'Take Attendance', icon: UserCheck },
           { id: 'teacher-timetable', label: 'My Timetable', icon: CalendarDays },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'STUDENT',
+    label: 'Student Portal',
+    short: 'Student',
+    icon: GraduationCap,
+    // Strictly role-based: visible ONLY to users with the parent role (Essential edition only)
+    isVisible: (c) => !c.isOrgAdmin && c.role === 'parent',
+    groups: [
+      {
+        title: 'Fee Services',
+        items: [
+          { id: 'student-fees', label: 'Pay Fees', icon: CreditCard },
+          { id: 'student-receipts', label: 'Payment Receipts', icon: Receipt },
         ],
       },
     ],

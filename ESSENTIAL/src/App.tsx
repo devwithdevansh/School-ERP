@@ -33,6 +33,7 @@ import { TeacherAllocationDashboard } from './components/TeacherAllocationDashbo
 import { StudentLeaveManagement } from './components/StudentLeaveManagement';
 import { StaffLeaveManagement } from './components/StaffLeaveManagement';
 import { TeacherView } from './components/TeacherView';
+import { StudentView } from './components/StudentView';
 import { ErpPlaceholder } from './components/ErpPlaceholder';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
@@ -92,6 +93,11 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
   // Teacher Workspace (Essential edition only)
   if (activePortal === 'TEACHER' || currentScreen === 'teacher-attendance' || currentScreen === 'teacher-timetable') {
     return <TeacherView />;
+  }
+
+  // Student / Parent Fee Workspace (Essential edition only)
+  if (activePortal === 'STUDENT' || currentScreen === 'student-fees' || currentScreen === 'student-receipts') {
+    return <StudentView onPrint={onPrint} />;
   }
 
   // If we are in ERP mode, route ERP screens

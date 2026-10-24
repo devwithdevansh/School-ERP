@@ -101,7 +101,7 @@ export const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email or phone</Label>
+              <Label htmlFor="email">Email or mobile number</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -110,7 +110,7 @@ export const Login: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@school.local"
+                  placeholder="name@school.com or 10-digit mobile"
                   className="pl-9"
                 />
               </div>

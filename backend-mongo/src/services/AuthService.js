@@ -33,6 +33,21 @@ async function requireActiveClient(clientId) {
 class AuthService {
   /** Current user + client (with enabled modules), used by the frontend to (re)build its menu. */
   static async getContext(reqUser) {
+    if (reqUser.role === 'parent') {
+      const parent = await parentRepository.findById(reqUser.id);
+      if (!parent || !parent.isActive) throw new AppError('Account not found or deactivated', 401);
+      const client = clientDto(await requireActiveClient(parent.clientId));
+      return {
+        user: {
+          id: parent._id.toString(),
+          name: parent.parentName || 'Parent',
+          email: parent.primaryMobileNumber,
+          role: 'parent',
+          permissions: []
+        },
+        client
+      };
+    }
     const user = await userRepository.findById(reqUser.id);
     if (!user || !user.isActive) throw new AppError('Account not found or deactivated', 401);
     const client = user.role === ORG_ADMIN_ROLE ? null : clientDto(await requireActiveClient(user.clientId));
@@ -160,14 +175,33 @@ class AuthService {
    * 1. Portal login – admin / staff / teachers (no audit – application event)
    * ---------------------------------------------------------------- */
   static async portalLogin({ email, password }) {
-    // email can be an email string OR a phone string
-    const user = await userRepository.findByLoginIdWithPassword(email);
-    if (!user) throw new AppError('Invalid credentials', 401);
-    if (!user.isActive) throw new AppError('Your account has been deactivated. Contact the administrator.', 403);
-    const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) throw new AppError('Invalid credentials', 401);
+    const cleanId = String(email || '').trim();
 
-    return AuthService._issueUserSession(user, { logLabel: 'Portal login' });
+    // 1. Check User (Admin / Staff / Teacher)
+    const user = await userRepository.findByLoginIdWithPassword(cleanId);
+    if (user) {
+      if (!user.isActive) throw new AppError('Your account has been deactivated. Contact the administrator.', 403);
+      const match = await bcrypt.compare(password, user.passwordHash);
+      if (!match) throw new AppError('Invalid credentials', 401);
+      return AuthService._issueUserSession(user, { logLabel: 'Portal login (user)' });
+    }
+
+    // 2. Check Parent / Student (using primary or secondary mobile number)
+    const parent = await parentRepository.findOneWithPassword({
+      $or: [
+        { primaryMobileNumber: cleanId },
+        { secondaryMobileNumber: cleanId }
+      ]
+    });
+    if (parent) {
+      if (!parent.isActive) throw new AppError('Your account has been deactivated. Contact the administrator.', 403);
+      if (!parent.passwordHash) throw new AppError('Account password is not set. Please set password or contact admin.', 401);
+      const match = await bcrypt.compare(password, parent.passwordHash);
+      if (!match) throw new AppError('Invalid credentials', 401);
+      return AuthService._issueParentSession(parent, { logLabel: 'Portal login (parent)' });
+    }
+
+    throw new AppError('Invalid credentials', 401);
   }
 
   /* ----------------------------------------------------------------
@@ -299,7 +333,18 @@ class AuthService {
       );
       logger.info(`${logLabel}: ${parent._id}`);
       await session.commitTransaction();
-      return { accessToken, refreshToken: refreshPlain, client: clientDto(client) };
+      return { 
+        accessToken, 
+        refreshToken: refreshPlain, 
+        user: {
+          id: parent._id.toString(),
+          name: parent.parentName || 'Parent',
+          email: parent.primaryMobileNumber,
+          role: 'parent',
+          permissions: []
+        },
+        client: clientDto(client) 
+      };
     } catch (err) {
       await session.abortTransaction();
       throw err;

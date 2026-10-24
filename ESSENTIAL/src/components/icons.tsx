@@ -479,3 +479,4 @@ export const ToggleRight = createCustomIcon(
     <circle cx="16" cy="12" r="2" />
   </>
 );
+
