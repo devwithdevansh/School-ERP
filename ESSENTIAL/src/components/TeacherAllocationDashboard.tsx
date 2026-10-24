@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../store';
 import { Users, Plus } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
@@ -29,6 +29,29 @@ export const TeacherAllocationDashboard: React.FC = () => {
   const [standard, setStandard] = useState('');
   const [medium, setMedium] = useState('English');
   const [saving, setSaving] = useState(false);
+  const [fetchedMasterSubjects, setFetchedMasterSubjects] = useState<any[]>([]);
+
+  // Direct fetch fallback in case store subjects list is empty or pending
+  useEffect(() => {
+    if (allMasterSubjects && allMasterSubjects.length > 0) {
+      setFetchedMasterSubjects(allMasterSubjects);
+      return;
+    }
+    let isMounted = true;
+    authFetch('/api/v1/academic-master/subjects')
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (isMounted && json?.data) {
+          setFetchedMasterSubjects(json.data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch subjects directly in TeacherAllocation:', err));
+    return () => { isMounted = false; };
+  }, [allMasterSubjects, authFetch]);
+
+  const masterList = useMemo(() => {
+    return (allMasterSubjects && allMasterSubjects.length > 0) ? allMasterSubjects : fetchedMasterSubjects;
+  }, [allMasterSubjects, fetchedMasterSubjects]);
   
   // Local state to track manually added divisions (e.g. before any student or teacher is added)
   const [manualDivisions, setManualDivisions] = useState<string[]>([]);
@@ -37,44 +60,57 @@ export const TeacherAllocationDashboard: React.FC = () => {
     return getActiveStandards(feeStructures, activeYear?.name, medium);
   }, [feeStructures, activeYear?.name, medium]);
 
-  // 1. Get Curriculum Subjects for selected class; fallback to all master subjects
+  // 1. Get Curriculum Subjects for selected class
   const classCurriculum = curriculums.find(c => 
     c.academicYearId === activeYear?._id && 
     c.standard === standard && 
     c.medium === medium
   );
   
-  // Combine curriculum subjects, existing allocated subjects, and master subjects
+  // Combine: 1. Existing allocated subjects for this class
+  //          2. Curriculum mapped subjects for this class
+  //          3. ALL Master Subjects from Subject Master (so teachers can be allocated immediately!)
   const subjects = useMemo(() => {
     if (!standard || !medium) return [];
     const map = new Map<string, any>();
 
-    // A. Curriculum mapped subjects
-    if (classCurriculum?.subjects && classCurriculum.subjects.length > 0) {
-      classCurriculum.subjects.forEach((s: any) => {
-        if (s && s._id) map.set(s._id, s);
-      });
-    }
-
-    // B. Any subject that already has an allocation in this class
+    // A. Any subject that already has an allocation in this class
     teacherAllocations.forEach(a => {
       if (a.academicYearId === activeYear?._id && a.standard === standard && a.medium === medium && a.subjectId) {
-        const sObj = typeof a.subjectId === 'object' ? a.subjectId : allMasterSubjects?.find((s: any) => s._id === a.subjectId);
+        const sId = typeof a.subjectId === 'object' ? a.subjectId._id : a.subjectId;
+        const sObj = typeof a.subjectId === 'object' && a.subjectId.subjectName
+          ? a.subjectId
+          : masterList.find((s: any) => s._id === sId) || { _id: sId, subjectName: 'Unknown Subject', type: 'Theory' };
         if (sObj && sObj._id && !map.has(sObj._id)) {
           map.set(sObj._id, sObj);
         }
       }
     });
 
-    // C. Fallback: if no curriculum mapped, automatically load from all master subjects!
-    if (map.size === 0 && allMasterSubjects && allMasterSubjects.length > 0) {
-      allMasterSubjects.forEach((s: any) => {
-        if (s && s._id) map.set(s._id, s);
+    // B. Curriculum mapped subjects
+    if (classCurriculum?.subjects && classCurriculum.subjects.length > 0) {
+      classCurriculum.subjects.forEach((s: any) => {
+        const sId = typeof s === 'object' ? s._id : s;
+        const sObj = typeof s === 'object' && s.subjectName
+          ? s
+          : masterList.find((m: any) => m._id === sId);
+        if (sObj && sObj._id && !map.has(sObj._id)) {
+          map.set(sObj._id, sObj);
+        }
+      });
+    }
+
+    // C. Always include ALL master subjects so every subject can be allocated to teachers directly!
+    if (masterList && masterList.length > 0) {
+      masterList.forEach((s: any) => {
+        if (s && s._id && !map.has(s._id)) {
+          map.set(s._id, s);
+        }
       });
     }
 
     return Array.from(map.values());
-  }, [classCurriculum, teacherAllocations, allMasterSubjects, activeYear?._id, standard, medium]);
+  }, [classCurriculum, teacherAllocations, masterList, activeYear?._id, standard, medium]);
 
   // 2. Derive existing divisions (default to 'A' if empty)
   const divisions = useMemo(() => {

@@ -45,6 +45,29 @@ export const Timetable: React.FC = () => {
   const [periods, setPeriods] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fetchedMasterSubjects, setFetchedMasterSubjects] = useState<any[]>([]);
+
+  // Direct fetch fallback in case store subjects list is empty or pending
+  React.useEffect(() => {
+    if (allMasterSubjects && allMasterSubjects.length > 0) {
+      setFetchedMasterSubjects(allMasterSubjects);
+      return;
+    }
+    let isMounted = true;
+    authFetch('/api/v1/academic-master/subjects')
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (isMounted && json?.data) {
+          setFetchedMasterSubjects(json.data);
+        }
+      })
+      .catch(err => console.error('Failed to fetch subjects directly in Timetable:', err));
+    return () => { isMounted = false; };
+  }, [allMasterSubjects, authFetch]);
+
+  const masterList = React.useMemo(() => {
+    return (allMasterSubjects && allMasterSubjects.length > 0) ? allMasterSubjects : fetchedMasterSubjects;
+  }, [allMasterSubjects, fetchedMasterSubjects]);
 
   const activeStandards = React.useMemo(() => {
     return getActiveStandards(feeStructures, activeYear?.name, undefined); // Medium can change, we might just pass selectedMedium if we want, or leave undefined to get all
@@ -121,16 +144,19 @@ export const Timetable: React.FC = () => {
   }, [activeYear, teacherAllocations, selectedStandard, selectedDivision, selectedMedium]);
 
   // Derived subjects for the form:
-  // Combines: 1. Subjects allocated to this class in teacherAllocations
+  // Combines: 1. Subjects allocated to this class in teacherAllocations (PRIORITY #1)
   //           2. Subjects in curriculum mapping
-  //           3. All master subjects (if unmapped, so user never has to write manually!)
+  //           3. All master subjects (so user is never blocked from assigning any subject)
   const formSubjects = React.useMemo(() => {
     if (!activeYear || !selectedStandard || !selectedMedium) return [];
     const map = new Map<string, any>();
 
     // 1. Subjects that have been allocated to teachers for this class
     classAllocations.forEach(a => {
-      const sObj = typeof a.subjectId === 'object' ? a.subjectId : allMasterSubjects?.find((s: any) => s._id === a.subjectId);
+      const sId = typeof a.subjectId === 'object' ? a.subjectId?._id : a.subjectId;
+      const sObj = typeof a.subjectId === 'object' && a.subjectId.subjectName
+        ? a.subjectId
+        : masterList.find((s: any) => s._id === sId);
       if (sObj && sObj._id) {
         map.set(sObj._id, sObj);
       }
@@ -143,26 +169,32 @@ export const Timetable: React.FC = () => {
       c.medium === selectedMedium
     );
     (curr?.subjects || []).forEach((s: any) => {
-      if (s && s._id && !map.has(s._id)) {
-        map.set(s._id, s);
+      const sId = typeof s === 'object' ? s._id : s;
+      const sObj = typeof s === 'object' && s.subjectName
+        ? s
+        : masterList.find((m: any) => m._id === sId);
+      if (sObj && sObj._id && !map.has(sObj._id)) {
+        map.set(sObj._id, sObj);
       }
     });
 
-    // 3. Fallback to all master subjects if none mapped
-    if (map.size === 0 && allMasterSubjects && allMasterSubjects.length > 0) {
-      allMasterSubjects.forEach((s: any) => {
-        if (s && s._id) map.set(s._id, s);
+    // 3. Always include all other master subjects
+    if (masterList && masterList.length > 0) {
+      masterList.forEach((s: any) => {
+        if (s && s._id && !map.has(s._id)) {
+          map.set(s._id, s);
+        }
       });
     }
 
     return Array.from(map.values());
-  }, [activeYear, selectedStandard, selectedDivision, selectedMedium, classAllocations, curriculums, allMasterSubjects]);
+  }, [activeYear, selectedStandard, selectedDivision, selectedMedium, classAllocations, curriculums, masterList]);
 
   const getAllocatedTeacherForSubject = (subjectId: string) => {
     if (!subjectId) return null;
     const alloc = classAllocations.find(a => {
       const sId = typeof a.subjectId === 'object' ? a.subjectId?._id : a.subjectId;
-      return sId === subjectId;
+      return sId?.toString() === subjectId?.toString();
     });
     if (!alloc) return null;
     return typeof alloc.teacherId === 'object' ? alloc.teacherId : teachers.find(t => t._id === alloc.teacherId);

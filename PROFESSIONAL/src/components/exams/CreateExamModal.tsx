@@ -10,7 +10,7 @@ interface CreateExamModalProps {
 }
 
 export const CreateExamModal: React.FC<CreateExamModalProps> = ({ isOpen, onClose, onExamCreated }) => {
-  const { academicYears, curriculums, authFetch, feeStructures } = useApp();
+  const { academicYears, curriculums, authFetch, feeStructures, teacherAllocations = [], subjects: masterSubjects = [] } = useApp();
   const activeYear = academicYears.find(y => y.isActive) || academicYears[0];
 
   const [mode, setMode] = useState<'FINAL' | 'WEEKLY'>('FINAL');
@@ -47,13 +47,36 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({ isOpen, onClos
 
   const availableSubjects = useMemo(() => {
     if (!activeYear || !standard || !medium) return [];
+    const map = new Map<string, any>();
+
+    // 1. Allocated subjects for this standard/medium
+    teacherAllocations.forEach(a => {
+      if (a.academicYearId === activeYear._id && a.standard === standard && a.medium === medium && a.subjectId) {
+        const sObj = typeof a.subjectId === 'object' ? a.subjectId : masterSubjects.find((s: any) => s._id === a.subjectId);
+        if (sObj && sObj._id) map.set(sObj._id, sObj);
+      }
+    });
+
+    // 2. Curriculum subjects
     const curr = curriculums.find(c =>
       c.academicYearId === activeYear._id &&
       c.standard === standard &&
       c.medium === medium
     );
-    return curr?.subjects || [];
-  }, [activeYear, curriculums, standard, medium]);
+    (curr?.subjects || []).forEach((s: any) => {
+      const sObj = typeof s === 'object' ? s : masterSubjects.find((sub: any) => sub._id === s);
+      if (sObj && sObj._id && !map.has(sObj._id)) map.set(sObj._id, sObj);
+    });
+
+    // 3. Fallback to all master subjects
+    if (map.size === 0 && masterSubjects && masterSubjects.length > 0) {
+      masterSubjects.forEach((s: any) => {
+        if (s && s._id) map.set(s._id, s);
+      });
+    }
+
+    return Array.from(map.values());
+  }, [activeYear, curriculums, teacherAllocations, masterSubjects, standard, medium]);
 
   if (!isOpen) return null;
 

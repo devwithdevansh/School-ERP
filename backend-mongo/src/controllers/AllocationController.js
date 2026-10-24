@@ -23,7 +23,10 @@ class AllocationController {
         subjects: [subjectId]
       });
     } else {
-      const subjectExists = curriculum.subjects.some(id => id.toString() === subjectId);
+      const subjectExists = curriculum.subjects.some(id => {
+        const rawId = typeof id === 'object' && id?._id ? id._id.toString() : id.toString();
+        return rawId === subjectId.toString();
+      });
       if (!subjectExists) {
         curriculum.subjects.push(subjectId);
         await curriculum.save();
