@@ -1,6 +1,8 @@
 class ExamResultModel {
   final String id;
+  final String examId;
   final String examName;
+  final String examCategory;
   final String examType;
   final String subjectName;
   final num maxMarks;
@@ -8,10 +10,13 @@ class ExamResultModel {
   final num? marksObtained;
   final String? gradeObtained;
   final String? remarks;
+  final DateTime? date;
 
   const ExamResultModel({
     required this.id,
+    this.examId = '',
     required this.examName,
+    this.examCategory = 'FINAL',
     required this.examType,
     required this.subjectName,
     required this.maxMarks,
@@ -19,6 +24,7 @@ class ExamResultModel {
     this.marksObtained,
     this.gradeObtained,
     this.remarks,
+    this.date,
   });
 
   bool get isPass => (marksObtained ?? 0) >= passingMarks;
@@ -26,12 +32,39 @@ class ExamResultModel {
   /// Graded by a letter grade rather than marks — has no numeric total.
   bool get isGradeBased => examType.toLowerCase() == 'grades';
 
+  /// Whether this is a weekly test, quick quiz, or periodic assessment
+  bool get isWeekly =>
+      examCategory.toUpperCase() == 'WEEKLY' ||
+      examName.toLowerCase().contains('weekly') ||
+      examName.toLowerCase().contains('quick') ||
+      examName.toLowerCase().contains('quiz');
+
   factory ExamResultModel.fromJson(Map<String, dynamic> json) {
     final exam = json['examId'];
     final subject = json['subjectId'];
+
+    String examIdStr = '';
+    String examNameStr = 'Exam';
+    String examCategoryStr = 'FINAL';
+
+    if (exam is Map) {
+      examIdStr = (exam['_id'] ?? '').toString();
+      examNameStr = exam['examName'] as String? ?? 'Exam';
+      examCategoryStr = (exam['type'] as String? ?? 'FINAL').toUpperCase();
+    } else if (exam != null) {
+      examIdStr = exam.toString();
+    }
+
+    DateTime? createdAt;
+    if (json['createdAt'] != null) {
+      createdAt = DateTime.tryParse(json['createdAt'].toString());
+    }
+
     return ExamResultModel(
       id: (json['_id'] ?? '').toString(),
-      examName: exam is Map ? (exam['examName'] as String? ?? 'Exam') : 'Exam',
+      examId: examIdStr,
+      examName: examNameStr,
+      examCategory: examCategoryStr,
       examType: json['gradingSystem'] as String? ?? 'Marks',
       subjectName: subject is Map ? (subject['subjectName'] as String? ?? 'Subject') : 'Subject',
       maxMarks: json['maxMarks'] as num? ?? 100,
@@ -39,6 +72,7 @@ class ExamResultModel {
       marksObtained: json['marksObtained'] as num?,
       gradeObtained: json['gradeObtained'] as String?,
       remarks: json['remarks'] as String?,
+      date: createdAt,
     );
   }
 }
