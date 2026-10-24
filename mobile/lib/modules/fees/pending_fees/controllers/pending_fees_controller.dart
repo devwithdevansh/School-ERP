@@ -684,8 +684,12 @@ class PendingFeesController extends GetxController
       final prefs = await SharedPreferences.getInstance();
       final pNumber = prefs.getString(StorageKeys.phone) ?? '';
       
+      final razorpayKey = Env.get('RAZORPAY_KEY_ID').isNotEmpty
+          ? Env.get('RAZORPAY_KEY_ID')
+          : 'rzp_test_TrlFSuviSl8lE2';
+
       var options = {
-        'key': Env.get('RAZORPAY_KEY_ID'),
+        'key': razorpayKey,
         'amount': (totalAmount * 100).round(),
         'name': SchoolBrand.appName,
         'description': 'Fee Payment',

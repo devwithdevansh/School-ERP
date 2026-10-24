@@ -255,7 +255,7 @@ export const StudentView: React.FC<StudentViewProps> = ({ onPrint }) => {
 
       // Step 2: Open Razorpay Checkout modal
       const options = {
-        key: orderData.key_id || orderData.key,
+        key: orderData.key_id || orderData.key || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TrlFSuviSl8lE2',
         amount: orderData.amount, // in paisa
         currency: orderData.currency || 'INR',
         name: client?.name || brand.schoolName,
