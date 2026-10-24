@@ -67,7 +67,7 @@ export const ReportCardsTab: React.FC<ReportCardsTabProps> = ({ exam }) => {
 
         const attendance = r?.attendance || 'PRESENT';
         const marks = attendance === 'PRESENT' && r?.marksObtained != null ? Number(r.marksObtained) : null;
-        const grade = r?.gradeObtained || (marks != null && sub.maxMarks ? getGrade(marks, sub.maxMarks) : '-');
+        const grade = r?.gradeObtained || (attendance === 'ABSENT' ? 'AB' : (marks != null && sub.maxMarks ? getGrade(marks, sub.maxMarks) : '-'));
 
         if (attendance === 'PRESENT' && marks != null) {
           totalObtained += marks;
@@ -92,7 +92,7 @@ export const ReportCardsTab: React.FC<ReportCardsTabProps> = ({ exam }) => {
       });
 
       const percentage = maxTotal > 0 ? Math.round((totalObtained / maxTotal) * 1000) / 10 : 0;
-      const overallGrade = getGrade(totalObtained, maxTotal);
+      const overallGrade = allAbsent && !anyMark ? 'AB' : getGrade(totalObtained, maxTotal);
       const result = allAbsent && !anyMark ? 'ABSENT' : hasFailed || percentage < 33 ? 'FAIL' : 'PASS';
 
       return {

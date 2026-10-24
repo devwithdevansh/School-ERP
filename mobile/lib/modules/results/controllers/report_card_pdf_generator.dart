@@ -353,7 +353,11 @@ class ReportCardPdfGenerator {
                           pw.Text('RESULT STATUS', style: pw.TextStyle(color: slateLight, fontSize: 8, letterSpacing: 0.8)),
                           pw.SizedBox(height: 2),
                           pw.Text(
-                            passed ? 'PASSED' : 'NEEDS IMPROVEMENT',
+                            passed
+                                ? 'PASSED'
+                                : (subjects.isNotEmpty && subjects.every((s) => s.isAbsent)
+                                    ? 'ABSENT'
+                                    : 'NEEDS IMPROVEMENT'),
                             style: pw.TextStyle(
                               color: passed ? secondaryColor : failColor,
                               fontSize: 11,

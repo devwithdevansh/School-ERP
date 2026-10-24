@@ -129,6 +129,7 @@ export const ResultsAnalyticsTab: React.FC<ResultsAnalyticsTabProps> = ({ exam }
 
       if (card.allAbsent && !card.anyMarkPresent) {
         card.result = 'ABSENT';
+        card.grade = 'AB';
       } else if (card.hasFailedSubject || card.percentage < 33) {
         card.result = 'FAIL';
       } else {

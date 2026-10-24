@@ -325,6 +325,80 @@ class ExamController {
       return obj;
     });
 
+    // Also include any class exams where this student was marked absent in attendance or exam is published
+    const existingPairs = new Set(
+      results.map(r => {
+        const eId = (r.examId?._id || r.examId)?.toString();
+        const sId = (r.subjectId?._id || r.subjectId)?.toString();
+        return `${eId}_${sId}`;
+      })
+    );
+
+    const activeYear = await AcademicYear.findOne({ isActive: true });
+    const classExams = await Exam.find({
+      standard: student.standard,
+      medium: student.medium,
+      status: { $in: ['PUBLISHED', 'READY', 'LOCKED', 'MARKS_ENTRY'] },
+      ...(activeYear ? { academicYearId: activeYear._id } : {}),
+      $or: [
+        { divisions: { $size: 0 } },
+        { divisions: student.division },
+        { divisions: student.division.toUpperCase() }
+      ]
+    }).populate('subjects.subjectId', 'subjectName subjectCode');
+
+    for (const exam of classExams) {
+      for (const sub of (exam.subjects || [])) {
+        const subIdStr = (sub.subjectId?._id || sub.subjectId)?.toString();
+        const pairKey = `${exam._id.toString()}_${subIdStr}`;
+        if (existingPairs.has(pairKey)) continue;
+
+        let isAbsentOnDate = false;
+        if (sub.examDate) {
+          const d = new Date(sub.examDate);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          if (absentDateKeys.has(key)) {
+            isAbsentOnDate = true;
+          }
+        }
+
+        if (isAbsentOnDate || exam.isPublished || exam.status === 'PUBLISHED' || exam.status === 'LOCKED') {
+          augmented.push({
+            _id: `absent-${exam._id}-${subIdStr}`,
+            examId: {
+              _id: exam._id,
+              examName: exam.examName,
+              type: exam.type,
+              status: exam.status,
+              isPublished: exam.isPublished,
+              maxMarks: sub.maxMarks != null ? Number(sub.maxMarks) : 100,
+              passingMarks: sub.passingMarks != null ? Number(sub.passingMarks) : 35,
+              academicYearId: exam.academicYearId,
+              standard: exam.standard,
+              medium: exam.medium,
+              subjects: exam.subjects
+            },
+            subjectId: {
+              _id: sub.subjectId?._id || sub.subjectId,
+              subjectName: sub.subjectId?.subjectName || 'Subject',
+              subjectCode: sub.subjectId?.subjectCode || ''
+            },
+            studentId: student._id,
+            attendance: 'ABSENT',
+            isAbsentInDailyAttendance: isAbsentOnDate,
+            marksObtained: null,
+            gradeObtained: null,
+            maxMarks: sub.maxMarks != null ? Number(sub.maxMarks) : 100,
+            passingMarks: sub.passingMarks != null ? Number(sub.passingMarks) : 35,
+            gradingSystem: sub.gradingSystem || 'Marks',
+            remarks: isAbsentOnDate ? 'Marked absent in daily attendance' : 'Absent for exam',
+            createdAt: exam.publishedAt || exam.createdAt
+          });
+          existingPairs.add(pairKey);
+        }
+      }
+    }
+
     sendResponse(res, 200, augmented);
   });
 

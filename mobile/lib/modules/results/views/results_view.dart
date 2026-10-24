@@ -18,24 +18,40 @@ class _ExamSummary {
 
   _ExamSummary(this.name, this.subjects, {this.category = 'FINAL'});
 
-  List<ExamResultModel> get _counted =>
-      subjects.where((s) => !s.isGradeBased && s.marksObtained != null).toList();
+  List<ExamResultModel> get _markSubjects =>
+      subjects.where((s) => !s.isGradeBased).toList();
 
-  num get total => _counted.fold<num>(0, (a, s) => a + s.marksObtained!);
-  num get max => _counted.fold<num>(0, (a, s) => a + s.maxMarks);
-  bool get hasMarks => _counted.isNotEmpty;
-  double get percent => max > 0 ? total / max * 100 : 0;
-  List<ExamResultModel> get failed => _counted.where((s) => !s.isPass).toList();
-  bool get passed => hasMarks && failed.isEmpty;
+  List<ExamResultModel> get _evaluatedSubjects =>
+      _markSubjects.where((s) => s.marksObtained != null || s.isAbsent).toList();
+
+  num get total => _evaluatedSubjects.fold<num>(
+      0, (a, s) => a + (s.isAbsent ? 0 : (s.marksObtained ?? 0)));
+
+  num get max => _evaluatedSubjects.fold<num>(0, (a, s) => a + s.maxMarks);
+
+  bool get hasMarks => _evaluatedSubjects.isNotEmpty;
+  bool get allAbsent => subjects.isNotEmpty && subjects.every((s) => s.isAbsent);
+  bool get anyAbsent => subjects.any((s) => s.isAbsent);
+
+  double get percent => max > 0 ? (total / max * 100) : 0;
+
+  List<ExamResultModel> get failed =>
+      _evaluatedSubjects.where((s) => !s.isPass).toList();
+
+  bool get passed => hasMarks && !anyAbsent && failed.isEmpty;
 
   String get grade {
+    if (allAbsent) return 'AB';
+    if (!hasMarks) return '—';
     final p = percent;
     return p >= 90 ? 'A+' : (p >= 80 ? 'A' : (p >= 70 ? 'B+' : (p >= 60 ? 'B' : 'C')));
   }
 
-  Color get tone => !hasMarks
-      ? AppColors.inkMid
-      : (!passed ? AppColors.red : (percent >= 75 ? AppColors.teal : AppColors.accentDeep));
+  Color get tone {
+    if (allAbsent || anyAbsent || !passed) return AppColors.red;
+    if (!hasMarks) return AppColors.inkMid;
+    return percent >= 75 ? AppColors.teal : AppColors.accentDeep;
+  }
 
   /// Weekly tests, periodic quizzes, or single-subject quick tests
   bool get isWeekly =>
@@ -429,14 +445,17 @@ class _WeeklyTestCard extends StatelessWidget {
     final r = result;
     final marks = r.marksObtained;
     final isPass = r.isPass;
+    final isAbsent = r.isAbsent;
     final hasMarks = marks != null;
-    final pct = (hasMarks && r.maxMarks > 0) ? (marks / r.maxMarks) : 0.0;
+    final pct = (marks != null && r.maxMarks > 0) ? (marks / r.maxMarks) : 0.0;
 
     final dateStr = r.date != null ? DateFormat('dd MMM yyyy').format(r.date!) : null;
 
-    final color = !hasMarks
-        ? AppColors.inkLight
-        : (!isPass ? AppColors.red : (pct >= 0.75 ? AppColors.teal : AppColors.accentDeep));
+    final color = isAbsent
+        ? AppColors.red
+        : (!hasMarks
+            ? AppColors.inkLight
+            : (!isPass ? AppColors.red : (pct >= 0.75 ? AppColors.teal : AppColors.accentDeep)));
 
     return SurfaceCard(
       padding: const EdgeInsets.all(Space.md),
@@ -519,8 +538,39 @@ class _WeeklyTestCard extends StatelessWidget {
 
           // Score and progress
           if (r.isAbsent) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text('ABSENT', style: AppTextStyles.monoMedium.copyWith(fontSize: 20, color: AppColors.red, fontWeight: FontWeight.w800)),
+                    Text(' / ${_fmtNum(r.maxMarks)}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.inkLight)),
+                    const SizedBox(width: 8),
+                    Text('(${r.passingMarks} to pass)', style: AppTextStyles.bodySmall.copyWith(fontSize: 10.5)),
+                  ],
+                ),
+                Text(
+                  '0%',
+                  style: AppTextStyles.monoMedium.copyWith(color: AppColors.red, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: 0.0,
+                minHeight: 7,
+                backgroundColor: AppColors.red.withValues(alpha: 0.15),
+                valueColor: AlwaysStoppedAnimation(AppColors.red),
+              ),
+            ),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
                 color: AppColors.red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
@@ -528,11 +578,11 @@ class _WeeklyTestCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.person_off_rounded, size: 16, color: AppColors.red),
+                  Icon(Icons.person_off_rounded, size: 15, color: AppColors.red),
                   const SizedBox(width: 8),
                   Text(
-                    'Student was Absent on Exam Day',
-                    style: AppTextStyles.labelLarge.copyWith(color: AppColors.red, fontWeight: FontWeight.bold),
+                    'Marked Absent on Exam Day (0 Marks Counted)',
+                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.red, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -792,16 +842,20 @@ class _ReportCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          s.passed ? Icons.verified_rounded : Icons.info_outline_rounded,
+                          s.allAbsent
+                              ? Icons.event_busy_rounded
+                              : (s.passed ? Icons.verified_rounded : Icons.info_outline_rounded),
                           size: 18,
                           color: s.passed ? AppColors.teal : AppColors.red,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            s.passed
-                                ? 'Result: PASSED'
-                                : 'Below pass marks in ${s.failed.map((f) => f.subjectName).join(', ')}',
+                            s.allAbsent
+                                ? 'Result: ABSENT'
+                                : (s.passed
+                                    ? 'Result: PASSED'
+                                    : 'Below pass marks in ${s.failed.map((f) => f.subjectName).join(', ')}'),
                             style: AppTextStyles.labelLarge.copyWith(color: s.passed ? AppColors.teal : AppColors.red),
                             textAlign: TextAlign.center,
                           ),
