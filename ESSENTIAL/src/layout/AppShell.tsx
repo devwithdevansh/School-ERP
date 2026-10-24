@@ -53,7 +53,44 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const nav: typeof navigate = (m, s) => { navigate(m, s); setDrawer(false); };
   const initials = currentUser.name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
-  const sidebars = mode === 'split' ? (
+  const isSingleModule = modules.length === 1;
+
+  const sidebars = isSingleModule ? (
+    <aside className="flex h-full min-h-0 w-64 shrink-0 flex-col border-r border-white/5 bg-[var(--color-side)] select-none">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5 shrink-0">
+        <img src={brand.logo} alt="" className="h-10 w-10 rounded-xl ring-1 ring-white/10 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-white">{title}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{activeModule.label}</p>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              {brand.edition}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="side-scroll min-h-0 flex-1 overflow-y-auto px-3 py-4">
+        <NavList moduleId={activeModule.id} groups={activeModule.groups} currentScreen={currentScreen} ctx={ctx} onNavigate={nav} />
+      </div>
+      <div className="border-t border-white/5 p-3.5 flex items-center gap-2.5 shrink-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-xs font-black text-slate-900 shadow-sm">
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-bold text-white">{currentUser.name}</p>
+          <p className="truncate text-[10px] text-slate-400">{currentUser.email || roleLabel}</p>
+        </div>
+        <button
+          type="button"
+          onClick={logout}
+          title="Sign out"
+          className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-rose-300 transition-colors cursor-pointer"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
+    </aside>
+  ) : mode === 'split' ? (
     <div className="flex h-full min-h-0">
       <IconRail modules={modules} activeId={activeModule.id} onSwitch={switchModule} onMerge={() => setMode('merged')} onLogout={logout} userInitials={initials} />
       <aside className="flex h-full min-h-0 w-60 shrink-0 flex-col border-l border-white/5 bg-[var(--color-side)]">

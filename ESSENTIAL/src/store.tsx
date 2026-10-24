@@ -43,8 +43,11 @@ export type ScreenType =
   | 'staff-leave'
   | 'teacher-attendance'
   | 'teacher-timetable'
+  | 'student-dashboard'
   | 'student-fees'
   | 'student-receipts'
+  | 'student-structure'
+  | 'student-helpdesk'
   | 'org-clients'
   | 'org-licences';
 
@@ -63,6 +66,9 @@ export interface ClientInfo {
   name: string;
   code: string;
   enabledModules: string[];
+  contactNumber?: string;
+  email?: string;
+  address?: string;
 }
 
 export interface AcademicYearData {
@@ -453,7 +459,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       try {
         const u = JSON.parse(saved);
         if (u.role === 'TEACHER') return 'teacher-attendance';
-        if (u.role === 'parent') return 'student-fees';
+        if (u.role === 'parent') return 'student-dashboard';
         if (u.role === 'ORG_ADMIN') return 'org-clients';
       } catch {}
       return 'dashboard';
@@ -962,7 +968,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setScreen('teacher-attendance');
       } else if (userObj.role === 'parent') {
         setActivePortal('STUDENT');
-        setScreen('student-fees');
+        setScreen('student-dashboard');
       } else {
         setScreen(userObj.role === 'ORG_ADMIN' ? 'org-clients' : 'dashboard');
       }

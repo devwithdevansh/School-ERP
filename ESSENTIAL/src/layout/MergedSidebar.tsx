@@ -85,64 +85,76 @@ export const MergedSidebar: React.FC<Props> = ({
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onSplit}
-          title="Switch to split layout (rail + menu)"
-          className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors shrink-0"
-        >
-          <Columns2 className="h-4 w-4" />
-        </button>
+        {modules.length > 1 && (
+          <button
+            type="button"
+            onClick={onSplit}
+            title="Switch to split layout (rail + menu)"
+            className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors shrink-0"
+          >
+            <Columns2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Scrollable Navigation Options with custom scroll styling */}
       <div className="side-scroll min-h-0 flex-1 overflow-y-auto px-3 py-3 space-y-1.5">
-        {modules.map((m) => {
-          const Icon = m.icon;
-          const expanded = isOpen(m.id);
-          const active = m.id === activeId;
-          return (
-            <div
-              key={m.id}
-              className={`rounded-2xl transition-colors ${expanded ? 'bg-white/[0.04]' : ''}`}
-            >
-              <button
-                type="button"
-                onClick={() => setOpen((o) => ({ ...o, [m.id]: !isOpen(m.id) }))}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/5 ${
-                  active ? 'text-white' : 'text-slate-300'
-                }`}
+        {modules.length === 1 ? (
+          <NavList
+            moduleId={modules[0].id}
+            groups={modules[0].groups}
+            currentScreen={currentScreen}
+            ctx={ctx}
+            onNavigate={onNavigate}
+          />
+        ) : (
+          modules.map((m) => {
+            const Icon = m.icon;
+            const expanded = isOpen(m.id);
+            const active = m.id === activeId;
+            return (
+              <div
+                key={m.id}
+                className={`rounded-2xl transition-colors ${expanded ? 'bg-white/[0.04]' : ''}`}
               >
-                <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all shrink-0 ${
-                    active
-                      ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-900/50'
-                      : 'bg-white/5 text-slate-400'
+                <button
+                  type="button"
+                  onClick={() => setOpen((o) => ({ ...o, [m.id]: !isOpen(m.id) }))}
+                  className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/5 ${
+                    active ? 'text-white' : 'text-slate-300'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="flex-1 text-left truncate">{m.label}</span>
-                <ChevronDown
-                  className={`h-4 w-4 text-slate-500 transition-transform duration-200 shrink-0 ${
-                    expanded ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-              {expanded && (
-                <div className="px-2 pb-3 pt-1">
-                  <NavList
-                    moduleId={m.id}
-                    groups={m.groups}
-                    currentScreen={active ? currentScreen : undefined}
-                    ctx={ctx}
-                    onNavigate={onNavigate}
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all shrink-0 ${
+                      active
+                        ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-900/50'
+                        : 'bg-white/5 text-slate-400'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1 text-left truncate">{m.label}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-slate-500 transition-transform duration-200 shrink-0 ${
+                      expanded ? 'rotate-180' : ''
+                    }`}
                   />
-                </div>
-              )}
-            </div>
-          );
-        })}
+                </button>
+                {expanded && (
+                  <div className="px-2 pb-3 pt-1">
+                    <NavList
+                      moduleId={m.id}
+                      groups={m.groups}
+                      currentScreen={active ? currentScreen : undefined}
+                      ctx={ctx}
+                      onNavigate={onNavigate}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* User Profile Bar & Layout Switch Footer */}

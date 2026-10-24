@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import {
   LayoutDashboard, CreditCard, AlertTriangle, Layers, Users, FileSpreadsheet, MessageSquare, Bell,
   Smartphone, Receipt, Activity, BarChart3, Settings, Wallet, BookOpen, UserCheck, CalendarDays,
-  ClipboardList, Award, ShieldCheck, GraduationCap, IndianRupee, Building2, ToggleRight,
+  ClipboardList, Award, ShieldCheck, GraduationCap, IndianRupee, Building2, ToggleRight, HelpCircle
 } from '../components/icons';
 import type { ScreenType } from '../store';
 import { type PermissionId, hasPermission } from './permissionsRegistry';
@@ -79,7 +79,7 @@ export const NAV_MODULES: NavModule[] = [
     short: 'ERP',
     icon: GraduationCap,
     // licensed for the school AND (optionally, via SUPER_ADMIN_EMAILS) restricted to super admins
-    isVisible: (c) => !c.isOrgAdmin && c.enabledModules.includes('ERP') && c.isSuperAdmin,
+    isVisible: (c) => !c.isOrgAdmin && c.role !== 'parent' && c.enabledModules.includes('ERP') && c.isSuperAdmin,
     groups: [
       { title: 'Overview', items: [{ id: 'dashboard', label: 'ERP Dashboard', icon: LayoutDashboard }] },
       { title: 'Students', items: [
@@ -114,7 +114,8 @@ export const NAV_MODULES: NavModule[] = [
     label: 'Fees',
     short: 'Fees',
     icon: IndianRupee,
-    isVisible: (c) => !c.isOrgAdmin && c.role !== 'TEACHER' && c.enabledModules.includes('FEES'),
+    // Visible strictly to school staff/admin (NOT teachers, NOT parents)
+    isVisible: (c) => !c.isOrgAdmin && c.role !== 'TEACHER' && c.role !== 'parent' && c.enabledModules.includes('FEES'),
     groups: [
       { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'SCREEN_DASHBOARD' }] },
       { title: 'Fees', items: [
@@ -167,14 +168,22 @@ export const NAV_MODULES: NavModule[] = [
     label: 'Student Portal',
     short: 'Student',
     icon: GraduationCap,
-    // Strictly role-based: visible ONLY to users with the parent role (Essential edition only)
+    // Strictly role-based: visible ONLY to parents/students in Essential edition
     isVisible: (c) => !c.isOrgAdmin && c.role === 'parent',
     groups: [
       {
         title: 'Fee Services',
         items: [
-          { id: 'student-fees', label: 'Pay Fees', icon: CreditCard },
+          { id: 'student-dashboard', label: 'Overview & Dues', icon: LayoutDashboard },
+          { id: 'student-fees', label: 'Pay Fees Online', icon: CreditCard },
           { id: 'student-receipts', label: 'Payment Receipts', icon: Receipt },
+        ],
+      },
+      {
+        title: 'School & Fee Info',
+        items: [
+          { id: 'student-structure', label: 'Fee Schedule', icon: Layers },
+          { id: 'student-helpdesk', label: 'Accounts Helpdesk', icon: Building2 },
         ],
       },
     ],
