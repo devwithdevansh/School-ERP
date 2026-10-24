@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../models/attendance_day_model.dart';
+import '../models/attendance_register_model.dart';
 import '../../core/network/api_client.dart';
 
 class AttendanceRepository {
@@ -93,5 +94,30 @@ class AttendanceRepository {
       print('AttendanceRepository.saveClassAttendance error: $e');
       return (success: false, error: null);
     }
+  }
+
+  /// Class register matrix & day-wise absentees history for teachers and admins
+  Future<AttendanceRegisterModel?> getAttendanceRegister({
+    required String standard,
+    required String division,
+    required String medium,
+    required int month,
+    required int year,
+  }) async {
+    try {
+      final response = await ApiClient.get(
+        '/attendance/register?standard=$standard&division=$division&medium=$medium&month=$month&year=$year',
+      );
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final dynamic raw = json['data'];
+        if (raw is Map<String, dynamic>) {
+          return AttendanceRegisterModel.fromJson(raw);
+        }
+      }
+    } catch (e) {
+      print('AttendanceRepository.getAttendanceRegister error: $e');
+    }
+    return null;
   }
 }

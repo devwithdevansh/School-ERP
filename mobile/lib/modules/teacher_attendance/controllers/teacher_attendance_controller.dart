@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/storage_keys.dart';
+import '../../../data/models/attendance_register_model.dart';
 import '../../../data/models/class_allocation_model.dart';
 import '../../../data/models/student_model.dart';
 import '../../../data/repositories/allocation_repository.dart';
@@ -29,6 +30,17 @@ class TeacherAttendanceController extends GetxController {
   final today = DateTime.now();
   String get dateKey =>
       '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Register state (History matrix & day-wise absentees log)
+  // ──────────────────────────────────────────────────────────────────────────
+  final activeTab = 'TODAY'.obs; // 'TODAY' or 'REGISTER'
+  final registerSubView = 'STUDENTS'.obs; // 'STUDENTS' or 'ABSENTEES'
+  final registerMonth = DateTime.now().obs;
+  final registerData = Rxn<AttendanceRegisterModel>();
+  final isLoadingRegister = false.obs;
+  final registerSearchQuery = ''.obs;
+  final registerOnlyAbsents = false.obs;
 
   @override
   void onInit() {
@@ -66,6 +78,9 @@ class TeacherAttendanceController extends GetxController {
   Future<void> selectClass(ClassAllocationModel cls) async {
     selectedClass.value = cls;
     await loadClass();
+    if (activeTab.value == 'REGISTER') {
+      await loadRegister();
+    }
   }
 
   Future<void> loadClass() async {
@@ -131,5 +146,57 @@ class TeacherAttendanceController extends GetxController {
     lastError = ok.error;
     if (ok.success) sheetStatus.value = 'SUBMITTED';
     return ok.success;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Register Actions
+  // ──────────────────────────────────────────────────────────────────────────
+  void setActiveTab(String tab) {
+    activeTab.value = tab;
+    if (tab == 'REGISTER' && registerData.value == null) {
+      loadRegister();
+    }
+  }
+
+  void setRegisterSubView(String view) {
+    registerSubView.value = view;
+  }
+
+  Future<void> changeRegisterMonth(int delta) async {
+    final current = registerMonth.value;
+    registerMonth.value = DateTime(current.year, current.month + delta);
+    await loadRegister();
+  }
+
+  Future<void> loadRegister() async {
+    final cls = selectedClass.value;
+    if (cls == null) return;
+    isLoadingRegister.value = true;
+    final dt = registerMonth.value;
+    final res = await _attendanceRepo.getAttendanceRegister(
+      standard: cls.standard,
+      division: cls.division,
+      medium: cls.medium,
+      month: dt.month,
+      year: dt.year,
+    );
+    registerData.value = res;
+    isLoadingRegister.value = false;
+  }
+
+  List<StudentRegisterRecord> get filteredRegisterStudents {
+    final data = registerData.value;
+    if (data == null) return [];
+    var list = data.register;
+    if (registerOnlyAbsents.value) {
+      list = list.where((s) => s.totalAbsent > 0).toList();
+    }
+    final q = registerSearchQuery.value.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      list = list.where((s) =>
+          s.studentName.toLowerCase().contains(q) ||
+          s.rollNo.toLowerCase().contains(q)).toList();
+    }
+    return list;
   }
 }
