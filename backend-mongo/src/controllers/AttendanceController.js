@@ -578,6 +578,161 @@ class AttendanceController {
       absentHistory: allAbsentDates,
     });
   });
+
+  /**
+   * POST /api/v1/attendance/seed-dummy
+   * Admin utility to generate realistic dummy attendance (P/A/L) for testing.
+   * Generates confirmed sheets for all active students from last month up to today.
+   */
+  static seedDummyAttendance = catchAsync(async (req, res) => {
+    const { startDate, endDate, presentRate = 0.90 } = req.body || {};
+
+    const now = new Date();
+    // Default start: 1st day of last month (e.g. Sept 1)
+    const defaultStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    defaultStart.setHours(0, 0, 0, 0);
+
+    // Default end: today (e.g. Oct 24)
+    const defaultEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    defaultEnd.setHours(0, 0, 0, 0);
+
+    const start = startDate ? toDay(startDate) : defaultStart;
+    const end = endDate ? toDay(endDate) : defaultEnd;
+
+    if (start > end) {
+      throw new AppError('startDate must be before or equal to endDate', 400);
+    }
+
+    const activeYear = (await AcademicYear.findOne({ isActive: true })) || (await AcademicYear.findOne());
+    const adminUser = req.user?._id || req.user?.id;
+
+    // Fetch all active students
+    const students = await Student.find({ isActive: { $ne: false } })
+      .select('_id studentName standard division medium rollNo isMigrated')
+      .sort({ rollNo: 1, studentName: 1 })
+      .lean();
+
+    if (students.length === 0) {
+      throw new AppError('No active students found to seed attendance for', 404);
+    }
+
+    // Group students by standard + division + medium
+    const classMap = new Map();
+    for (const st of students) {
+      const std = st.standard?.trim();
+      const div = st.division?.trim()?.toUpperCase();
+      const med = st.medium?.trim();
+      if (!std || !div || !med) continue;
+
+      const key = `${std}|${div}|${med}`;
+      if (!classMap.has(key)) {
+        classMap.set(key, { standard: std, division: div, medium: med, students: [] });
+      }
+      classMap.get(key).students.push(st);
+    }
+
+    // Get class teacher allocations
+    const allocations = activeYear
+      ? await ClassTeacherAllocation.find({ academicYearId: activeYear._id }).lean()
+      : [];
+    const teacherMap = new Map(
+      allocations.map((a) => [`${a.standard}|${String(a.division).toUpperCase()}|${a.medium}`, a.teacherId])
+    );
+
+    // Build array of dates (excluding Sundays)
+    const workingDates = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      if (cur.getDay() !== 0) { // 0 = Sunday
+        workingDates.push(new Date(cur));
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    const absentRemarks = [
+      'Sick',
+      'Fever',
+      'Family function',
+      'Out of town',
+      'Medical appointment',
+      'Urgent work',
+      null,
+      null,
+    ];
+
+    let totalSheets = 0;
+    let totalRecords = 0;
+
+    // Loop through each working day and each class
+    for (const d of workingDates) {
+      const sheetDate = toDay(d);
+
+      for (const [key, classInfo] of classMap.entries()) {
+        const teacherId = teacherMap.get(key) || adminUser;
+
+        const records = classInfo.students.map((st) => {
+          const rand = Math.random();
+          let status = 'PRESENT';
+          let remarks = null;
+
+          if (rand > presentRate) {
+            // ~80% of non-present are ABSENT, ~20% are LATE
+            if (Math.random() < 0.8) {
+              status = 'ABSENT';
+              remarks = absentRemarks[Math.floor(Math.random() * absentRemarks.length)];
+            } else {
+              status = 'LATE';
+              remarks = 'Traffic delay';
+            }
+          }
+
+          return {
+            studentId: st._id,
+            status,
+            remarks,
+            verifiedByAdmin: true,
+            verifiedAt: sheetDate,
+            verifiedBy: adminUser,
+            notifiedAt: status === 'ABSENT' || status === 'LATE' ? sheetDate : null,
+          };
+        });
+
+        await Attendance.findOneAndUpdate(
+          {
+            date: sheetDate,
+            standard: classInfo.standard,
+            division: classInfo.division,
+            medium: classInfo.medium,
+          },
+          {
+            $set: {
+              academicYearId: activeYear?._id || null,
+              teacherId,
+              records,
+              status: 'CONFIRMED',
+              submittedAt: sheetDate,
+              confirmedAt: sheetDate,
+              confirmedBy: adminUser,
+            },
+          },
+          { upsert: true, new: true, runValidators: true }
+        );
+
+        totalSheets += 1;
+        totalRecords += records.length;
+      }
+    }
+
+    sendResponse(res, 200, {
+      message: 'Dummy attendance generated successfully',
+      workingDaysCount: workingDates.length,
+      totalClasses: classMap.size,
+      totalSheets,
+      totalRecords,
+      startDate: start.toISOString().split('T')[0],
+      endDate: end.toISOString().split('T')[0],
+    });
+  });
 }
 
 export default AttendanceController;

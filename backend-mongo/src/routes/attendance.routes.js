@@ -20,6 +20,9 @@ router.post('/:id/confirm', authorize('ADMIN', 'STAFF'), AttendanceController.co
 router.get('/pending-absences', authorize('ADMIN', 'STAFF'), AttendanceController.getPendingAbsences);
 router.post('/:id/verify-absence', authorize('ADMIN', 'STAFF'), AttendanceController.verifyAbsence);
 
+// Dev / test dummy attendance generator
+router.post('/seed-dummy', authorize('ADMIN'), AttendanceController.seedDummyAttendance);
+
 router.route('/')
   .get(authorize('ADMIN', 'STAFF', 'TEACHER'), AttendanceController.getAttendance)
   .post(authorize('ADMIN', 'STAFF', 'TEACHER'), AttendanceController.saveAttendance);

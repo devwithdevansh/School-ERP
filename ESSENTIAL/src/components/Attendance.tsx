@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar as CalendarIcon, Save, Loader2, CheckCircle2, XCircle, Clock, BellRing, ArrowLeft,
-  ShieldCheck, Users, UserCheck, ClipboardX, Send,
+  ShieldCheck, Users, UserCheck, ClipboardX, Send, Wand2,
 } from './icons';
 import { useApp } from '../store';
 import { AttendanceRegisterView } from './AttendanceRegisterView';
@@ -280,7 +280,7 @@ const SheetEditor: React.FC<{
  * Overview: one card per class showing whether attendance is filled
  * -------------------------------------------------------------------------- */
 export const Attendance: React.FC = () => {
-  const { fetchAttendanceOverview, confirmAttendance, remindAttendanceTeacher } = useApp();
+  const { fetchAttendanceOverview, confirmAttendance, remindAttendanceTeacher, authFetch } = useApp();
   const [mainTab, setMainTab] = useState<'SHEETS' | 'REGISTER'>('SHEETS');
   const [date, setDate] = useState(todayKey());
   const [cards, setCards] = useState<ClassCard[]>([]);
@@ -290,6 +290,7 @@ export const Attendance: React.FC = () => {
   const [open, setOpen] = useState<ClassCard | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [seedingBusy, setSeedingBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const keyOf = (c: ClassCard) => `${c.standard}|${c.division}|${c.medium}`;
@@ -365,6 +366,30 @@ export const Attendance: React.FC = () => {
     setBulkBusy(false);
     flash(`${targets.length} sheet(s) confirmed · ${parents} parent(s) notified`);
     load(true);
+  };
+
+  const generateDummyAttendance = async () => {
+    if (!window.confirm("Generate random test attendance (approx 90% present, 10% absent) for all classes from last month up to today?")) {
+      return;
+    }
+    setSeedingBusy(true);
+    try {
+      const res = await authFetch('/api/v1/attendance/seed-dummy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ presentRate: 0.90 })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to generate dummy attendance');
+      }
+      flash(`Generated ${data.data?.workingDaysCount || '40+'} working days of attendance across ${data.data?.totalClasses || 0} classes!`);
+      load(true);
+    } catch (err: any) {
+      alert(err.message || 'Error generating attendance');
+    } finally {
+      setSeedingBusy(false);
+    }
   };
 
   if (open) {
@@ -466,6 +491,15 @@ export const Attendance: React.FC = () => {
                 className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl text-sm"
               >
                 <ShieldCheck className="h-4 w-4" /> Confirm all submitted
+              </button>
+              <button
+                onClick={generateDummyAttendance}
+                disabled={seedingBusy}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl text-sm shadow-sm transition-all active:scale-95"
+                title="Assign random attendance for all students from last month up to today"
+              >
+                {seedingBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                {seedingBusy ? 'Seeding...' : 'Seed Test Attendance'}
               </button>
             </div>
           </div>
