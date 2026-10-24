@@ -281,7 +281,10 @@ export const StudentView: React.FC<StudentViewProps> = ({ onPrint }) => {
 
             const verifyRes = await authFetch('/api/v1/payments/razorpay/verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'Idempotency-Key': response.razorpay_payment_id || `IDEMP_${Date.now()}_${Math.random()}`,
+              },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

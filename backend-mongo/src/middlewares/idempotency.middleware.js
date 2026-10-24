@@ -15,7 +15,7 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 const idempotency = (req, res, next) => {
-  const key = req.headers['idempotency-key'];
+  const key = req.headers['idempotency-key'] || req.body?.razorpay_payment_id;
   if (!key) {
     return next(new AppError('Idempotency-Key header is required for this endpoint', 400));
   }
