@@ -13,15 +13,21 @@ class AllocationController {
   static assignSubjectTeacher = catchAsync(async (req, res) => {
     const { academicYearId, teacherId, standard, division, medium, subjectId } = req.body;
 
-    // 1. Validate that the subject exists in the curriculum for this standard/medium
-    const curriculum = await Curriculum.findOne({ academicYearId, standard, medium });
+    // 1. Ensure the subject is linked in the curriculum for this standard/medium
+    let curriculum = await Curriculum.findOne({ academicYearId, standard, medium });
     if (!curriculum) {
-      throw new AppError(`No curriculum found for Standard ${standard} (${medium})`, 404);
-    }
-    
-    const subjectExists = curriculum.subjects.some(id => id.toString() === subjectId);
-    if (!subjectExists) {
-      throw new AppError('The selected subject is not mapped to this curriculum.', 400);
+      curriculum = await Curriculum.create({
+        academicYearId,
+        standard,
+        medium,
+        subjects: [subjectId]
+      });
+    } else {
+      const subjectExists = curriculum.subjects.some(id => id.toString() === subjectId);
+      if (!subjectExists) {
+        curriculum.subjects.push(subjectId);
+        await curriculum.save();
+      }
     }
 
     // 2. Upsert allocation (if another teacher was assigned, replace them)

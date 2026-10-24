@@ -35,7 +35,9 @@ export const Timetable: React.FC = () => {
     users, // Teachers
     currentUser,
     authFetch,
-    feeStructures
+    feeStructures,
+    teacherAllocations = [],
+    subjects: allMasterSubjects = []
   } = useApp();
 
   const activeYear = academicYears.find(y => y.isActive) || academicYears[0];
@@ -102,18 +104,103 @@ export const Timetable: React.FC = () => {
     fetchTimetable();
   }, [selectedStandard, selectedDivision, selectedMedium, selectedTeacher, viewMode, activeYear]);
 
-  // Derived subjects for the form
+  const teachers = users.filter(u => u.role === 'TEACHER');
+
+  // Allocations for the selected class (Standard, Division, Medium)
+  const classAllocations = React.useMemo(() => {
+    if (!activeYear || !selectedStandard || !selectedMedium) return [];
+    return teacherAllocations.filter(a => {
+      const isDivMatch = !selectedDivision || a.division?.toUpperCase() === selectedDivision.toUpperCase();
+      return (
+        a.academicYearId === activeYear._id &&
+        a.standard === selectedStandard &&
+        a.medium === selectedMedium &&
+        isDivMatch
+      );
+    });
+  }, [activeYear, teacherAllocations, selectedStandard, selectedDivision, selectedMedium]);
+
+  // Derived subjects for the form:
+  // Combines: 1. Subjects allocated to this class in teacherAllocations
+  //           2. Subjects in curriculum mapping
+  //           3. All master subjects (if unmapped, so user never has to write manually!)
   const formSubjects = React.useMemo(() => {
     if (!activeYear || !selectedStandard || !selectedMedium) return [];
+    const map = new Map<string, any>();
+
+    // 1. Subjects that have been allocated to teachers for this class
+    classAllocations.forEach(a => {
+      const sObj = typeof a.subjectId === 'object' ? a.subjectId : allMasterSubjects?.find((s: any) => s._id === a.subjectId);
+      if (sObj && sObj._id) {
+        map.set(sObj._id, sObj);
+      }
+    });
+
+    // 2. Subjects from curriculum mapping
     const curr = curriculums.find(c => 
       c.academicYearId === activeYear._id && 
       c.standard === selectedStandard && 
       c.medium === selectedMedium
     );
-    return curr?.subjects || [];
-  }, [activeYear, curriculums, selectedStandard, selectedMedium]);
+    (curr?.subjects || []).forEach((s: any) => {
+      if (s && s._id && !map.has(s._id)) {
+        map.set(s._id, s);
+      }
+    });
 
-  const teachers = users.filter(u => u.role === 'TEACHER');
+    // 3. Fallback to all master subjects if none mapped
+    if (map.size === 0 && allMasterSubjects && allMasterSubjects.length > 0) {
+      allMasterSubjects.forEach((s: any) => {
+        if (s && s._id) map.set(s._id, s);
+      });
+    }
+
+    return Array.from(map.values());
+  }, [activeYear, selectedStandard, selectedDivision, selectedMedium, classAllocations, curriculums, allMasterSubjects]);
+
+  const getAllocatedTeacherForSubject = (subjectId: string) => {
+    if (!subjectId) return null;
+    const alloc = classAllocations.find(a => {
+      const sId = typeof a.subjectId === 'object' ? a.subjectId?._id : a.subjectId;
+      return sId === subjectId;
+    });
+    if (!alloc) return null;
+    return typeof alloc.teacherId === 'object' ? alloc.teacherId : teachers.find(t => t._id === alloc.teacherId);
+  };
+
+  const handleSubjectChange = (subjectId: string) => {
+    if (!subjectId) {
+      setNewPeriod(prev => ({ ...prev, subjectId: '', teacherId: '' }));
+      return;
+    }
+    const allocated = getAllocatedTeacherForSubject(subjectId);
+    setNewPeriod(prev => ({
+      ...prev,
+      subjectId,
+      // Auto-populate teacher if allocated!
+      teacherId: allocated?._id || prev.teacherId
+    }));
+  };
+
+  const handleTeacherChange = (teacherId: string) => {
+    setNewPeriod(prev => ({ ...prev, teacherId }));
+    if (teacherId) {
+      // Find what subject(s) this teacher is allocated to in this class
+      const teacherAllocs = classAllocations.filter(a => {
+        const tId = typeof a.teacherId === 'object' ? a.teacherId?._id : a.teacherId;
+        return tId === teacherId;
+      });
+      // If this teacher is allocated to 1 subject in this class, auto-select that subject!
+      if (teacherAllocs.length === 1) {
+        const sId = typeof teacherAllocs[0].subjectId === 'object'
+          ? teacherAllocs[0].subjectId?._id
+          : teacherAllocs[0].subjectId;
+        if (sId) {
+          setNewPeriod(prev => ({ ...prev, teacherId, subjectId: sId }));
+        }
+      }
+    }
+  };
 
   const handleCreate = async () => {
     if (!selectedStandard || !selectedDivision || !selectedMedium) {
@@ -127,7 +214,9 @@ export const Timetable: React.FC = () => {
         standard: selectedStandard,
         division: selectedDivision,
         medium: selectedMedium,
-        ...newPeriod
+        ...newPeriod,
+        subjectId: newPeriod.subjectId || null,
+        teacherId: newPeriod.teacherId || null
       };
       
       const res = await authFetch('/api/v1/erp/timetable', {
@@ -228,8 +317,12 @@ export const Timetable: React.FC = () => {
             <>
               <select 
                 value={selectedStandard} 
-                onChange={e => setSelectedStandard(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={e => {
+                  const val = e.target.value;
+                  setSelectedStandard(val);
+                  if (val && !selectedDivision) setSelectedDivision('A');
+                }}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium"
               >
                 <option value="">Select Std</option>
                 {activeStandards.map(s => <option key={s} value={s}>{s}</option>)}
@@ -237,7 +330,7 @@ export const Timetable: React.FC = () => {
               <select
                 value={selectedDivision}
                 onChange={e => setSelectedDivision(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium"
               >
                 <option value="">Div</option>
                 {['A', 'B', 'C', 'D'].map(d => <option key={d} value={d}>{d}</option>)}
@@ -245,7 +338,7 @@ export const Timetable: React.FC = () => {
               <select 
                 value={selectedMedium} 
                 onChange={e => setSelectedMedium(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium"
               >
                 <option value="English">English</option>
                 <option value="Gujarati">Gujarati</option>
@@ -311,23 +404,40 @@ export const Timetable: React.FC = () => {
               />
             </div>
             <div className="col-span-2 md:col-span-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subject & Teacher</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Subject & Teacher</label>
+                {newPeriod.subjectId && getAllocatedTeacherForSubject(newPeriod.subjectId) && (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Auto-allocated: {getAllocatedTeacherForSubject(newPeriod.subjectId)?.name}
+                  </span>
+                )}
+              </div>
               <div className="flex gap-2">
                 <select 
                   value={newPeriod.subjectId} 
-                  onChange={e => setNewPeriod({ ...newPeriod, subjectId: e.target.value })}
-                  className="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => handleSubjectChange(e.target.value)}
+                  className="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 >
                   <option value="">Recess / Free</option>
-                  {formSubjects.map((s: any) => <option key={s._id} value={s._id}>{s.subjectName}</option>)}
+                  {formSubjects.map((s: any) => {
+                    const allocated = getAllocatedTeacherForSubject(s._id);
+                    return (
+                      <option key={s._id} value={s._id}>
+                        {s.subjectName} {allocated ? `(${allocated.name})` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
                 <select 
                   value={newPeriod.teacherId} 
-                  onChange={e => setNewPeriod({ ...newPeriod, teacherId: e.target.value })}
-                  className="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => handleTeacherChange(e.target.value)}
+                  className="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 >
-                  <option value="">None</option>
-                  {teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                  <option value="">None (Free / Recess)</option>
+                  {teachers.map(t => (
+                    <option key={t._id} value={t._id}>{t.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

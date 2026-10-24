@@ -19,7 +19,8 @@ export const TeacherAllocationDashboard: React.FC = () => {
     users, 
     authFetch, 
     refreshData,
-    feeStructures
+    feeStructures,
+    subjects: allMasterSubjects
   } = useApp();
 
   const activeYear = academicYears.find(y => y.isActive) || academicYears[0];
@@ -36,15 +37,46 @@ export const TeacherAllocationDashboard: React.FC = () => {
     return getActiveStandards(feeStructures, activeYear?.name, medium);
   }, [feeStructures, activeYear?.name, medium]);
 
-  // 1. Get Curriculum Subjects for selected class
+  // 1. Get Curriculum Subjects for selected class; fallback to all master subjects
   const classCurriculum = curriculums.find(c => 
     c.academicYearId === activeYear?._id && 
     c.standard === standard && 
     c.medium === medium
   );
-  const subjects = classCurriculum?.subjects || [];
+  
+  // Combine curriculum subjects, existing allocated subjects, and master subjects
+  const subjects = useMemo(() => {
+    if (!standard || !medium) return [];
+    const map = new Map<string, any>();
 
-  // 2. Derive existing divisions
+    // A. Curriculum mapped subjects
+    if (classCurriculum?.subjects && classCurriculum.subjects.length > 0) {
+      classCurriculum.subjects.forEach((s: any) => {
+        if (s && s._id) map.set(s._id, s);
+      });
+    }
+
+    // B. Any subject that already has an allocation in this class
+    teacherAllocations.forEach(a => {
+      if (a.academicYearId === activeYear?._id && a.standard === standard && a.medium === medium && a.subjectId) {
+        const sObj = typeof a.subjectId === 'object' ? a.subjectId : allMasterSubjects?.find((s: any) => s._id === a.subjectId);
+        if (sObj && sObj._id && !map.has(sObj._id)) {
+          map.set(sObj._id, sObj);
+        }
+      }
+    });
+
+    // C. Fallback: if no curriculum mapped, automatically load from all master subjects!
+    if (map.size === 0 && allMasterSubjects && allMasterSubjects.length > 0) {
+      allMasterSubjects.forEach((s: any) => {
+        if (s && s._id) map.set(s._id, s);
+      });
+    }
+
+    return Array.from(map.values());
+  }, [classCurriculum, teacherAllocations, allMasterSubjects, activeYear?._id, standard, medium]);
+
+  // 2. Derive existing divisions (default to 'A' if empty)
   const divisions = useMemo(() => {
     if (!activeYear || !standard) return [];
     
@@ -73,6 +105,11 @@ export const TeacherAllocationDashboard: React.FC = () => {
 
     // Add manual divisions
     manualDivisions.forEach(d => divSet.add(d.toUpperCase()));
+
+    // Default to 'A' if none found so teacher can be assigned immediately
+    if (divSet.size === 0) {
+      divSet.add('A');
+    }
 
     return Array.from(divSet).sort();
   }, [activeYear, standard, medium, students, classTeacherAllocations, teacherAllocations, manualDivisions]);
@@ -180,7 +217,14 @@ export const TeacherAllocationDashboard: React.FC = () => {
       </Card>
 
       {standard && medium && (
-        <Card className="p-0 gap-0">
+        <>
+          {subjects.length > 0 && (!classCurriculum || !classCurriculum.subjects || classCurriculum.subjects.length === 0) && (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-2xl text-xs font-semibold shadow-xs">
+              <span className="text-base">⚡</span>
+              <span>All Master Subjects are automatically available. Assigning a teacher will automatically link the subject to this curriculum!</span>
+            </div>
+          )}
+          <Card className="p-0 gap-0">
           <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
@@ -233,8 +277,8 @@ export const TeacherAllocationDashboard: React.FC = () => {
               {subjects.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={divisions.length + 2} className="px-6 py-12 text-center text-muted-foreground whitespace-normal">
-                    <p className="font-semibold">No subjects mapped in curriculum.</p>
-                    <p className="text-sm mt-1">Please go to 'Curriculum & Subjects' and map subjects to this class first.</p>
+                    <p className="font-semibold">No subjects created yet.</p>
+                    <p className="text-sm mt-1">Please add subjects in 'Curriculum & Subjects' first so you can allocate teachers to them.</p>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -272,6 +316,7 @@ export const TeacherAllocationDashboard: React.FC = () => {
             </TableBody>
           </Table>
         </Card>
+        </>
       )}
     </div>
   );

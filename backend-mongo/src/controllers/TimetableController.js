@@ -87,8 +87,8 @@ class TimetableController {
       periodName,
       startTime,
       endTime,
-      subjectId,
-      teacherId
+      subjectId: subjectId || null,
+      teacherId: teacherId || null
     });
 
     sendResponse(res, 201, newPeriod, 'Period scheduled successfully');
