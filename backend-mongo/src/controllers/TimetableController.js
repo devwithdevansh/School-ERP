@@ -39,7 +39,22 @@ class TimetableController {
    * Admin can assign a period. Includes collision checks.
    */
   static createPeriod = catchAsync(async (req, res) => {
-    const { standard, division, medium, dayOfWeek, periodName, startTime, endTime, subjectId, teacherId } = req.body;
+    const { 
+      standard, 
+      division, 
+      medium, 
+      dayOfWeek, 
+      periodName, 
+      startTime, 
+      endTime, 
+      subjectId, 
+      teacherId,
+      isProxy,
+      proxyTeacherId,
+      proxySubjectId,
+      proxyNote,
+      proxyDate
+    } = req.body;
 
     const activeYear = await AcademicYear.findOne({ isActive: true });
     if (!activeYear) throw new AppError('No active academic year', 400);
@@ -77,6 +92,7 @@ class TimetableController {
         }
       }
     }
+    // Create timetable period
 
     const newPeriod = await Timetable.create({
       academicYearId: activeYear._id,
@@ -88,7 +104,12 @@ class TimetableController {
       startTime,
       endTime,
       subjectId: subjectId || null,
-      teacherId: teacherId || null
+      teacherId: teacherId || null,
+      isProxy: Boolean(isProxy),
+      proxyTeacherId: proxyTeacherId || null,
+      proxySubjectId: proxySubjectId || null,
+      proxyNote: proxyNote || '',
+      proxyDate: proxyDate || ''
     });
 
     sendResponse(res, 201, newPeriod, 'Period scheduled successfully');
@@ -116,20 +137,66 @@ class TimetableController {
       query.division = division;
       query.medium = medium;
     } else if (teacherId) {
-      query.teacherId = teacherId;
+      query.$or = [{ teacherId }, { proxyTeacherId: teacherId }];
     } else {
-      // By default, if teacher requests, show their timetable
+      // By default, if teacher requests, show their timetable (both assigned & proxy classes)
       if (req.user.role === 'TEACHER') {
-        query.teacherId = req.user._id;
+        query.$or = [{ teacherId: req.user._id }, { proxyTeacherId: req.user._id }];
       }
     }
 
     const periods = await Timetable.find(query)
       .populate('subjectId', 'subjectName subjectCode')
       .populate('teacherId', 'name')
-      .sort({ dayOfWeek: 1, startTime: 1 }); // Sorting by string time might be flawed if format isn't 24h, but we can sort on frontend
+      .populate('proxyTeacherId', 'name')
+      .populate('proxySubjectId', 'subjectName subjectCode')
+      .sort({ dayOfWeek: 1, startTime: 1 });
 
     sendResponse(res, 200, periods);
+  });
+
+  /**
+   * PUT /api/v1/erp/timetable/:id
+   */
+  static updatePeriod = catchAsync(async (req, res) => {
+    if (req.user.role !== 'ADMIN') throw new AppError('Only administrators can edit the timetable', 403);
+    
+    const period = await Timetable.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+      .populate('subjectId', 'subjectName subjectCode')
+      .populate('teacherId', 'name')
+      .populate('proxyTeacherId', 'name')
+      .populate('proxySubjectId', 'subjectName subjectCode');
+    if (!period) throw new AppError('Period not found', 404);
+
+    sendResponse(res, 200, period, 'Period updated successfully');
+  });
+
+  /**
+   * PATCH /api/v1/erp/timetable/:id/proxy
+   * Designate or remove proxy / substitution teacher and subject
+   */
+  static setProxy = catchAsync(async (req, res) => {
+    if (req.user.role !== 'ADMIN') throw new AppError('Only administrators can set proxy / substitution', 403);
+    
+    const { isProxy, proxyTeacherId, proxySubjectId, proxyNote, proxyDate } = req.body;
+    const period = await Timetable.findByIdAndUpdate(
+      req.params.id,
+      {
+        isProxy: isProxy !== undefined ? isProxy : true,
+        proxyTeacherId: proxyTeacherId || null,
+        proxySubjectId: proxySubjectId || null,
+        proxyNote: proxyNote || '',
+        proxyDate: proxyDate || ''
+      },
+      { new: true, runValidators: true }
+    )
+      .populate('subjectId', 'subjectName subjectCode')
+      .populate('teacherId', 'name')
+      .populate('proxyTeacherId', 'name')
+      .populate('proxySubjectId', 'subjectName subjectCode');
+
+    if (!period) throw new AppError('Period not found', 404);
+    sendResponse(res, 200, period, 'Proxy substitution updated successfully');
   });
 
   /**

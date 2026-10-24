@@ -190,14 +190,90 @@ export const Timetable: React.FC = () => {
     return Array.from(map.values());
   }, [activeYear, selectedStandard, selectedDivision, selectedMedium, classAllocations, curriculums, masterList]);
 
-  const getAllocatedTeacherForSubject = (subjectId: string) => {
-    if (!subjectId) return null;
+  const getAllocatedTeachersForSubject = (subjectId: string): any[] => {
+    if (!subjectId) return [];
     const alloc = classAllocations.find(a => {
       const sId = typeof a.subjectId === 'object' ? a.subjectId?._id : a.subjectId;
       return sId?.toString() === subjectId?.toString();
     });
-    if (!alloc) return null;
-    return typeof alloc.teacherId === 'object' ? alloc.teacherId : teachers.find(t => t._id === alloc.teacherId);
+    if (!alloc) return [];
+    const result: any[] = [];
+    if (Array.isArray(alloc.teacherIds) && alloc.teacherIds.length > 0) {
+      alloc.teacherIds.forEach((t: any) => {
+        const tObj = typeof t === 'object' ? t : teachers.find(u => u._id === t);
+        if (tObj && !result.some(x => x._id === tObj._id)) result.push(tObj);
+      });
+    } else if (alloc.teacherId) {
+      const tObj = typeof alloc.teacherId === 'object' ? alloc.teacherId : teachers.find(u => u._id === alloc.teacherId);
+      if (tObj) result.push(tObj);
+    }
+    return result;
+  };
+
+  const getAllocatedTeacherForSubject = (subjectId: string) => {
+    const list = getAllocatedTeachersForSubject(subjectId);
+    return list.length > 0 ? list[0] : null;
+  };
+
+  // Proxy / Substitution State
+  const [proxyModalPeriod, setProxyModalPeriod] = useState<any | null>(null);
+  const [proxyForm, setProxyForm] = useState({
+    isProxy: true,
+    proxyTeacherId: '',
+    proxySubjectId: '',
+    proxyNote: '',
+    proxyDate: new Date().toISOString().split('T')[0]
+  });
+
+  const handleOpenProxyModal = (period: any) => {
+    setProxyModalPeriod(period);
+    setProxyForm({
+      isProxy: period.isProxy ?? true,
+      proxyTeacherId: period.proxyTeacherId?._id || period.proxyTeacherId || '',
+      proxySubjectId: period.proxySubjectId?._id || period.proxySubjectId || '',
+      proxyNote: period.proxyNote || '',
+      proxyDate: period.proxyDate || new Date().toISOString().split('T')[0]
+    });
+  };
+
+  const handleSaveProxy = async () => {
+    if (!proxyModalPeriod) return;
+    setSaving(true);
+    try {
+      const res = await authFetch(`/api/v1/erp/timetable/${proxyModalPeriod._id}/proxy`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(proxyForm)
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || 'Failed to update proxy substitution');
+      }
+      setProxyModalPeriod(null);
+      await fetchTimetable();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClearProxy = async (periodId: string) => {
+    setSaving(true);
+    try {
+      const res = await authFetch(`/api/v1/erp/timetable/${periodId}/proxy`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isProxy: false, proxyTeacherId: null, proxySubjectId: null, proxyNote: '', proxyDate: '' })
+      });
+      if (!res.ok) throw new Error('Failed to clear proxy');
+      setProxyModalPeriod(null);
+      await fetchTimetable();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSubjectChange = (subjectId: string) => {
@@ -438,10 +514,10 @@ export const Timetable: React.FC = () => {
             <div className="col-span-2 md:col-span-2">
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[10px] font-bold text-slate-500 uppercase">Subject & Teacher</label>
-                {newPeriod.subjectId && getAllocatedTeacherForSubject(newPeriod.subjectId) && (
+                {newPeriod.subjectId && getAllocatedTeachersForSubject(newPeriod.subjectId).length > 0 && (
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Auto-allocated: {getAllocatedTeacherForSubject(newPeriod.subjectId)?.name}
+                    Allocated: {getAllocatedTeachersForSubject(newPeriod.subjectId).map((t: any) => t.name).join(', ')}
                   </span>
                 )}
               </div>
@@ -453,10 +529,10 @@ export const Timetable: React.FC = () => {
                 >
                   <option value="">Recess / Free</option>
                   {formSubjects.map((s: any) => {
-                    const allocated = getAllocatedTeacherForSubject(s._id);
+                    const allocatedList = getAllocatedTeachersForSubject(s._id);
                     return (
                       <option key={s._id} value={s._id}>
-                        {s.subjectName} {allocated ? `(${allocated.name})` : ''}
+                        {s.subjectName} {allocatedList.length > 0 ? `(${allocatedList.map(t => t.name).join(', ')})` : ''}
                       </option>
                     );
                   })}
@@ -467,9 +543,20 @@ export const Timetable: React.FC = () => {
                   className="w-1/2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 >
                   <option value="">None (Free / Recess)</option>
-                  {teachers.map(t => (
-                    <option key={t._id} value={t._id}>{t.name}</option>
-                  ))}
+                  {newPeriod.subjectId && getAllocatedTeachersForSubject(newPeriod.subjectId).length > 0 && (
+                    <optgroup label="Allocated for this Subject">
+                      {getAllocatedTeachersForSubject(newPeriod.subjectId).map((t: any, idx: number) => (
+                        <option key={`alloc-${t._id}`} value={t._id}>
+                          ★ {t.name} (Teacher {idx + 1})
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <optgroup label="All Teachers">
+                    {teachers.map(t => (
+                      <option key={t._id} value={t._id}>{t.name}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -478,7 +565,7 @@ export const Timetable: React.FC = () => {
             <button 
               onClick={handleCreate}
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-sm transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-sm transition-colors cursor-pointer"
             >
               {saving ? 'Saving...' : 'Add to Timetable'}
             </button>
@@ -501,15 +588,16 @@ export const Timetable: React.FC = () => {
                 </div>
                 <div className="flex-1 p-4 flex gap-4 overflow-x-auto">
                   {dayPeriods.map(p => (
-                    <div key={p._id} className={`shrink-0 w-48 rounded-xl border p-3 relative group
-                      ${!p.subjectId ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200 hover:border-blue-300'}
+                    <div key={p._id} className={`shrink-0 w-52 rounded-xl border p-3 relative group transition-all
+                      ${p.isProxy ? 'bg-amber-50/60 border-amber-300 shadow-xs' : !p.subjectId ? 'bg-amber-50/40 border-amber-200' : 'bg-white border-slate-200 hover:border-blue-300'}
                     `}>
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{p.periodName}</span>
                         {currentUser?.role === 'ADMIN' && (
                           <button 
                             onClick={() => handleDelete(p._id)}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-all cursor-pointer"
+                            title="Delete period"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -525,15 +613,59 @@ export const Timetable: React.FC = () => {
                       </div>
                       
                       {p.teacherId && viewMode === 'CLASS' && (
-                        <div className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-lg inline-block">
+                        <div className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg inline-block">
                           {p.teacherId.name}
                         </div>
                       )}
                       
                       {viewMode === 'TEACHER' && (
-                        <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg inline-flex items-center gap-1">
+                        <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg inline-flex items-center gap-1">
                           <MapPin className="w-3 h-3" /> Std {p.standard}-{p.division}
                         </div>
+                      )}
+
+                      {/* PROXY / SUBSTITUTION BADGE & DETAILS */}
+                      {p.isProxy ? (
+                        <div className="mt-2.5 p-2 rounded-lg bg-amber-100/80 border border-amber-300 text-amber-900 text-xs">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="inline-flex items-center gap-1 font-extrabold text-[10px] uppercase text-amber-800 bg-amber-200 px-1.5 py-0.5 rounded">
+                              <span>⚡</span> PROXY
+                            </span>
+                            {currentUser?.role === 'ADMIN' && (
+                              <button
+                                onClick={() => handleOpenProxyModal(p)}
+                                className="text-[10px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-800">
+                            <span className="text-slate-500 font-medium">Sub:</span> <span className="font-bold text-amber-900">{p.proxyTeacherId?.name || 'Unassigned'}</span>
+                          </div>
+                          {p.proxySubjectId && (
+                            <div className="text-[10px] text-slate-600 truncate">
+                              <span className="text-slate-500 font-medium">Sub Subj:</span> {p.proxySubjectId.subjectName}
+                            </div>
+                          )}
+                          {p.proxyNote && (
+                            <div className="text-[10px] text-amber-800 italic mt-0.5 truncate" title={p.proxyNote}>
+                              "{p.proxyNote}"
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        currentUser?.role === 'ADMIN' && viewMode === 'CLASS' && (
+                          <div className="mt-2 pt-1 border-t border-slate-100 flex justify-end">
+                            <button
+                              onClick={() => handleOpenProxyModal(p)}
+                              className="text-[10px] font-semibold text-slate-400 hover:text-amber-600 flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Set proxy/substitute teacher for this period"
+                            >
+                              <span>⚡</span> Set Proxy
+                            </button>
+                          </div>
+                        )
                       )}
                     </div>
                   ))}
@@ -543,6 +675,121 @@ export const Timetable: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Proxy / Substitution Modal */}
+      {proxyModalPeriod && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                  <span className="text-amber-500">⚡</span> Proxy / Substitution
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {proxyModalPeriod.periodName} ({proxyModalPeriod.startTime} - {proxyModalPeriod.endTime}) • Std {proxyModalPeriod.standard}-{proxyModalPeriod.division}
+                </p>
+              </div>
+              <button
+                onClick={() => setProxyModalPeriod(null)}
+                className="text-slate-400 hover:text-slate-600 size-8 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="py-4 space-y-4">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={proxyForm.isProxy}
+                  onChange={e => setProxyForm({ ...proxyForm, isProxy: e.target.checked })}
+                  className="size-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm font-bold text-slate-800">Enable Proxy Substitution for this period</span>
+              </label>
+
+              {proxyForm.isProxy && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      Substitute Teacher <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={proxyForm.proxyTeacherId}
+                      onChange={e => setProxyForm({ ...proxyForm, proxyTeacherId: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                    >
+                      <option value="">Select Substitute Teacher...</option>
+                      {teachers.map(t => (
+                        <option key={t._id} value={t._id}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      Substitute Subject (Optional)
+                    </label>
+                    <select
+                      value={proxyForm.proxySubjectId}
+                      onChange={e => setProxyForm({ ...proxyForm, proxySubjectId: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                    >
+                      <option value="">Keep Regular Subject ({proxyModalPeriod.subjectId?.subjectName || 'Free Period'})</option>
+                      {masterList.map((s: any) => (
+                        <option key={s._id} value={s._id}>{s.subjectName}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1">
+                      Proxy Note / Reason (Visible to Parents & Students)
+                    </label>
+                    <input
+                      type="text"
+                      value={proxyForm.proxyNote}
+                      onChange={e => setProxyForm({ ...proxyForm, proxyNote: e.target.value })}
+                      placeholder="e.g. Regular teacher on leave - Library revision"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100 gap-2">
+              {proxyModalPeriod.isProxy ? (
+                <button
+                  type="button"
+                  onClick={() => handleClearProxy(proxyModalPeriod._id)}
+                  disabled={saving}
+                  className="px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                >
+                  Clear Proxy
+                </button>
+              ) : <div />}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setProxyModalPeriod(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveProxy}
+                  disabled={saving}
+                  className="px-5 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  {saving ? 'Saving...' : 'Save Proxy'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

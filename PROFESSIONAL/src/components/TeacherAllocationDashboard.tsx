@@ -186,22 +186,68 @@ export const TeacherAllocationDashboard: React.FC = () => {
     }
   };
 
-  const handleAssignSubjectTeacher = async (division: string, subjectId: string, teacherId: string, existingAllocationId?: string) => {
-    if (!activeYear || !standard || !medium) return;
+  const handleAddTeacherToSubject = async (
+    division: string, 
+    subjectId: string, 
+    newTeacherId: string, 
+    existingAllocationId?: string, 
+    currentTeacherIds: string[] = []
+  ) => {
+    if (!activeYear || !standard || !medium || !newTeacherId) return;
+    const updatedIds = [...new Set([...currentTeacherIds, newTeacherId])];
     setSaving(true);
     try {
-      if (!teacherId) {
+      const res = await authFetch('/api/v1/erp/allocations/subject-teacher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          academicYearId: activeYear._id,
+          standard,
+          division,
+          medium,
+          subjectId,
+          teacherIds: updatedIds
+        })
+      });
+      if (!res.ok) throw new Error('Failed to assign teacher');
+      await refreshData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveTeacherFromSubject = async (
+    division: string, 
+    subjectId: string, 
+    removeTeacherId: string, 
+    existingAllocationId?: string, 
+    currentTeacherIds: string[] = []
+  ) => {
+    if (!activeYear || !standard || !medium) return;
+    const updatedIds = currentTeacherIds.filter(id => id !== removeTeacherId);
+    setSaving(true);
+    try {
+      if (updatedIds.length === 0) {
         if (existingAllocationId) {
           const res = await authFetch(`/api/v1/erp/allocations/subject-teacher/${existingAllocationId}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error('Failed to remove subject allocation');
+          if (!res.ok) throw new Error('Failed to remove allocation');
         }
       } else {
         const res = await authFetch('/api/v1/erp/allocations/subject-teacher', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ academicYearId: activeYear._id, standard, division, medium, subjectId, teacherId })
+          body: JSON.stringify({
+            academicYearId: activeYear._id,
+            standard,
+            division,
+            medium,
+            subjectId,
+            teacherIds: updatedIds
+          })
         });
-        if (!res.ok) throw new Error('Failed to assign subject teacher');
+        if (!res.ok) throw new Error('Failed to update teacher allocation');
       }
       await refreshData();
     } catch (err: any) {
@@ -329,19 +375,84 @@ export const TeacherAllocationDashboard: React.FC = () => {
                         const sId = a.subjectId && typeof a.subjectId === 'object' ? a.subjectId._id : a.subjectId;
                         return a.academicYearId === activeYear?._id && a.standard === standard && a.medium === medium && a.division?.toUpperCase() === div && sId === sub._id;
                       });
+
+                      // Extract all allocated teachers (handling both teacherIds array and legacy single teacherId)
+                      const assignedTeachers: any[] = [];
+                      if (Array.isArray(alloc?.teacherIds) && alloc.teacherIds.length > 0) {
+                        alloc.teacherIds.forEach((t: any) => {
+                          const tObj = typeof t === 'object' ? t : teachers.find(u => u._id === t);
+                          if (tObj && !assignedTeachers.some(x => x._id === tObj._id)) assignedTeachers.push(tObj);
+                        });
+                      } else if (alloc?.teacherId) {
+                        const tObj = typeof alloc.teacherId === 'object' ? alloc.teacherId : teachers.find(u => u._id === alloc.teacherId);
+                        if (tObj) assignedTeachers.push(tObj);
+                      }
+
+                      const assignedIds = assignedTeachers.map(t => t._id);
+
                       return (
                         <TableCell key={`sub-${sub._id}-${div}`} className="px-4 py-3 border-r align-top">
-                          <NativeSelect
-                            value={alloc?.teacherId?._id || ''}
-                            onChange={e => handleAssignSubjectTeacher(div, sub._id, e.target.value, alloc?._id)}
-                            disabled={saving}
-                            className={`w-full ${alloc ? 'font-semibold bg-success-soft text-success-soft-foreground' : 'text-muted-foreground'}`}
-                          >
-                            <option value="">Unassigned</option>
-                            {teachers.map(t => (
-                              <option key={t._id} value={t._id}>{t.name}</option>
-                            ))}
-                          </NativeSelect>
+                          {assignedTeachers.length > 0 ? (
+                            <div className="space-y-1.5">
+                              <div className="flex flex-wrap gap-1">
+                                {assignedTeachers.map((t, idx) => (
+                                  <span
+                                    key={t._id}
+                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs"
+                                  >
+                                    <span>{t.name}</span>
+                                    {assignedTeachers.length > 1 && (
+                                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1 rounded">
+                                        T{idx + 1}
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      disabled={saving}
+                                      onClick={() => handleRemoveTeacherFromSubject(div, sub._id, t._id, alloc?._id, assignedIds)}
+                                      className="text-emerald-700 hover:text-red-600 hover:bg-emerald-200/60 rounded size-3.5 flex items-center justify-center transition-colors cursor-pointer"
+                                      title="Remove teacher"
+                                    >
+                                      ×
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                              <NativeSelect
+                                value=""
+                                onChange={e => {
+                                  if (e.target.value) {
+                                    handleAddTeacherToSubject(div, sub._id, e.target.value, alloc?._id, assignedIds);
+                                  }
+                                }}
+                                disabled={saving}
+                                className="w-full text-xs text-muted-foreground hover:text-foreground h-7"
+                              >
+                                <option value="">+ Add Teacher...</option>
+                                {teachers
+                                  .filter(t => !assignedIds.includes(t._id))
+                                  .map(t => (
+                                    <option key={t._id} value={t._id}>{t.name}</option>
+                                  ))}
+                              </NativeSelect>
+                            </div>
+                          ) : (
+                            <NativeSelect
+                              value=""
+                              onChange={e => {
+                                if (e.target.value) {
+                                  handleAddTeacherToSubject(div, sub._id, e.target.value, alloc?._id, []);
+                                }
+                              }}
+                              disabled={saving}
+                              className="w-full text-muted-foreground"
+                            >
+                              <option value="">Assign Teacher...</option>
+                              {teachers.map(t => (
+                                <option key={t._id} value={t._id}>{t.name}</option>
+                              ))}
+                            </NativeSelect>
+                          )}
                         </TableCell>
                       );
                     })}

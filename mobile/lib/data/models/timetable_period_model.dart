@@ -8,6 +8,10 @@ class TimetablePeriodModel {
   final String? teacherName;
   final String? standard;
   final String? division;
+  final bool isProxy;
+  final String? proxyTeacherName;
+  final String? proxySubjectName;
+  final String? proxyNote;
 
   const TimetablePeriodModel({
     required this.id,
@@ -19,6 +23,10 @@ class TimetablePeriodModel {
     this.teacherName,
     this.standard,
     this.division,
+    this.isProxy = false,
+    this.proxyTeacherName,
+    this.proxySubjectName,
+    this.proxyNote,
   });
 
   bool get isBreak => subjectName == null;
@@ -28,6 +36,9 @@ class TimetablePeriodModel {
   factory TimetablePeriodModel.fromJson(Map<String, dynamic> json) {
     final subject = json['subjectId'];
     final teacher = json['teacherId'];
+    final proxyTeacher = json['proxyTeacherId'];
+    final proxySubject = json['proxySubjectId'];
+
     return TimetablePeriodModel(
       id: (json['_id'] ?? '').toString(),
       dayOfWeek: json['dayOfWeek'] as String? ?? '',
@@ -38,6 +49,10 @@ class TimetablePeriodModel {
       teacherName: teacher is Map ? teacher['name'] as String? : null,
       standard: json['standard'] as String?,
       division: json['division'] as String?,
+      isProxy: json['isProxy'] == true,
+      proxyTeacherName: proxyTeacher is Map ? proxyTeacher['name'] as String? : null,
+      proxySubjectName: proxySubject is Map ? proxySubject['subjectName'] as String? : null,
+      proxyNote: json['proxyNote'] as String?,
     );
   }
 }

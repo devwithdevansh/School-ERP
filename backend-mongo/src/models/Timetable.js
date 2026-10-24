@@ -47,6 +47,28 @@ const timetableSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null, // Null if recess
+    },
+    isProxy: {
+      type: Boolean,
+      default: false,
+    },
+    proxyTeacherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    proxySubjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subject',
+      default: null,
+    },
+    proxyNote: {
+      type: String,
+      default: '',
+    },
+    proxyDate: {
+      type: String,
+      default: '',
     }
   },
   {

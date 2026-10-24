@@ -11,7 +11,21 @@ class AllocationController {
   // ==========================================
 
   static assignSubjectTeacher = catchAsync(async (req, res) => {
-    const { academicYearId, teacherId, standard, division, medium, subjectId } = req.body;
+    const { academicYearId, standard, division, medium, subjectId } = req.body;
+
+    let ids = [];
+    if (Array.isArray(req.body.teacherIds)) {
+      ids = req.body.teacherIds.filter(Boolean).map(String);
+    } else if (req.body.teacherId) {
+      ids = [String(req.body.teacherId)];
+    }
+    // Remove duplicates while preserving order
+    ids = [...new Set(ids)];
+
+    if (ids.length === 0) {
+      await TeacherAllocation.findOneAndDelete({ academicYearId, standard, division, medium, subjectId });
+      return sendResponse(res, 200, null, 'Subject allocation removed');
+    }
 
     // 1. Ensure the subject is linked in the curriculum for this standard/medium
     let curriculum = await Curriculum.findOne({ academicYearId, standard, medium });
@@ -33,14 +47,20 @@ class AllocationController {
       }
     }
 
-    // 2. Upsert allocation (if another teacher was assigned, replace them)
+    // 2. Upsert allocation with teacherIds array & primary teacherId
     const allocation = await TeacherAllocation.findOneAndUpdate(
       { academicYearId, standard, division, medium, subjectId },
-      { teacherId },
+      { 
+        teacherId: ids[0],
+        teacherIds: ids
+      },
       { new: true, upsert: true, runValidators: true }
-    ).populate('teacherId', 'name email role').populate('subjectId');
+    )
+      .populate('teacherId', 'name email role')
+      .populate('teacherIds', 'name email role')
+      .populate('subjectId');
 
-    sendResponse(res, 200, allocation, 'Subject teacher assigned successfully');
+    sendResponse(res, 200, allocation, 'Subject teachers assigned successfully');
   });
 
   static getSubjectAllocations = catchAsync(async (req, res) => {
@@ -53,6 +73,7 @@ class AllocationController {
 
     const allocations = await TeacherAllocation.find(query)
       .populate('teacherId', 'name email role')
+      .populate('teacherIds', 'name email role')
       .populate('subjectId')
       .sort({ standard: 1, division: 1, medium: 1 });
       

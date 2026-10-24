@@ -121,7 +121,12 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
         type: _CardType.timetable,
         emoji: '📅',
         title: "Today's Timetable",
-        subtitle: todayPeriods.map((p) => p.subjectName ?? p.periodName).join(' → '),
+        subtitle: todayPeriods.map((p) {
+          final sName = (p.isProxy && p.proxySubjectName != null && p.proxySubjectName!.isNotEmpty)
+              ? p.proxySubjectName!
+              : (p.subjectName ?? p.periodName);
+          return p.isProxy ? '⚡ $sName' : sName;
+        }).join(' → '),
         gradient: const [Color(0xFF7B68AE), Color(0xFF4A3F78)],
       ));
     }
@@ -167,7 +172,7 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
       );
     }
     if (_cards.isEmpty) {
-      return SizedBox(
+      return const SizedBox(
         height: 140,
         child: _HighlightCard(
           data: _HighlightData(
@@ -175,7 +180,7 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
             emoji: '👋',
             title: 'Welcome back!',
             subtitle: "No new results, homework, or classes to show right now.",
-            gradient: const [Brand.deep, Color(0xFF24407A)],
+            gradient: [Brand.deep, Color(0xFF24407A)],
           ),
         ),
       );

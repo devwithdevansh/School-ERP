@@ -212,17 +212,29 @@ class _PeriodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subject = period.subjectName ?? period.periodName;
+    final effectiveSubject = (period.isProxy && period.proxySubjectName != null && period.proxySubjectName!.isNotEmpty)
+        ? period.proxySubjectName!
+        : (period.subjectName ?? period.periodName);
+
+    final effectiveTeacher = (period.isProxy && period.proxyTeacherName != null && period.proxyTeacherName!.isNotEmpty)
+        ? period.proxyTeacherName!
+        : (period.teacherName ?? '');
+
     final secondary = teacherView
         ? (period.classLabel.isNotEmpty ? 'Class ${period.classLabel}' : '')
-        : (period.teacherName ?? '');
+        : effectiveTeacher;
 
     final card = Container(
       padding: const EdgeInsets.all(Space.md - 2),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(Radii.md),
-        border: Border.all(color: isNow ? AppColors.accentDeep : AppColors.border, width: isNow ? 1.6 : 1),
+        border: Border.all(
+          color: period.isProxy
+              ? AppColors.accentDeep
+              : (isNow ? AppColors.accentDeep : AppColors.border),
+          width: (isNow || period.isProxy) ? 1.6 : 1,
+        ),
         boxShadow: isNow ? Elevation.of(SurfaceLevel.raised) : null,
       ),
       child: Row(
@@ -231,13 +243,17 @@ class _PeriodCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: isNow ? AppColors.accentPale : AppColors.primaryLight,
+              color: period.isProxy
+                  ? AppColors.accentPale
+                  : (isNow ? AppColors.accentPale : AppColors.primaryLight),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              teacherView ? Icons.groups_rounded : Icons.menu_book_rounded,
+              period.isProxy
+                  ? Icons.swap_horiz_rounded
+                  : (teacherView ? Icons.groups_rounded : Icons.menu_book_rounded),
               size: 20,
-              color: isNow ? AppColors.accentDeep : AppColors.primary,
+              color: (isNow || period.isProxy) ? AppColors.accentDeep : AppColors.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -245,15 +261,23 @@ class _PeriodCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  period.periodName.toUpperCase(),
-                  style: AppTextStyles.labelSmall.copyWith(letterSpacing: 1.0),
+                Row(
+                  children: [
+                    Text(
+                      period.periodName.toUpperCase(),
+                      style: AppTextStyles.labelSmall.copyWith(letterSpacing: 1.0),
+                    ),
+                    if (period.isProxy) ...[
+                      const SizedBox(width: 6),
+                      const StatusPill('PROXY', tone: PillTone.warning, icon: Icons.bolt_rounded),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 1),
                 Row(
                   children: [
                     Flexible(
-                      child: Text(subject, style: AppTextStyles.h3, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      child: Text(effectiveSubject, style: AppTextStyles.h3, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     if (isNow) ...[
                       const SizedBox(width: 8),
@@ -275,7 +299,31 @@ class _PeriodCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Expanded(
-                        child: Text(secondary, style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          period.isProxy && !teacherView && period.teacherName != null && period.teacherName != effectiveTeacher
+                              ? '$effectiveTeacher (Sub for ${period.teacherName})'
+                              : secondary,
+                          style: AppTextStyles.bodyMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (period.isProxy && period.proxyNote != null && period.proxyNote!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 12, color: AppColors.accentDeep),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          period.proxyNote!,
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.accentDeep, fontStyle: FontStyle.italic),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
