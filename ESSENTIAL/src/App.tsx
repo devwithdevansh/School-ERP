@@ -98,11 +98,8 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
   // Student / Parent Fee Workspace (Essential edition only)
   if (
     activePortal === 'STUDENT' ||
-    currentScreen === 'student-dashboard' ||
     currentScreen === 'student-fees' ||
-    currentScreen === 'student-receipts' ||
-    currentScreen === 'student-structure' ||
-    currentScreen === 'student-helpdesk'
+    currentScreen === 'student-receipts'
   ) {
     return <StudentView onPrint={onPrint} />;
   }

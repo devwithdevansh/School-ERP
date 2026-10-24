@@ -459,7 +459,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       try {
         const u = JSON.parse(saved);
         if (u.role === 'TEACHER') return 'teacher-attendance';
-        if (u.role === 'parent') return 'student-dashboard';
+        if (u.role === 'parent') return 'student-fees';
         if (u.role === 'ORG_ADMIN') return 'org-clients';
       } catch {}
       return 'dashboard';
@@ -968,7 +968,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setScreen('teacher-attendance');
       } else if (userObj.role === 'parent') {
         setActivePortal('STUDENT');
-        setScreen('student-dashboard');
+        setScreen('student-fees');
       } else {
         setScreen(userObj.role === 'ORG_ADMIN' ? 'org-clients' : 'dashboard');
       }

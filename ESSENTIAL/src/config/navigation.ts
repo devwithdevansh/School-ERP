@@ -174,16 +174,8 @@ export const NAV_MODULES: NavModule[] = [
       {
         title: 'Fee Services',
         items: [
-          { id: 'student-dashboard', label: 'Overview & Dues', icon: LayoutDashboard },
-          { id: 'student-fees', label: 'Pay Fees Online', icon: CreditCard },
+          { id: 'student-fees', label: 'Pay Pending Fees', icon: CreditCard },
           { id: 'student-receipts', label: 'Payment Receipts', icon: Receipt },
-        ],
-      },
-      {
-        title: 'School & Fee Info',
-        items: [
-          { id: 'student-structure', label: 'Fee Schedule', icon: Layers },
-          { id: 'student-helpdesk', label: 'Accounts Helpdesk', icon: Building2 },
         ],
       },
     ],
