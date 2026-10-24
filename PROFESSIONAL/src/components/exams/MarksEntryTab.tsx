@@ -73,14 +73,17 @@ export const MarksEntryTab: React.FC<MarksEntryTabProps> = ({
 
         const merged = classStudents.map(st => {
           const existing = fetched.find(r => (r.studentId?._id || r.studentId?.id || r.studentId) === (st._id || st.id));
+          const isAbsentInDailyAttendance = !!existing?.isAbsentInDailyAttendance;
+          const initialAttendance = existing?.attendance || (isAbsentInDailyAttendance ? 'ABSENT' : 'PRESENT');
           return {
             studentId: st._id || st.id,
             studentName: st.studentName,
             rollNo: st.rollNo,
-            attendance: existing?.attendance || 'PRESENT',
+            attendance: initialAttendance,
+            isAbsentInDailyAttendance,
             marksObtained: existing?.marksObtained != null ? existing.marksObtained : '',
             gradeObtained: existing?.gradeObtained || '',
-            remarks: existing?.remarks || ''
+            remarks: existing?.remarks || (isAbsentInDailyAttendance && !existing?.remarks ? 'Absent in daily attendance' : '')
           };
         });
 
@@ -498,8 +501,15 @@ export const MarksEntryTab: React.FC<MarksEntryTabProps> = ({
                         {row.rollNo ?? '-'}
                       </td>
                       <td className="py-3 px-4">
-                        <div className={`font-bold text-sm ${isAbsent ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                          {row.studentName}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`font-bold text-sm ${isAbsent ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                            {row.studentName}
+                          </span>
+                          {row.isAbsentInDailyAttendance && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                              ⚠️ Absent in Attendance
+                            </span>
+                          )}
                         </div>
                       </td>
 

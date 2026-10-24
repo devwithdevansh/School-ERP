@@ -500,6 +500,12 @@ class _WeeklyTestCard extends StatelessWidget {
                     style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                   ),
                 )
+              else if (r.isAbsent)
+                const StatusPill(
+                  'ABSENT',
+                  tone: PillTone.danger,
+                  icon: Icons.cancel_outlined,
+                )
               else if (hasMarks)
                 StatusPill(
                   isPass ? 'PASSED' : 'BELOW PASS',
@@ -512,7 +518,26 @@ class _WeeklyTestCard extends StatelessWidget {
           const SizedBox(height: Space.md),
 
           // Score and progress
-          if (!r.isGradeBased && hasMarks) ...[
+          if (r.isAbsent) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.person_off_rounded, size: 16, color: AppColors.red),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Student was Absent on Exam Day',
+                    style: AppTextStyles.labelLarge.copyWith(color: AppColors.red, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (!r.isGradeBased && hasMarks) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -692,17 +717,21 @@ class _ReportCard extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: Text(
-                            r.isGradeBased
-                                ? (r.gradeObtained ?? '—')
-                                : (r.marksObtained == null
-                                    ? '—'
-                                    : '${_fmtNum(r.marksObtained!)} / ${_fmtNum(r.maxMarks)}'),
+                            r.isAbsent
+                                ? 'ABSENT'
+                                : (r.isGradeBased
+                                    ? (r.gradeObtained ?? '—')
+                                    : (r.marksObtained == null
+                                        ? '—'
+                                        : '${_fmtNum(r.marksObtained!)} / ${_fmtNum(r.maxMarks)}')),
                             textAlign: TextAlign.right,
                             style: AppTextStyles.mono.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: (!r.isGradeBased && r.marksObtained != null && !r.isPass)
+                              color: r.isAbsent
                                   ? AppColors.red
-                                  : AppColors.ink,
+                                  : ((!r.isGradeBased && r.marksObtained != null && !r.isPass)
+                                      ? AppColors.red
+                                      : AppColors.ink),
                             ),
                           ),
                         ),

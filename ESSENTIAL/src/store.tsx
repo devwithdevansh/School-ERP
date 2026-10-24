@@ -359,6 +359,7 @@ interface AppContextType {
   fetchAttendanceOverview: (date: string) => Promise<any[]>;
   confirmAttendance: (attendanceId: string) => Promise<{ success: boolean; notified?: number; error?: string }>;
   remindAttendanceTeacher: (cls: { standard: string; division: string; medium: string; date: string }) => Promise<{ success: boolean; error?: string }>;
+  fetchAttendanceRegister: (standard: string, division: string, medium?: string, month?: number, year?: number) => Promise<any>;
 
   addStudent: (student: Omit<Student, 'id' | 'status'>) => Promise<boolean>;
   recordPayment: (
@@ -1355,6 +1356,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const fetchAttendanceRegister = async (standard: string, division: string, medium = 'English', month?: number, year?: number): Promise<any> => {
+    try {
+      const q = new URLSearchParams({ standard, division, medium });
+      if (month) q.append('month', String(month));
+      if (year) q.append('year', String(year));
+      const res = await authFetch(`/api/v1/attendance/register?${q.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching attendance register:', err);
+      return null;
+    }
+  };
+
   // Update a standard fee structure
   const updateFeeStructure = async (id: string, data: Partial<FeeStructureData>): Promise<boolean> => {
     try {
@@ -1840,6 +1858,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         fetchAttendanceOverview,
         confirmAttendance,
         remindAttendanceTeacher,
+        fetchAttendanceRegister,
         addStudent,
         recordPayment,
         applyConcession,

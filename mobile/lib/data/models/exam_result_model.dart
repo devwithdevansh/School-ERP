@@ -11,6 +11,7 @@ class ExamResultModel {
   final String? gradeObtained;
   final String? remarks;
   final DateTime? date;
+  final String attendance;
 
   const ExamResultModel({
     required this.id,
@@ -25,9 +26,13 @@ class ExamResultModel {
     this.gradeObtained,
     this.remarks,
     this.date,
+    this.attendance = 'PRESENT',
   });
 
-  bool get isPass => (marksObtained ?? 0) >= passingMarks;
+  bool get isPass => (marksObtained ?? 0) >= passingMarks && !isAbsent;
+
+  /// Whether the student was marked absent for this exam/subject
+  bool get isAbsent => attendance.toUpperCase() == 'ABSENT';
 
   /// Graded by a letter grade rather than marks — has no numeric total.
   bool get isGradeBased => examType.toLowerCase() == 'grades';
@@ -73,6 +78,7 @@ class ExamResultModel {
       gradeObtained: json['gradeObtained'] as String?,
       remarks: json['remarks'] as String?,
       date: createdAt,
+      attendance: (json['attendance'] as String? ?? 'PRESENT').toUpperCase(),
     );
   }
 }

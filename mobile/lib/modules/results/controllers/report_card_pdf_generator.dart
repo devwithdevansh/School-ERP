@@ -260,12 +260,14 @@ class ReportCardPdfGenerator {
                               pw.Expanded(
                                 flex: 2,
                                 child: pw.Text(
-                                  sub.isGradeBased
-                                      ? (sub.gradeObtained ?? '—')
-                                      : (hasMarks ? '${sub.marksObtained}' : '—'),
+                                  sub.isAbsent
+                                      ? 'ABSENT'
+                                      : (sub.isGradeBased
+                                          ? (sub.gradeObtained ?? '—')
+                                          : (hasMarks ? '${sub.marksObtained}' : '—')),
                                   textAlign: pw.TextAlign.right,
                                   style: pw.TextStyle(
-                                    color: (hasMarks && !isPass && !sub.isGradeBased) ? failColor : slateDark,
+                                    color: (sub.isAbsent || (hasMarks && !isPass && !sub.isGradeBased)) ? failColor : slateDark,
                                     fontSize: 9,
                                     fontWeight: pw.FontWeight.bold,
                                   ),
@@ -274,12 +276,14 @@ class ReportCardPdfGenerator {
                               pw.Expanded(
                                 flex: 2,
                                 child: pw.Text(
-                                  sub.isGradeBased
-                                      ? 'GRADED'
-                                      : (!hasMarks ? 'PENDING' : (isPass ? 'PASS' : 'FAIL')),
+                                  sub.isAbsent
+                                      ? 'ABSENT'
+                                      : (sub.isGradeBased
+                                          ? 'GRADED'
+                                          : (!hasMarks ? 'PENDING' : (isPass ? 'PASS' : 'FAIL'))),
                                   textAlign: pw.TextAlign.center,
                                   style: pw.TextStyle(
-                                    color: isPass ? secondaryColor : failColor,
+                                    color: (!sub.isAbsent && isPass) ? secondaryColor : failColor,
                                     fontSize: 8,
                                     fontWeight: pw.FontWeight.bold,
                                   ),

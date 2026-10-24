@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/ui/ui.dart';
@@ -21,6 +22,7 @@ class _AttendanceViewState extends State<AttendanceView> {
   late DateTime _month;
   static final DateTime _today = DateTime.now();
   bool _loading = true;
+  StudentAttendanceReport? _report;
   List<AttendanceDayModel> _records = [];
 
   @override
@@ -37,10 +39,11 @@ class _AttendanceViewState extends State<AttendanceView> {
       return;
     }
     setState(() => _loading = true);
-    final records = await _repo.getAttendance(studentId, month: _month.month, year: _month.year);
+    final report = await _repo.getStudentAttendanceReport(studentId, month: _month.month, year: _month.year);
     if (!mounted) return;
     setState(() {
-      _records = records;
+      _report = report;
+      _records = report.records;
       _loading = false;
     });
   }
@@ -79,10 +82,22 @@ class _AttendanceViewState extends State<AttendanceView> {
   Widget build(BuildContext context) {
     final statuses = _statuses;
     final counted = statuses.values.where((s) => s == _Day.present || s == _Day.absent || s == _Day.late).toList();
-    final present = counted.where((s) => s == _Day.present || s == _Day.late).length;
-    final absent = counted.where((s) => s == _Day.absent).length;
-    final onLeave = statuses.values.where((s) => s == _Day.leave).length;
-    final pct = counted.isEmpty ? 0.0 : present / counted.length;
+    final monthPresent = counted.where((s) => s == _Day.present || s == _Day.late).length;
+    final monthAbsent = counted.where((s) => s == _Day.absent).length;
+    final monthLeave = statuses.values.where((s) => s == _Day.leave).length;
+    final monthPct = counted.isEmpty ? 0.0 : monthPresent / counted.length;
+
+    // Overall session summary from report
+    final summary = _report?.summary ?? AttendanceSummary(
+      totalDays: counted.length,
+      presentDays: monthPresent,
+      absentDays: monthAbsent,
+      leaveDays: monthLeave,
+      percentage: (monthPct * 100).roundToDouble(),
+    );
+
+    final sessionPct = (summary.percentage / 100).clamp(0.0, 1.0);
+    final absentList = _report?.absentHistory ?? [];
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -97,94 +112,325 @@ class _AttendanceViewState extends State<AttendanceView> {
             ? const Center(child: CircularProgressIndicator())
             : ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
                 children: [
-                  Padding(
+                  // ─────────────────────────────────────────────────────────────
+                  // 1. OVERALL SESSION DAYS COUNT CARD
+                  // ─────────────────────────────────────────────────────────────
+                  SurfaceCard(
                     padding: const EdgeInsets.all(16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SurfaceCard(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                          child: Row(
-                            children: [
-                              ProgressRing(
-                                progress: pct,
-                                size: 72,
-                                strokeWidth: 7,
-                                color: pct >= 0.85 ? AppColors.teal : AppColors.accentDeep,
-                                center: Text('${(pct * 100).round()}%',
-                                    style: AppTextStyles.mono.copyWith(fontSize: 15, fontWeight: FontWeight.w800)),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text('This month', style: AppTextStyles.bodySmall),
-                                    const SizedBox(height: 2),
-                                    Text('${counted.length} school days', style: AppTextStyles.h3),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 6,
-                                      children: [
-                                        _StatChip(label: 'Present', value: present, color: AppColors.teal),
-                                        _StatChip(label: 'Absent', value: absent, color: AppColors.red),
-                                        _StatChip(label: 'Leave', value: onLeave, color: AppColors.inkLight),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.chevron_left_rounded),
-                              color: AppColors.ink,
-                              onPressed: () {
-                                setState(() => _month = DateTime(_month.year, _month.month - 1));
-                                _load();
-                              },
+                            Text(
+                              'ACADEMIC SESSION SUMMARY',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.inkLight,
+                                letterSpacing: 1.0,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                            Text(_monthLabel(_month), style: AppTextStyles.h3),
-                            IconButton(
-                              icon: const Icon(Icons.chevron_right_rounded),
-                              color: _month.year == _today.year && _month.month == _today.month
-                                  ? AppColors.border
-                                  : AppColors.ink,
-                              onPressed: _month.year == _today.year && _month.month == _today.month
-                                  ? null
-                                  : () {
-                                      setState(() => _month = DateTime(_month.year, _month.month + 1));
-                                      _load();
-                                    },
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: sessionPct >= 0.75
+                                    ? AppColors.tealPale
+                                    : AppColors.redPale,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                sessionPct >= 0.75 ? 'GOOD STANDING' : 'LOW ATTENDANCE',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: sessionPct >= 0.75 ? AppColors.teal : AppColors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9.5,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        SurfaceCard(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                          child: _CalendarGrid(month: _month, statuses: statuses),
-                        ),
                         const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 14,
-                          runSpacing: 8,
+                        Row(
                           children: [
-                            _LegendDot(color: AppColors.teal, label: 'Present'),
-                            _LegendDot(color: AppColors.red, label: 'Absent'),
-                            _LegendDot(color: AppColors.inkLight, label: 'Holiday / Weekend'),
+                            ProgressRing(
+                              progress: sessionPct,
+                              size: 78,
+                              strokeWidth: 8,
+                              color: sessionPct >= 0.85
+                                  ? AppColors.teal
+                                  : (sessionPct >= 0.75 ? AppColors.accentDeep : AppColors.red),
+                              center: Text(
+                                '${summary.percentage.toStringAsFixed(1)}%',
+                                style: AppTextStyles.mono.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 18),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${summary.totalDays} Total Days',
+                                    style: AppTextStyles.h2.copyWith(fontSize: 20),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'Recorded working days in session',
+                                    style: AppTextStyles.bodySmall.copyWith(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(height: 1),
+                        const SizedBox(height: 12),
+                        // 4-stat counters
+                        Row(
+                          children: [
+                            _DayCounterBox(
+                              label: 'PRESENT',
+                              value: summary.presentDays,
+                              color: AppColors.teal,
+                              icon: Icons.check_circle_outline_rounded,
+                            ),
+                            const SizedBox(width: 8),
+                            _DayCounterBox(
+                              label: 'ABSENT',
+                              value: summary.absentDays,
+                              color: AppColors.red,
+                              icon: Icons.highlight_off_rounded,
+                            ),
+                            const SizedBox(width: 8),
+                            _DayCounterBox(
+                              label: 'LEAVE',
+                              value: summary.leaveDays,
+                              color: AppColors.primary,
+                              icon: Icons.event_busy_rounded,
+                            ),
                           ],
                         ),
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // ─────────────────────────────────────────────────────────────
+                  // 2. MONTH SELECTOR & CALENDAR VIEW
+                  // ─────────────────────────────────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left_rounded),
+                        color: AppColors.ink,
+                        onPressed: () {
+                          setState(() => _month = DateTime(_month.year, _month.month - 1));
+                          _load();
+                        },
+                      ),
+                      Text(_monthLabel(_month), style: AppTextStyles.h3),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right_rounded),
+                        color: _month.year == _today.year && _month.month == _today.month
+                            ? AppColors.border
+                            : AppColors.ink,
+                        onPressed: _month.year == _today.year && _month.month == _today.month
+                            ? null
+                            : () {
+                                setState(() => _month = DateTime(_month.year, _month.month + 1));
+                                _load();
+                              },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  SurfaceCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _CalendarGrid(month: _month, statuses: statuses),
+                        const SizedBox(height: 14),
+                        const Divider(height: 1),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'This month: ${counted.length} days',
+                              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Wrap(
+                              spacing: 6,
+                              children: [
+                                _StatChip(label: 'Present', value: monthPresent, color: AppColors.teal),
+                                _StatChip(label: 'Absent', value: monthAbsent, color: AppColors.red),
+                                if (monthLeave > 0)
+                                  _StatChip(label: 'Leave', value: monthLeave, color: AppColors.primary),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 8,
+                    children: [
+                      _LegendDot(color: AppColors.teal, label: 'Present'),
+                      _LegendDot(color: AppColors.red, label: 'Absent'),
+                      _LegendDot(color: AppColors.inkLight, label: 'Holiday / Weekend'),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ─────────────────────────────────────────────────────────────
+                  // 3. ABSENCE REGISTER & HISTORY (SPECIFIC DATES OF ABSENCE)
+                  // ─────────────────────────────────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'ABSENCE HISTORY & LOGS',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          letterSpacing: 1.0,
+                          color: AppColors.inkLight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: absentList.isEmpty ? AppColors.tealPale : AppColors.redPale,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${absentList.length} Day${absentList.length == 1 ? '' : 's'} Absent',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: absentList.isEmpty ? AppColors.teal : AppColors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  if (absentList.isEmpty)
+                    SurfaceCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.tealPale,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.verified_rounded, color: AppColors.teal, size: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('100% Attendance', style: AppTextStyles.h3),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Great job! No absent days recorded so far.',
+                                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.inkLight),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: absentList.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, i) {
+                        final item = absentList[i];
+                        final dateStr = DateFormat('EEEE, dd MMMM yyyy').format(item.date);
+                        return SurfaceCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: AppColors.redPale,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(Icons.event_busy_rounded, color: AppColors.red, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      dateStr,
+                                      style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      item.remarks != null && item.remarks!.trim().isNotEmpty
+                                          ? 'Reason: ${item.remarks!.trim()}'
+                                          : 'Marked absent by teacher',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: item.remarks != null && item.remarks!.trim().isNotEmpty
+                                            ? AppColors.ink
+                                            : AppColors.inkLight,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.redPale,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'ABSENT',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+
+                  const SizedBox(height: 24),
                 ],
               ),
       ),
@@ -198,6 +444,62 @@ class _AttendanceViewState extends State<AttendanceView> {
   }
 }
 
+class _DayCounterBox extends StatelessWidget {
+  final String label;
+  final int value;
+  final Color color;
+  final IconData icon;
+
+  const _DayCounterBox({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 12, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: color,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$value',
+              style: AppTextStyles.monoMedium.copyWith(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _StatChip extends StatelessWidget {
   final String label;
   final int value;
@@ -207,7 +509,7 @@ class _StatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
       child: Text(
         '$value $label',

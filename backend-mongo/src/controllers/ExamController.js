@@ -3,6 +3,7 @@ import Exam from '../models/Exam.js';
 import ExamResult from '../models/ExamResult.js';
 import AcademicYear from '../models/AcademicYear.js';
 import Student from '../models/Student.js';
+import Attendance from '../models/Attendance.js';
 import AllocationGuardService from '../services/AllocationGuardService.js';
 import verifyParentOwnsStudent from '../utils/verifyParentOwnsStudent.js';
 import catchAsync from '../utils/catchAsync.js';
@@ -283,12 +284,48 @@ class ExamController {
       await verifyParentOwnsStudent(req, studentId);
     }
 
+    const student = await Student.findById(studentId);
+    if (!student) throw new AppError('Student not found', 404);
+
     const results = await ExamResult.find({ studentId })
-      .populate({ path: 'examId', select: 'examName type status isPublished maxMarks passingMarks academicYearId standard medium' })
+      .populate({ path: 'examId', select: 'examName type status isPublished maxMarks passingMarks academicYearId standard medium subjects' })
       .populate('subjectId', 'subjectName subjectCode')
       .sort({ createdAt: -1 });
 
-    sendResponse(res, 200, results);
+    // Dates when this student was marked ABSENT in daily attendance
+    const absentSheets = await Attendance.find({
+      standard: student.standard,
+      division: student.division,
+      medium: student.medium,
+      'records.studentId': studentId,
+      'records.status': 'ABSENT'
+    }).select('date');
+
+    const absentDateKeys = new Set(
+      absentSheets.map(s => {
+        const d = new Date(s.date);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      })
+    );
+
+    const augmented = results.map(r => {
+      const obj = r.toObject ? r.toObject() : { ...r };
+      const sIdStr = obj.subjectId?._id?.toString() || obj.subjectId?.toString();
+      const examSub = obj.examId?.subjects?.find(s => s.subjectId?.toString() === sIdStr);
+      if (examSub?.examDate) {
+        const d = new Date(examSub.examDate);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (absentDateKeys.has(key)) {
+          obj.isAbsentInDailyAttendance = true;
+          if (!obj.attendance || (obj.attendance === 'PRESENT' && obj.marksObtained == null)) {
+            obj.attendance = 'ABSENT';
+          }
+        }
+      }
+      return obj;
+    });
+
+    sendResponse(res, 200, augmented);
   });
 
   /**
@@ -311,6 +348,32 @@ class ExamController {
         subjectId
       );
 
+      // Check attendance for this class on examDate if defined
+      const examSub = exam.subjects.find(s => s.subjectId.toString() === subjectId.toString());
+      const targetDate = examSub?.examDate;
+      let absentStudentIds = new Set();
+      if (targetDate) {
+        const dStart = new Date(targetDate);
+        dStart.setHours(0, 0, 0, 0);
+        const dEnd = new Date(targetDate);
+        dEnd.setHours(23, 59, 59, 999);
+
+        const sheet = await Attendance.findOne({
+          standard: exam.standard,
+          division: division.toUpperCase(),
+          medium: exam.medium,
+          date: { $gte: dStart, $lte: dEnd }
+        });
+
+        if (sheet?.records) {
+          for (const rec of sheet.records) {
+            if (rec.status === 'ABSENT') {
+              absentStudentIds.add(rec.studentId.toString());
+            }
+          }
+        }
+      }
+
       const results = await ExamResult.find({
         examId,
         subjectId
@@ -320,7 +383,45 @@ class ExamController {
         select: 'studentName admissionNo rollNo division standard medium isActive isMigrated'
       });
 
-      const filteredResults = results.filter(r => r.studentId != null);
+      const filteredResults = results
+        .filter(r => r.studentId != null)
+        .map(r => {
+          const sId = (r.studentId?._id || r.studentId?.id || r.studentId).toString();
+          const isAbsentInDailyAttendance = absentStudentIds.has(sId);
+          const obj = r.toObject ? r.toObject() : { ...r };
+          obj.isAbsentInDailyAttendance = isAbsentInDailyAttendance;
+          if (isAbsentInDailyAttendance && (!obj.attendance || obj.attendance === 'PRESENT') && (obj.marksObtained == null)) {
+            obj.attendance = 'ABSENT';
+          }
+          return obj;
+        });
+
+      // Also include any students marked absent on that date who don't have an ExamResult yet
+      const existingStudentIds = new Set(filteredResults.map(r => (r.studentId?._id || r.studentId?.id || r.studentId).toString()));
+      const missingAbsentIds = Array.from(absentStudentIds).filter(id => !existingStudentIds.has(id));
+      if (missingAbsentIds.length > 0) {
+        const missingStudents = await Student.find({
+          _id: { $in: missingAbsentIds },
+          division: division.toUpperCase(),
+          standard: exam.standard,
+          medium: exam.medium,
+          isActive: { $ne: false }
+        }).select('studentName admissionNo rollNo division standard medium');
+
+        for (const ms of missingStudents) {
+          filteredResults.push({
+            examId,
+            subjectId,
+            studentId: ms,
+            attendance: 'ABSENT',
+            isAbsentInDailyAttendance: true,
+            marksObtained: null,
+            gradeObtained: null,
+            remarks: 'Marked absent in daily attendance'
+          });
+        }
+      }
+
       return sendResponse(res, 200, filteredResults);
     }
 

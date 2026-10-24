@@ -346,9 +346,152 @@ class AttendanceController {
   });
 
   /**
+   * GET /api/v1/attendance/register?standard=X&division=Y&medium=Z&month=M&year=Y
+   * Class attendance register: Day-wise matrix (P/A/L/—) and daily absentees list for teachers & admin
+   */
+  static getAttendanceRegister = catchAsync(async (req, res) => {
+    const { standard, division, medium, month, year } = req.query;
+
+    if (!standard || !division || !medium) {
+      throw new AppError('standard, division, and medium are required', 400);
+    }
+
+    const now = new Date();
+    const y = year ? parseInt(year, 10) : now.getFullYear();
+    const m = month ? parseInt(month, 10) : now.getMonth() + 1; // 1-12
+
+    const start = new Date(y, m - 1, 1);
+    const end = new Date(y, m, 1); // first day of next month
+
+    // Active students in this class
+    const students = await Student.find({
+      standard,
+      division: division.toUpperCase(),
+      medium,
+      isActive: { $ne: false },
+      isMigrated: true,
+    })
+      .select('studentName rollNo admissionNo phone primaryMobileNumber parentId')
+      .populate('parentId', 'parentName primaryMobileNumber')
+      .sort({ rollNo: 1, studentName: 1 })
+      .lean();
+
+    // Attendance sheets in this month
+    const sheets = await Attendance.find({
+      standard,
+      division: division.toUpperCase(),
+      medium,
+      date: { $gte: start, $lt: end },
+    })
+      .sort({ date: 1 })
+      .lean();
+
+    // Prepare recorded dates
+    const dates = sheets.map((s) => {
+      const d = new Date(s.date);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return {
+        dateKey,
+        date: s.date,
+        dayOfMonth: d.getDate(),
+        dayOfWeek: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        status: s.status,
+      };
+    });
+
+    // Date -> Sheet Map
+    const dateSheetMap = new Map();
+    for (const s of sheets) {
+      const d = new Date(s.date);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      dateSheetMap.set(dateKey, s);
+    }
+
+    // Daily Absentee Log (for each day, which students were absent)
+    const dailyAbsentees = [];
+    for (const { dateKey, date } of dates) {
+      const sheet = dateSheetMap.get(dateKey);
+      const absents = [];
+      if (sheet?.records) {
+        for (const rec of sheet.records) {
+          if (rec.status === 'ABSENT') {
+            const student = students.find((st) => st._id.toString() === rec.studentId.toString());
+            absents.push({
+              studentId: rec.studentId,
+              studentName: student?.studentName || 'Student',
+              rollNo: student?.rollNo ?? null,
+              parentPhone: student?.parentId?.primaryMobileNumber || student?.phone || null,
+              remarks: rec.remarks || null,
+              verifiedByAdmin: rec.verifiedByAdmin,
+            });
+          }
+        }
+      }
+      dailyAbsentees.push({
+        dateKey,
+        date,
+        absentCount: absents.length,
+        absents,
+      });
+    }
+
+    // Matrix per student
+    const studentRegister = students.map((st) => {
+      const sId = st._id.toString();
+      const dayStatuses = {};
+      let present = 0;
+      let absent = 0;
+      let late = 0;
+      let leave = 0;
+
+      for (const { dateKey } of dates) {
+        const sheet = dateSheetMap.get(dateKey);
+        const rec = sheet?.records?.find((r) => r.studentId.toString() === sId);
+        const status = rec ? rec.status : '—';
+        dayStatuses[dateKey] = status;
+
+        if (status === 'PRESENT') present++;
+        else if (status === 'ABSENT') absent++;
+        else if (status === 'LATE') { late++; present++; }
+        else if (status === 'LEAVE') leave++;
+      }
+
+      const totalDays = dates.length;
+      const pct = totalDays > 0 ? Number(((present / totalDays) * 100).toFixed(1)) : 0;
+
+      return {
+        studentId: st._id,
+        studentName: st.studentName,
+        rollNo: st.rollNo,
+        parentPhone: st.parentId?.primaryMobileNumber || st.phone || null,
+        dayStatuses,
+        totalPresent: present,
+        totalAbsent: absent,
+        totalLate: late,
+        totalLeave: leave,
+        totalDays,
+        percentage: pct,
+      };
+    });
+
+    sendResponse(res, 200, {
+      month: m,
+      year: y,
+      standard,
+      division: division.toUpperCase(),
+      medium,
+      totalStudents: students.length,
+      totalWorkingDays: dates.length,
+      dates,
+      register: studentRegister,
+      dailyAbsentees,
+    });
+  });
+
+  /**
    * GET /api/v1/attendance/student/:studentId?month=&year=
-   * A parent's view of one child's attendance for a given month
-   * (defaults to the current month). Ownership-checked for parents.
+   * A parent/student view of attendance with days count (total, present, absent, leave)
+   * and absence history register.
    */
   static getAttendanceForStudent = catchAsync(async (req, res) => {
     const { studentId } = req.params;
@@ -368,12 +511,14 @@ class AttendanceController {
     const start = new Date(y, m - 1, 1);
     const end = new Date(y, m, 1); // first day of next month, exclusive
 
+    const activeYear = await AcademicYear.findOne({ isActive: true });
+
+    // 1. Current month sheets
     const days = await Attendance.find({
       standard: student.standard,
       division: student.division,
       medium: student.medium,
       date: { $gte: start, $lt: end },
-      // Parents must never see a teacher's unconfirmed sheet.
       ...(req.user.role === 'parent' ? { status: { $ne: 'SUBMITTED' } } : {}),
     }).sort({ date: 1 });
 
@@ -384,7 +529,54 @@ class AttendanceController {
       })
       .filter(Boolean);
 
-    sendResponse(res, 200, records);
+    // 2. All-time / Academic Year attendance for total days count
+    const allDaysQuery = {
+      standard: student.standard,
+      division: student.division,
+      medium: student.medium,
+      ...(activeYear ? { academicYearId: activeYear._id } : {}),
+      ...(req.user.role === 'parent' ? { status: { $ne: 'SUBMITTED' } } : {}),
+    };
+    const allDays = await Attendance.find(allDaysQuery).sort({ date: 1 });
+
+    let totalDays = 0;
+    let presentDays = 0;
+    let absentDays = 0;
+    let lateDays = 0;
+    let leaveDays = 0;
+    const allAbsentDates = [];
+
+    for (const day of allDays) {
+      const rec = day.records.find((r) => r.studentId.toString() === studentId);
+      if (!rec) continue;
+      totalDays += 1;
+      if (rec.status === 'PRESENT') {
+        presentDays += 1;
+      } else if (rec.status === 'ABSENT') {
+        absentDays += 1;
+        allAbsentDates.push({ date: day.date, remarks: rec.remarks || null });
+      } else if (rec.status === 'LATE') {
+        lateDays += 1;
+        presentDays += 1; // counted as attended
+      } else if (rec.status === 'LEAVE') {
+        leaveDays += 1;
+      }
+    }
+
+    const percentage = totalDays > 0 ? Number(((presentDays / totalDays) * 100).toFixed(1)) : 0;
+
+    sendResponse(res, 200, {
+      records,
+      summary: {
+        totalDays,
+        presentDays,
+        absentDays,
+        lateDays,
+        leaveDays,
+        percentage,
+      },
+      absentHistory: allAbsentDates,
+    });
   });
 }
 

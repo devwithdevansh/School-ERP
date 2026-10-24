@@ -10,7 +10,8 @@ router.use(authenticate);
 // A parent's view of their own child's attendance for a given month
 router.get('/student/:studentId', authorize('ADMIN', 'STAFF', 'TEACHER', 'parent'), AttendanceController.getAttendanceForStudent);
 
-// Admin: per-class "is attendance filled" cards, teacher reminders, and sheet confirmation
+// Admin & Teachers: per-class attendance register matrix & day-wise absentees history
+router.get('/register', authorize('ADMIN', 'STAFF', 'TEACHER'), AttendanceController.getAttendanceRegister);
 router.get('/overview', authorize('ADMIN', 'STAFF'), AttendanceController.getOverview);
 router.post('/remind', authorize('ADMIN', 'STAFF'), AttendanceController.remindTeacher);
 router.post('/:id/confirm', authorize('ADMIN', 'STAFF'), AttendanceController.confirmSheet);
