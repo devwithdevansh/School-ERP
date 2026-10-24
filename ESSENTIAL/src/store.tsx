@@ -93,6 +93,7 @@ export interface TeacherAllocationData {
   _id: string;
   academicYearId: string;
   teacherId: any;
+  teacherIds?: any[];
   standard: string;
   division: string;
   medium: string;

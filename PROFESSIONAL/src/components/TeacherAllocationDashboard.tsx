@@ -378,8 +378,9 @@ export const TeacherAllocationDashboard: React.FC = () => {
 
                       // Extract all allocated teachers (handling both teacherIds array and legacy single teacherId)
                       const assignedTeachers: any[] = [];
-                      if (Array.isArray(alloc?.teacherIds) && alloc.teacherIds.length > 0) {
-                        alloc.teacherIds.forEach((t: any) => {
+                      const rawTeacherIds = (alloc as any)?.teacherIds;
+                      if (Array.isArray(rawTeacherIds) && rawTeacherIds.length > 0) {
+                        rawTeacherIds.forEach((t: any) => {
                           const tObj = typeof t === 'object' ? t : teachers.find(u => u._id === t);
                           if (tObj && !assignedTeachers.some(x => x._id === tObj._id)) assignedTeachers.push(tObj);
                         });
