@@ -45,7 +45,8 @@ export function useNav() {
   const roleLabel = isOrgAdmin ? 'Organization Admin'
     : isSuperAdmin ? 'Super Admin'
     : currentUser?.role === 'ADMIN' ? 'Administrator'
-    : currentUser?.role === 'TEACHER' ? 'Teacher' : 'Staff Member';
+    : currentUser?.role === 'TEACHER' ? 'Teacher'
+    : currentUser?.role === 'parent' ? 'Student / Parent' : 'Staff Member';
 
   return { ctx, modules, activeModule, currentScreen, navigate, switchModule, roleLabel };
 }
