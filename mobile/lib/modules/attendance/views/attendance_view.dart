@@ -125,14 +125,19 @@ class _AttendanceViewState extends State<AttendanceView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'ACADEMIC SESSION SUMMARY',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.inkLight,
-                                letterSpacing: 1.0,
-                                fontWeight: FontWeight.w700,
+                            Expanded(
+                              child: Text(
+                                'SESSION SUMMARY',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.inkLight,
+                                  letterSpacing: 1.0,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
@@ -267,17 +272,25 @@ class _AttendanceViewState extends State<AttendanceView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'This month: ${counted.length} days',
-                              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                            Expanded(
+                              child: Text(
+                                'This month: ${counted.length} days',
+                                style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            Wrap(
-                              spacing: 6,
+                            const SizedBox(width: 6),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 _StatChip(label: 'Present', value: monthPresent, color: AppColors.teal),
+                                const SizedBox(width: 4),
                                 _StatChip(label: 'Absent', value: monthAbsent, color: AppColors.red),
-                                if (monthLeave > 0)
+                                if (monthLeave > 0) ...[
+                                  const SizedBox(width: 4),
                                   _StatChip(label: 'Leave', value: monthLeave, color: AppColors.primary),
+                                ],
                               ],
                             ),
                           ],
@@ -306,14 +319,19 @@ class _AttendanceViewState extends State<AttendanceView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'ABSENCE HISTORY & LOGS',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          letterSpacing: 1.0,
-                          color: AppColors.inkLight,
-                          fontWeight: FontWeight.w700,
+                      Expanded(
+                        child: Text(
+                          'ABSENCE HISTORY',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            letterSpacing: 1.0,
+                            color: AppColors.inkLight,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -471,15 +489,20 @@ class _DayCounterBox extends StatelessWidget {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 12, color: color),
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: color,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
+                Icon(icon, size: 11, color: color),
+                const SizedBox(width: 3),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: color,
+                      fontSize: 9.0,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

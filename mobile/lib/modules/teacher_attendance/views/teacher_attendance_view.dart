@@ -59,7 +59,7 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
             // Top Tab Navigation: Mark Today vs Class Register
             Container(
               color: AppColors.white,
-              padding: const EdgeInsets.fromLTRB(Space.md, Space.xs + 2, Space.md, Space.xs + 2),
+              padding: const EdgeInsets.fromLTRB(Space.md, Space.xs, Space.md, Space.xs),
               child: Row(
                 children: [
                   Expanded(
@@ -88,7 +88,7 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
             Expanded(
               child: controller.activeTab.value == 'TODAY'
                   ? _TodayAttendanceSheet(controller: controller)
-                  : _ClassRegisterBody(controller: controller),
+                  : _MinimalClassRegisterBody(controller: controller),
             ),
           ],
         );
@@ -169,35 +169,30 @@ class _TabButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: isActive ? AppColors.primary : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(Radii.md),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 16,
+              size: 15,
               color: isActive ? Colors.white : AppColors.inkLight,
             ),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: AppTextStyles.labelLarge.copyWith(
-                color: isActive ? Colors.white : AppColors.inkLight,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                fontSize: 13,
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: isActive ? Colors.white : AppColors.inkLight,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                  fontSize: 12.5,
+                ),
               ),
             ),
           ],
@@ -244,7 +239,14 @@ class _TodayAttendanceSheet extends StatelessWidget {
                     children: [
                       Icon(Icons.school_rounded, size: 18, color: AppColors.primary),
                       const SizedBox(width: 8),
-                      Text(controller.selectedClass.value?.label ?? '', style: AppTextStyles.h3),
+                      Expanded(
+                        child: Text(
+                          controller.selectedClass.value?.label ?? '',
+                          style: AppTextStyles.h3,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 if (students.isNotEmpty) ...[
@@ -326,11 +328,11 @@ class _TodayAttendanceSheet extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CLASS REGISTER BODY (MONTHLY MATRIX & DAILY ABSENTEES)
+// MINIMAL & EASY-TO-USE CLASS REGISTER BODY
 // ─────────────────────────────────────────────────────────────────────────────
-class _ClassRegisterBody extends StatelessWidget {
+class _MinimalClassRegisterBody extends StatelessWidget {
   final TeacherAttendanceController controller;
-  const _ClassRegisterBody({required this.controller});
+  const _MinimalClassRegisterBody({required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -341,10 +343,10 @@ class _ClassRegisterBody extends StatelessWidget {
 
       return Column(
         children: [
-          // Header Controls: Class Selector & Month Navigator
+          // Header Bar: Class + Month Navigation + Summary Chip
           Container(
             color: AppColors.white,
-            padding: const EdgeInsets.fromLTRB(Space.md, Space.xs + 2, Space.md, Space.sm),
+            padding: const EdgeInsets.fromLTRB(Space.md, Space.xs, Space.md, Space.sm),
             child: Column(
               children: [
                 if (controller.myClasses.length > 1) ...[
@@ -359,52 +361,117 @@ class _ClassRegisterBody extends StatelessWidget {
                   ),
                   const SizedBox(height: Space.xs),
                 ],
-                // Month Selector Bar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(Radii.md),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left_rounded),
-                        color: AppColors.ink,
-                        onPressed: () => controller.changeRegisterMonth(-1),
-                        tooltip: 'Previous month',
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.calendar_month_rounded, size: 17, color: AppColors.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            DateFormat('MMMM yyyy').format(selectedMonth),
-                            style: AppTextStyles.h3,
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right_rounded),
-                        color: AppColors.ink,
-                        onPressed: () => controller.changeRegisterMonth(1),
-                        tooltip: 'Next month',
-                      ),
-                    ],
-                  ),
+                // Month Selector Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      color: AppColors.ink,
+                      onPressed: () => controller.changeRegisterMonth(-1),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          DateFormat('MMMM yyyy').format(selectedMonth),
+                          style: AppTextStyles.h3,
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded),
+                      color: AppColors.ink,
+                      onPressed: () => controller.changeRegisterMonth(1),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ),
+                if (regData != null) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(Radii.sm),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${regData.totalWorkingDays} Working Days',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.inkMid,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text('•', style: AppTextStyles.labelSmall.copyWith(color: AppColors.inkLight)),
+                        Flexible(
+                          child: Text(
+                            '${regData.averagePercentage}% Avg Attendance',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: regData.averagePercentage >= 75 ? AppColors.teal : AppColors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
+            ),
+          ),
+
+          // Two-mode simple pill switcher
+          Container(
+            color: AppColors.white,
+            padding: const EdgeInsets.fromLTRB(Space.md, 0, Space.md, Space.xs + 2),
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(Radii.sm),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _RegisterSegmentButton(
+                      label: 'By Student',
+                      isSelected: controller.registerSubView.value == 'STUDENTS',
+                      onTap: () => controller.setRegisterSubView('STUDENTS'),
+                    ),
+                  ),
+                  Expanded(
+                    child: _RegisterSegmentButton(
+                      label: 'By Date',
+                      isSelected: controller.registerSubView.value == 'ABSENTEES',
+                      onTap: () => controller.setRegisterSubView('ABSENTEES'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
           Divider(height: 1, color: AppColors.border),
 
-          // Register Body Content
+          // Content List
           Expanded(
             child: isLoading && regData == null
-                ? const SkeletonList(itemHeight: 76)
+                ? const SkeletonList(itemHeight: 64)
                 : regData == null
                     ? Center(
                         child: EmptyState(
@@ -413,10 +480,9 @@ class _ClassRegisterBody extends StatelessWidget {
                           message: 'Could not load attendance register for ${DateFormat('MMMM yyyy').format(selectedMonth)}.',
                         ),
                       )
-                    : _RegisterLoadedContent(
-                        controller: controller,
-                        data: regData,
-                      ),
+                    : controller.registerSubView.value == 'STUDENTS'
+                        ? _MinimalStudentListView(data: regData)
+                        : _MinimalDateListView(data: regData),
           ),
         ],
       );
@@ -424,204 +490,47 @@ class _ClassRegisterBody extends StatelessWidget {
   }
 }
 
-class _RegisterLoadedContent extends StatelessWidget {
-  final TeacherAttendanceController controller;
-  final AttendanceRegisterModel data;
-
-  const _RegisterLoadedContent({
-    required this.controller,
-    required this.data,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(Space.md, Space.md, Space.md, Space.xl),
-        children: [
-          // 1. Overview 4-Metric Card
-          SurfaceCard(
-            padding: const EdgeInsets.all(Space.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'MONTHLY REGISTER OVERVIEW',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        letterSpacing: 1.0,
-                        color: AppColors.inkLight,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${data.standard}-${data.division} (${data.medium})',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Space.sm + 2),
-                Row(
-                  children: [
-                    Expanded(
-                      child: StatTile(
-                        icon: Icons.calendar_today_rounded,
-                        value: '${data.totalWorkingDays}',
-                        label: 'Working Days',
-                        tone: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: Space.sm),
-                    Expanded(
-                      child: StatTile(
-                        icon: Icons.percent_rounded,
-                        value: '${data.averagePercentage}%',
-                        label: 'Avg Attendance',
-                        tone: data.averagePercentage >= 85
-                            ? AppColors.teal
-                            : (data.averagePercentage >= 75 ? AppColors.amber : AppColors.red),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Space.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: StatTile(
-                        icon: Icons.people_alt_rounded,
-                        value: '${data.totalStudents}',
-                        label: 'Enrolled',
-                        tone: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(width: Space.sm),
-                    Expanded(
-                      child: StatTile(
-                        icon: Icons.person_off_rounded,
-                        value: '${data.totalAbsencesInMonth}',
-                        label: 'Total Absences',
-                        tone: data.totalAbsencesInMonth == 0 ? AppColors.teal : AppColors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: Space.md),
-
-          // 2. Sub-view Switcher: Students vs Daily Absentees
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(Radii.md),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _SubTabPill(
-                    label: 'Student Register',
-                    count: data.register.length,
-                    icon: Icons.format_list_numbered_rounded,
-                    isSelected: controller.registerSubView.value == 'STUDENTS',
-                    onTap: () => controller.setRegisterSubView('STUDENTS'),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: _SubTabPill(
-                    label: 'Daily Absentees',
-                    count: data.dailyAbsentees.where((d) => d.absentCount > 0).length,
-                    icon: Icons.event_note_rounded,
-                    isSelected: controller.registerSubView.value == 'ABSENTEES',
-                    onTap: () => controller.setRegisterSubView('ABSENTEES'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: Space.md),
-
-          // 3. Sub-view Content
-          if (controller.registerSubView.value == 'STUDENTS') ...[
-            _StudentRegisterSection(controller: controller, data: data),
-          ] else ...[
-            _DailyAbsenteesSection(data: data),
-          ],
-        ],
-      );
-    });
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// SUB-TAB PILL
+// REGISTER SEGMENT BUTTON
 // ─────────────────────────────────────────────────────────────────────────────
-class _SubTabPill extends StatelessWidget {
+class _RegisterSegmentButton extends StatelessWidget {
   final String label;
-  final int count;
-  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _SubTabPill({
+  const _RegisterSegmentButton({
     required this.label,
-    required this.count,
-    required this.icon,
     required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Pressable(
+    return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.transparent,
-          borderRadius: BorderRadius.circular(Radii.sm),
-          border: isSelected ? Border.all(color: AppColors.primary.withValues(alpha: 0.3)) : null,
+          color: isSelected ? AppColors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(Radii.sm - 2),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isSelected ? AppColors.primary : AppColors.inkLight,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                '$label ($count)',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: isSelected ? AppColors.primary : AppColors.inkLight,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
+        child: Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: isSelected ? AppColors.ink : AppColors.inkLight,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -629,585 +538,231 @@ class _SubTabPill extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STUDENT REGISTER SECTION
+// MINIMAL "BY STUDENT" LIST VIEW
 // ─────────────────────────────────────────────────────────────────────────────
-class _StudentRegisterSection extends StatelessWidget {
-  final TeacherAttendanceController controller;
+class _MinimalStudentListView extends StatelessWidget {
   final AttendanceRegisterModel data;
-
-  const _StudentRegisterSection({
-    required this.controller,
-    required this.data,
-  });
+  const _MinimalStudentListView({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final students = controller.filteredRegisterStudents;
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search & Filter Card
-          SurfaceCard(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.search_rounded, size: 20, color: AppColors.inkLight),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          hintText: 'Search student name or roll no...',
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8),
-                        ),
-                        onChanged: (val) => controller.registerSearchQuery.value = val,
-                      ),
-                    ),
-                    if (controller.registerSearchQuery.value.isNotEmpty)
-                      GestureDetector(
-                        onTap: () => controller.registerSearchQuery.value = '',
-                        child: Icon(Icons.close_rounded, size: 18, color: AppColors.inkLight),
-                      ),
-                  ],
-                ),
-                const Divider(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Showing ${students.length} of ${data.register.length} students',
-                      style: AppTextStyles.bodySmall.copyWith(fontSize: 11),
-                    ),
-                    InkWell(
-                      onTap: () => controller.registerOnlyAbsents.value = !controller.registerOnlyAbsents.value,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: controller.registerOnlyAbsents.value
-                              ? AppColors.red.withValues(alpha: 0.12)
-                              : AppColors.surfaceMuted,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: controller.registerOnlyAbsents.value
-                                ? AppColors.red.withValues(alpha: 0.3)
-                                : Colors.transparent,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              controller.registerOnlyAbsents.value
-                                  ? Icons.check_box_rounded
-                                  : Icons.check_box_outline_blank_rounded,
-                              size: 14,
-                              color: controller.registerOnlyAbsents.value
-                                  ? AppColors.red
-                                  : AppColors.inkLight,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              'Only with absences',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: controller.registerOnlyAbsents.value
-                                    ? AppColors.red
-                                    : AppColors.inkLight,
-                                fontSize: 11,
-                                fontWeight: controller.registerOnlyAbsents.value
-                                    ? FontWeight.w700
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: Space.sm + 2),
-
-          if (students.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: Space.xl),
-              child: Center(
-                child: EmptyState(
-                  icon: Icons.person_search_rounded,
-                  title: 'No matching students',
-                  message: 'Try clearing the search or filter.',
-                ),
-              ),
-            )
-          else
-            for (final st in students) ...[
-              _StudentRegisterCard(record: st, dates: data.dates),
-              const SizedBox(height: Space.xs + 2),
-            ],
-        ],
-      );
-    });
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// STUDENT REGISTER CARD
-// ─────────────────────────────────────────────────────────────────────────────
-class _StudentRegisterCard extends StatefulWidget {
-  final StudentRegisterRecord record;
-  final List<AttendanceRegisterDate> dates;
-
-  const _StudentRegisterCard({
-    required this.record,
-    required this.dates,
-  });
-
-  @override
-  State<_StudentRegisterCard> createState() => _StudentRegisterCardState();
-}
-
-class _StudentRegisterCardState extends State<_StudentRegisterCard> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final r = widget.record;
-    final pct = r.percentage;
-    final tone = pct >= 90
-        ? AppColors.teal
-        : (pct >= 75 ? AppColors.amber : AppColors.red);
-
-    return SurfaceCard(
-      level: SurfaceLevel.flat,
-      padding: const EdgeInsets.all(Space.sm + 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Student Info Row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Roll No Badge
-              Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(Radii.sm),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Text(
-                  r.rollNo,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-
-              // Name & Contact
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      r.studentName,
-                      style: AppTextStyles.labelLarge.copyWith(fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (r.parentPhone != null && r.parentPhone!.isNotEmpty)
-                      Row(
-                        children: [
-                          Icon(Icons.phone_rounded, size: 11, color: AppColors.inkLight),
-                          const SizedBox(width: 4),
-                          Text(
-                            r.parentPhone!,
-                            style: AppTextStyles.bodySmall.copyWith(fontSize: 11),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-
-              // Attendance Percentage Pill
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: tone.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: tone.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  '${pct.toStringAsFixed(1)}%',
-                  style: AppTextStyles.monoMedium.copyWith(
-                    color: tone,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // Day Count Stats Bar
-          Row(
-            children: [
-              _MiniStat(label: 'Present', count: r.totalPresent, color: AppColors.teal),
-              const SizedBox(width: 6),
-              _MiniStat(label: 'Absent', count: r.totalAbsent, color: AppColors.red),
-              const SizedBox(width: 6),
-              _MiniStat(label: 'Leave', count: r.totalLeave, color: AppColors.primary),
-              const Spacer(),
-              InkWell(
-                onTap: () => setState(() => _expanded = !_expanded),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  child: Row(
-                    children: [
-                      Text(
-                        _expanded ? 'Hide Matrix' : 'View Days',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                        ),
-                      ),
-                      Icon(
-                        _expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Expanded Matrix & Absent Log
-          if (_expanded) ...[
-            const SizedBox(height: 10),
-            Divider(height: 1, color: AppColors.border),
-            const SizedBox(height: 10),
-
-            // Explicit Absent Dates Alert
-            if (r.totalAbsent > 0) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(
-                  color: AppColors.red.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(Radii.sm),
-                  border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.event_busy_rounded, size: 14, color: AppColors.red),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Absent on: ${r.absentDateKeys.map((k) {
-                          final p = k.split('-');
-                          return p.length == 3 ? '${p[2]}/${p[1]}' : k;
-                        }).join(', ')}',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.red,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Horizontal Scroll of All Recorded Day Chips
-            Text(
-              'DAILY REGISTER BREAKDOWN',
-              style: AppTextStyles.labelSmall.copyWith(fontSize: 10, letterSpacing: 0.8, color: AppColors.inkLight),
-            ),
-            const SizedBox(height: 6),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: widget.dates.map((d) {
-                  final status = r.dayStatuses[d.dateKey] ?? '—';
-                  final Color chipColor;
-                  final String chipLabel;
-
-                  switch (status) {
-                    case 'PRESENT':
-                      chipColor = AppColors.teal;
-                      chipLabel = 'P';
-                      break;
-                    case 'ABSENT':
-                      chipColor = AppColors.red;
-                      chipLabel = 'A';
-                      break;
-                    case 'LATE':
-                      chipColor = AppColors.amber;
-                      chipLabel = 'L';
-                      break;
-                    case 'LEAVE':
-                      chipColor = AppColors.primary;
-                      chipLabel = 'Lv';
-                      break;
-                    default:
-                      chipColor = AppColors.inkLight;
-                      chipLabel = '—';
-                  }
-
-                  return Container(
-                    margin: const EdgeInsets.only(right: 5),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: chipColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: chipColor.withValues(alpha: 0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          '${d.dayOfMonth}',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            fontSize: 10,
-                            color: AppColors.inkMid,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          chipLabel,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: chipColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final int count;
-  final Color color;
-
-  const _MiniStat({
-    required this.label,
-    required this.count,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        '$label: $count',
-        style: AppTextStyles.labelSmall.copyWith(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DAILY ABSENTEES HISTORY SECTION
-// ─────────────────────────────────────────────────────────────────────────────
-class _DailyAbsenteesSection extends StatelessWidget {
-  final AttendanceRegisterModel data;
-  const _DailyAbsenteesSection({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    if (data.dailyAbsentees.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: Space.xl),
-        child: Center(
-          child: EmptyState(
-            icon: Icons.event_available_rounded,
-            title: 'No Days Recorded',
-            message: 'No daily attendance sheets found for this month.',
-          ),
+    final list = data.register;
+    if (list.isEmpty) {
+      return const Center(
+        child: EmptyState(
+          icon: Icons.people_outline_rounded,
+          title: 'No Students',
+          message: 'No student records in this class.',
         ),
       );
     }
 
-    return Column(
-      children: [
-        for (final day in data.dailyAbsentees) ...[
-          _DailyAbsentCard(day: day),
-          const SizedBox(height: Space.sm),
-        ],
-      ],
-    );
-  }
-}
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(Space.md, Space.sm, Space.md, Space.xl),
+      itemCount: list.length,
+      separatorBuilder: (_, __) => const SizedBox(height: Space.xs + 2),
+      itemBuilder: (context, index) {
+        final st = list[index];
+        final isAllPresent = st.totalAbsent == 0;
+        final absentDatesFormatted = st.absentDateKeys.map((k) {
+          final parts = k.split('-');
+          return parts.length == 3 ? '${parts[2]}/${parts[1]}' : k;
+        }).join(', ');
 
-class _DailyAbsentCard extends StatelessWidget {
-  final DailyAbsenteeLog day;
-  const _DailyAbsentCard({required this.day});
-
-  @override
-  Widget build(BuildContext context) {
-    final dateStr = DateFormat('EEE, dd MMMM yyyy').format(day.date);
-    final hasAbsents = day.absentCount > 0;
-
-    return SurfaceCard(
-      level: SurfaceLevel.flat,
-      padding: const EdgeInsets.all(Space.sm + 3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Day Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return SurfaceCard(
+          level: SurfaceLevel.flat,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          color: isAllPresent ? null : AppColors.redPale.withValues(alpha: 0.35),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(
-                    hasAbsents ? Icons.event_busy_rounded : Icons.verified_rounded,
-                    size: 16,
-                    color: hasAbsents ? AppColors.red : AppColors.teal,
+                  // Roll No Badge
+                  Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isAllPresent ? AppColors.surfaceMuted : AppColors.redPale,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      st.rollNo,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isAllPresent ? AppColors.ink : AppColors.red,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // Name & Days Present
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          st.studentName,
+                          style: AppTextStyles.labelLarge.copyWith(fontSize: 13.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${st.totalPresent} / ${st.totalDays} Days (${st.percentage.toStringAsFixed(0)}%)',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.inkLight,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Text(dateStr, style: AppTextStyles.h3.copyWith(fontSize: 14)),
+
+                  // Absent / Present Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isAllPresent
+                          ? AppColors.tealPale
+                          : AppColors.redPale,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isAllPresent ? '100% Present' : '${st.totalAbsent} Absent',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: isAllPresent ? AppColors.teal : AppColors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: (hasAbsents ? AppColors.red : AppColors.teal).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: (hasAbsents ? AppColors.red : AppColors.teal).withValues(alpha: 0.3),
+
+              // Inline absent dates if any
+              if (!isAllPresent && absentDatesFormatted.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.red.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Absent on: $absentDatesFormatted',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.red,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                child: Text(
-                  hasAbsents ? '${day.absentCount} Absent' : 'All Present',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: hasAbsents ? AppColors.red : AppColors.teal,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              ],
             ],
           ),
-
-          if (hasAbsents) ...[
-            const SizedBox(height: 10),
-            Divider(height: 1, color: AppColors.border),
-            const SizedBox(height: 8),
-
-            // List of Absent Students
-            for (final st in day.absents) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.red.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        st.rollNo,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.red,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            st.studentName,
-                            style: AppTextStyles.labelLarge.copyWith(fontSize: 13),
-                          ),
-                          if (st.remarks != null && st.remarks!.isNotEmpty)
-                            Text(
-                              'Reason: ${st.remarks}',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.red,
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (st.parentPhone != null && st.parentPhone!.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.phone_rounded, size: 12, color: AppColors.inkLight),
-                          const SizedBox(width: 4),
-                          Text(
-                            st.parentPhone!,
-                            style: AppTextStyles.mono.copyWith(fontSize: 11, color: AppColors.inkMid),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ] else ...[
-            const SizedBox(height: 6),
-            Text(
-              '100% attendance recorded — no students were absent.',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.teal, fontSize: 11.5),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EXISTING SHEET STATUS BANNER & STUDENT ROW
+// MINIMAL "BY DATE" LIST VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+class _MinimalDateListView extends StatelessWidget {
+  final AttendanceRegisterModel data;
+  const _MinimalDateListView({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final list = data.dailyAbsentees;
+    if (list.isEmpty) {
+      return const Center(
+        child: EmptyState(
+          icon: Icons.event_available_rounded,
+          title: 'No Days Recorded',
+          message: 'No daily attendance sheets found for this month.',
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(Space.md, Space.sm, Space.md, Space.xl),
+      itemCount: list.length,
+      separatorBuilder: (_, __) => const SizedBox(height: Space.xs + 2),
+      itemBuilder: (context, index) {
+        final day = list[index];
+        final dateStr = DateFormat('EEE, dd MMM yyyy').format(day.date);
+        final hasAbsents = day.absentCount > 0;
+
+        return SurfaceCard(
+          level: SurfaceLevel.flat,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        hasAbsents ? Icons.event_busy_rounded : Icons.check_circle_rounded,
+                        size: 15,
+                        color: hasAbsents ? AppColors.red : AppColors.teal,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(dateStr, style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (hasAbsents ? AppColors.red : AppColors.teal).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      hasAbsents ? '${day.absentCount} Absent' : 'All Present',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: hasAbsents ? AppColors.red : AppColors.teal,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              if (hasAbsents) ...[
+                const SizedBox(height: 6),
+                for (final st in day.absents) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2, bottom: 2, left: 4),
+                    child: Text(
+                      '• Roll ${st.rollNo}: ${st.studentName}${st.remarks != null && st.remarks!.isNotEmpty ? ' (${st.remarks})' : ''}',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.inkMid,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHEET STATUS BANNER & STUDENT ROW
 // ─────────────────────────────────────────────────────────────────────────────
 class _SheetStatusBanner extends StatelessWidget {
   final String status;
