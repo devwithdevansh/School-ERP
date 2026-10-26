@@ -1429,6 +1429,23 @@ class StudentService {
         feeStruct.scheduleType !== 'DEFAULT_12_2';
 
       if (hasCustomParts) {
+        // Collect names of all active custom installment parts
+        const activePartNames = new Set(feeStruct.installmentParts.map(p => p.name));
+
+        // Delete any UNPAID fee-structure ledgers that are NOT part of the new installmentParts list!
+        const obsoleteUnpaidLedgers = existingLedgers.filter(l =>
+          (l.feeType === 'EDUCATION' || l.feeType === 'TERM') &&
+          l.generatedFrom === 'FEE_STRUCTURE' &&
+          !activePartNames.has(l.feePeriod) &&
+          (l.paidAmount || 0) === 0
+        );
+
+        if (obsoleteUnpaidLedgers.length > 0) {
+          const idsToDelete = obsoleteUnpaidLedgers.map(l => l._id);
+          await mongoose.model('StudentFeeLedger').deleteMany({ _id: { $in: idsToDelete } }, { session });
+          existingLedgers = existingLedgers.filter(l => !idsToDelete.includes(l._id));
+        }
+
         for (const part of feeStruct.installmentParts) {
           const partFeeType = part.feeType || 'EDUCATION';
           const cat = partFeeType === 'TERM' ? termCategory : educationCategory;
@@ -1469,6 +1486,20 @@ class StudentService {
           }
         }
       } else if (educationCategory) {
+        const standardPeriodNames = new Set([...months.map(m => m.name), ...terms.map(t => t.name)]);
+        const obsoleteUnpaidLedgers = existingLedgers.filter(l =>
+          (l.feeType === 'EDUCATION' || l.feeType === 'TERM') &&
+          l.generatedFrom === 'FEE_STRUCTURE' &&
+          !standardPeriodNames.has(l.feePeriod) &&
+          (l.paidAmount || 0) === 0
+        );
+
+        if (obsoleteUnpaidLedgers.length > 0) {
+          const idsToDelete = obsoleteUnpaidLedgers.map(l => l._id);
+          await mongoose.model('StudentFeeLedger').deleteMany({ _id: { $in: idsToDelete } }, { session });
+          existingLedgers = existingLedgers.filter(l => !idsToDelete.includes(l._id));
+        }
+
         for (const m of months) {
           if (!existingKey('EDUCATION', m.name)) {
             ledgersToCreate.push({
@@ -1661,6 +1692,21 @@ class StudentService {
     if (!activeAcademicYearDoc) throw new AppError('No active academic year found.', 400);
     const activeAcademicYearStr = activeAcademicYearDoc.name;
     return await this._generateLedgersForAcademicYear(studentId, activeAcademicYearStr);
+  }
+
+  /** Sync all active students' fee ledgers when a FeeStructure is created or updated */
+  static async syncStudentsForFeeStructure(feeStructure) {
+    try {
+      if (!feeStructure) return;
+      const { standard, medium, academicYear } = feeStructure;
+      const query = { standard, medium, status: 'ACTIVE' };
+      const students = await mongoose.model('Student').find(query).select('_id');
+      for (const st of students) {
+        await this._generateLedgersForAcademicYear(st._id, academicYear);
+      }
+    } catch (err) {
+      logger.error('syncStudentsForFeeStructure error', err);
+    }
   }
 
   /**

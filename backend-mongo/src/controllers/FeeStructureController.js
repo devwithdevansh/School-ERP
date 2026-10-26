@@ -1,9 +1,10 @@
-// src/controllers/FeeStructureController.js
 import FeeStructure from '../models/FeeStructure.js';
 import TransportFeeStructure from '../models/TransportFeeStructure.js';
+import StudentService from '../services/StudentService.js';
 import catchAsync from '../utils/catchAsync.js';
 import sendResponse from '../utils/response.js';
 import AppError from '../utils/AppError.js';
+import logger from '../utils/logger.js';
 
 class FeeStructureController {
   /**
@@ -39,9 +40,11 @@ class FeeStructureController {
         { ...req.body, isActive: true },
         { new: true, runValidators: true }
       );
+      StudentService.syncStudentsForFeeStructure(updated).catch(e => logger.error('syncStudentsForFeeStructure error', e));
       return sendResponse(res, 200, updated);
     }
     const newStructure = await FeeStructure.create(req.body);
+    StudentService.syncStudentsForFeeStructure(newStructure).catch(e => logger.error('syncStudentsForFeeStructure error', e));
     sendResponse(res, 201, newStructure);
   });
 
@@ -79,6 +82,7 @@ class FeeStructureController {
     if (!updated) {
       throw new AppError('Fee structure not found', 404);
     }
+    StudentService.syncStudentsForFeeStructure(updated).catch(e => logger.error('syncStudentsForFeeStructure error', e));
     sendResponse(res, 200, updated);
   });
 

@@ -178,7 +178,18 @@ export const CollectFee: React.FC = () => {
     );
 
     if (isCustomPlan) {
-      return studentLedgers;
+      const parts = currentFeeStructure.installmentParts || [];
+      const partOrder = new Map<string, number>();
+      parts.forEach((p: any, idx: number) => {
+        partOrder.set((p.name || '').trim().toLowerCase(), idx);
+      });
+      return studentLedgers
+        .filter((l) => partOrder.has((l.feePeriod || '').trim().toLowerCase()))
+        .sort((a, b) => {
+          const orderA = partOrder.get((a.feePeriod || '').trim().toLowerCase()) ?? 999;
+          const orderB = partOrder.get((b.feePeriod || '').trim().toLowerCase()) ?? 999;
+          return orderA - orderB;
+        });
     }
 
     return studentLedgers.filter(
@@ -507,11 +518,61 @@ export const CollectFee: React.FC = () => {
 
     let needsSync = false;
 
-    const eduConfig = getApplicablePeriods(COMBINED_EDU_TERM_CONFIG);
-    for (const item of eduConfig) {
-      const entry = getLedger(item.type, item.value);
-      if (!entry) { needsSync = true; break; }
-      if (entry.status === 'PENDING' && !selectedStudent.isRTE && entry.totalAmount !== getStandardAmount(item.type, item.value)) { needsSync = true; break; }
+    const isCustomPlan =
+      fs?.scheduleType &&
+      fs.scheduleType !== 'DEFAULT_12_2' &&
+      (fs.installmentParts?.length ?? 0) > 0;
+
+    if (isCustomPlan) {
+      const sId = selectedStudent._id || selectedStudent.id;
+      for (const part of (fs.installmentParts || [])) {
+        const entry = ledgerEntries.find(
+          (l) =>
+            l.studentId === sId &&
+            (l.feeType === 'EDUCATION' || l.feeType === 'TERM') &&
+            (l.feePeriod || '').trim().toLowerCase() === (part.name || '').trim().toLowerCase() &&
+            (l.academicYear === selectedYear || (!l.academicYear && isDefaultYear))
+        );
+        if (!entry) { needsSync = true; break; }
+        if (entry.status === 'PENDING' && !selectedStudent.isRTE && entry.totalAmount !== part.amount) {
+          needsSync = true; break;
+        }
+      }
+      if (!needsSync) {
+        const allowedPartNames = new Set((fs.installmentParts || []).map((p: any) => (p.name || '').trim().toLowerCase()));
+        const hasObsolete = ledgerEntries.some(
+          (l) =>
+            l.studentId === sId &&
+            (l.feeType === 'EDUCATION' || l.feeType === 'TERM') &&
+            (l.academicYear === selectedYear || (!l.academicYear && isDefaultYear)) &&
+            l.status === 'PENDING' &&
+            (l.paidAmount || 0) === 0 &&
+            !allowedPartNames.has((l.feePeriod || '').trim().toLowerCase())
+        );
+        if (hasObsolete) needsSync = true;
+      }
+    } else {
+      const eduConfig = getApplicablePeriods(COMBINED_EDU_TERM_CONFIG);
+      for (const item of eduConfig) {
+        const entry = getLedger(item.type, item.value);
+        if (!entry) { needsSync = true; break; }
+        if (entry.status === 'PENDING' && !selectedStudent.isRTE && entry.totalAmount !== getStandardAmount(item.type, item.value)) { needsSync = true; break; }
+      }
+      if (!needsSync) {
+        const sId = selectedStudent._id || selectedStudent.id;
+        const hasObsolete = ledgerEntries.some(
+          (l) =>
+            l.studentId === sId &&
+            (l.feeType === 'EDUCATION' || l.feeType === 'TERM') &&
+            (l.academicYear === selectedYear || (!l.academicYear && isDefaultYear)) &&
+            l.status === 'PENDING' &&
+            (l.paidAmount || 0) === 0 &&
+            !STANDARD_MONTH_PERIODS.has(l.feePeriod) &&
+            l.feePeriod !== 'Term 1' &&
+            l.feePeriod !== 'Term 2'
+        );
+        if (hasObsolete) needsSync = true;
+      }
     }
 
     if (!needsSync && selectedStudent.transportType !== 'None') {
@@ -536,7 +597,17 @@ export const CollectFee: React.FC = () => {
       setAutoSyncSignature(currentSignature);
       const doSync = async () => {
         setIsRegenerating(true);
-        await regenerateLedgers(selectedStudent._id || selectedStudent.id);
+        const sId = selectedStudent._id || selectedStudent.id;
+        await regenerateLedgers(sId);
+        try {
+          const res = await authFetch(`/api/v1/ledgers?studentId=${sId}&limit=100`);
+          const data = await res.json();
+          if (data && data.data) {
+            setLedgerEntries(data.data);
+          }
+        } catch (fetchErr) {
+          console.error('Failed to reload ledgers after sync', fetchErr);
+        }
         setIsRegenerating(false);
       };
       doSync();

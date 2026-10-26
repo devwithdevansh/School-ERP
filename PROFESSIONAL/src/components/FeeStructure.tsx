@@ -665,20 +665,22 @@ export const FeeStructure: React.FC = () => {
   const getFeeDetails = (structure: any) => {
     if (!structure) return null;
     const annual = structure.annualFee;
-    const eduParts = structure.educationPartCount || 12;
-    const termParts = structure.termPartCount || 2;
+    const scheduleType = structure.scheduleType || 'DEFAULT_12_2';
+    const isCustom = scheduleType !== 'DEFAULT_12_2';
+    const installmentParts: InstallmentPart[] = structure.installmentParts || [];
+
+    const eduParts = isCustom ? (installmentParts.length || 1) : (structure.educationPartCount || 12);
+    const termParts = isCustom ? 0 : (structure.termPartCount !== undefined ? structure.termPartCount : 2);
     const totalParts = eduParts + termParts;
 
-    // Calculate monthly education fee based on 14-part division
+    // Calculate monthly education fee based on division
     const monthlyEdu = totalParts > 0 ? Math.round(annual / totalParts) : 0;
 
     // Use exact DB values — 0 is a valid admin-set amount
-    const termFee = structure.termFee ?? 0;
+    const termFee = isCustom ? 0 : (structure.termFee ?? 0);
     const admission = structure.admissionFee ?? 0;
     const bagKit = structure.bagKitFee ?? 0;
 
-    const scheduleType = structure.scheduleType || 'DEFAULT_12_2';
-    const installmentParts = structure.installmentParts || [];
     let scheduleLabel = '12 Mo Tuition + 2 Term Fees';
     if (scheduleType === 'MONTHLY_12') scheduleLabel = '12 Monthly Installments';
     else if (scheduleType === 'QUARTERLY_4') scheduleLabel = 'Quarterly (4 Parts)';
@@ -695,6 +697,7 @@ export const FeeStructure: React.FC = () => {
       admission,
       bagKit,
       scheduleType,
+      isCustom,
       installmentParts,
       scheduleLabel,
     };
@@ -853,20 +856,49 @@ export const FeeStructure: React.FC = () => {
                     <span className="text-sm font-bold text-slate-500">Annual Tuition Fee (Total)</span>
                     <span className="text-base font-extrabold text-blue-700">₹{englishDetails.annual.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
-                    <div>
-                      <span className="text-sm font-bold text-slate-500 block">Education Fee (Monthly)</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Calculated as {englishDetails.eduParts} equal parts</span>
+                  {englishDetails.isCustom ? (
+                    <div className="px-5 py-4 bg-slate-50/50 space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-extrabold uppercase tracking-wider text-slate-500">Installment Schedule</span>
+                        <span className="font-bold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                          {englishDetails.scheduleLabel}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 pt-1">
+                        {englishDetails.installmentParts.map((p, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-xs bg-white border border-slate-200/80 rounded-xl px-3.5 py-2.5 shadow-2xs">
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-700 font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                                #{idx + 1}
+                              </span>
+                              <div>
+                                <span className="font-bold text-slate-800 block">{p.name}</span>
+                                {p.dueMonth && <span className="text-[10px] text-slate-400 font-semibold">Due in {p.dueMonth}</span>}
+                              </div>
+                            </div>
+                            <span className="font-black text-slate-900 text-sm">₹{(p.amount || 0).toLocaleString('en-IN')}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <span className="text-sm font-black text-slate-800">₹{englishDetails.monthlyEdu.toLocaleString('en-IN')} /mo</span>
-                  </div>
-                  <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
-                    <div>
-                      <span className="text-sm font-bold text-slate-500 block">Term Fee (2 parts/year)</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Configured fee charged per term</span>
-                    </div>
-                    <span className="text-sm font-black text-slate-800">₹{englishDetails.termFee.toLocaleString('en-IN')} /term</span>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
+                        <div>
+                          <span className="text-sm font-bold text-slate-500 block">Education Fee (Monthly)</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">Calculated as {englishDetails.eduParts} equal parts</span>
+                        </div>
+                        <span className="text-sm font-black text-slate-800">₹{englishDetails.monthlyEdu.toLocaleString('en-IN')} /mo</span>
+                      </div>
+                      <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
+                        <div>
+                          <span className="text-sm font-bold text-slate-500 block">Term Fee (2 parts/year)</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">Configured fee charged per term</span>
+                        </div>
+                        <span className="text-sm font-black text-slate-800">₹{englishDetails.termFee.toLocaleString('en-IN')} /term</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
                     <div>
                       <span className="text-sm font-bold text-slate-500 block">Admission Fee</span>
@@ -947,20 +979,49 @@ export const FeeStructure: React.FC = () => {
                   <span className="text-sm font-bold text-slate-500">Annual Tuition Fee (Total)</span>
                   <span className="text-base font-extrabold text-teal-700">₹{gujaratiDetails.annual.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
-                  <div>
-                    <span className="text-sm font-bold text-slate-500 block">Education Fee (Monthly)</span>
-                    <span className="text-[10px] text-slate-400 font-semibold">Calculated as {gujaratiDetails.eduParts} equal parts</span>
+                {gujaratiDetails.isCustom ? (
+                  <div className="px-5 py-4 bg-slate-50/50 space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-extrabold uppercase tracking-wider text-slate-500">Installment Schedule</span>
+                      <span className="font-bold text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-0.5 rounded-full">
+                        {gujaratiDetails.scheduleLabel}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                      {gujaratiDetails.installmentParts.map((p, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-xs bg-white border border-slate-200/80 rounded-xl px-3.5 py-2.5 shadow-2xs">
+                          <div className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-teal-50 text-teal-700 font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div>
+                              <span className="font-bold text-slate-800 block">{p.name}</span>
+                              {p.dueMonth && <span className="text-[10px] text-slate-400 font-semibold">Due in {p.dueMonth}</span>}
+                            </div>
+                          </div>
+                          <span className="font-black text-slate-900 text-sm">₹{(p.amount || 0).toLocaleString('en-IN')}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <span className="text-sm font-black text-slate-800">₹{gujaratiDetails.monthlyEdu.toLocaleString('en-IN')} /mo</span>
-                </div>
-                <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
-                  <div>
-                    <span className="text-sm font-bold text-slate-500 block">Term Fee (2 parts/year)</span>
-                    <span className="text-[10px] text-slate-400 font-semibold">Configured fee charged per term</span>
-                  </div>
-                  <span className="text-sm font-black text-slate-800">₹{gujaratiDetails.termFee.toLocaleString('en-IN')} /term</span>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
+                      <div>
+                        <span className="text-sm font-bold text-slate-500 block">Education Fee (Monthly)</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Calculated as {gujaratiDetails.eduParts} equal parts</span>
+                      </div>
+                      <span className="text-sm font-black text-slate-800">₹{gujaratiDetails.monthlyEdu.toLocaleString('en-IN')} /mo</span>
+                    </div>
+                    <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
+                      <div>
+                        <span className="text-sm font-bold text-slate-500 block">Term Fee (2 parts/year)</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Configured fee charged per term</span>
+                      </div>
+                      <span className="text-sm font-black text-slate-800">₹{gujaratiDetails.termFee.toLocaleString('en-IN')} /term</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between items-center px-5 py-4 hover:bg-slate-50/30 transition-colors">
                   <div>
                     <span className="text-sm font-bold text-slate-500 block">Admission Fee</span>

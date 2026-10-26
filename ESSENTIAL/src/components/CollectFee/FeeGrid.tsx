@@ -101,6 +101,13 @@ export const FeeGrid: React.FC<FeeGridProps> = ({
                 RTE Waived
               </span>
             </span>
+          ) : feeCategory === 'EDUCATION' && customEducationLedgers.length > 0 ? (
+            <span className="flex items-center gap-1.5">
+              <span>Total: ₹{customEducationLedgers.reduce((sum, l) => sum + (l.totalAmount || 0), 0).toLocaleString('en-IN')}</span>
+              <span className="text-xs font-semibold text-slate-500">
+                ({customEducationLedgers.length} {customEducationLedgers.length === 1 ? 'Part' : 'Parts'})
+              </span>
+            </span>
           ) : (
             `₹${(feeCategory === 'EDUCATION'
               ? studentFeeConfig.education
