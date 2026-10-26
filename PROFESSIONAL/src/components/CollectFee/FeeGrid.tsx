@@ -23,6 +23,7 @@ interface LedgerEntry {
   totalAmount: number;
   remainingAmount: number;
   academicYear?: string;
+  dueDate?: string;
 }
 
 interface FeeGridProps {
@@ -32,6 +33,7 @@ interface FeeGridProps {
   setSelectedFees: React.Dispatch<React.SetStateAction<{ category: string; period: string }[]>>;
   isRegenerating: boolean;
   midYearTransportLedgers: LedgerEntry[];
+  customEducationLedgers?: LedgerEntry[];
   COMBINED_EDU_TERM_CONFIG: EduTermConfig;
   MONTHS_CONFIG: EduTermConfig;
   studentFeeConfig: StudentFeeConfig;
@@ -51,6 +53,7 @@ export const FeeGrid: React.FC<FeeGridProps> = ({
   setSelectedFees,
   isRegenerating,
   midYearTransportLedgers,
+  customEducationLedgers = [],
   COMBINED_EDU_TERM_CONFIG,
   MONTHS_CONFIG,
   studentFeeConfig,
@@ -219,8 +222,81 @@ export const FeeGrid: React.FC<FeeGridProps> = ({
         </div>
       )}
 
+      {/* Custom Installment Plan Grid */}
+      {feeCategory === 'EDUCATION' && customEducationLedgers && customEducationLedgers.length > 0 && (
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+              Installment Schedule ({customEducationLedgers.length} Parts)
+            </span>
+            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+              Custom Schedule
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+            {customEducationLedgers.map((ledger) => {
+              const isPaid = ledger.status === 'PAID';
+              const isSelected = selectedFees.some(
+                (f) => f.category === ledger.feeType && f.period === ledger.feePeriod
+              );
+              const isOverdueDue = !isPaid && ledger.dueDate && new Date(ledger.dueDate) < new Date();
+              const dueAmt = ledger.remainingAmount ?? ledger.totalAmount;
+
+              let cardStyle = 'border-slate-200 bg-white text-slate-700 hover:border-indigo-400 hover:bg-indigo-50/20';
+              if (isPaid) {
+                cardStyle = selectedStudent.isRTE
+                  ? 'bg-blue-50 border-blue-200 text-blue-600 cursor-not-allowed'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-not-allowed';
+              } else if (isSelected) {
+                cardStyle = 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20';
+              } else if (isOverdueDue) {
+                cardStyle = 'border-rose-300 text-rose-700 bg-rose-50/50 hover:border-rose-400';
+              }
+
+              return (
+                <button
+                  key={ledger._id || ledger.id}
+                  type="button"
+                  disabled={isPaid}
+                  onClick={() => handlePeriodToggle(ledger.feeType, ledger.feePeriod)}
+                  className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all relative select-none ${cardStyle}`}
+                >
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="font-bold text-xs tracking-wide line-clamp-1">{ledger.feePeriod}</span>
+                    {isSelected && <Check className="h-3.5 w-3.5 shrink-0 stroke-[3]" />}
+                  </div>
+                  <div className="mt-2.5 flex items-end justify-between">
+                    <div>
+                      <span className={`text-[10px] block font-semibold ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
+                        {ledger.dueDate ? new Date(ledger.dueDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : 'Due'}
+                      </span>
+                      <span className="text-xs font-black tracking-tight">
+                        ₹{dueAmt.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
+                        isPaid
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : isSelected
+                          ? 'bg-white/20 text-white'
+                          : isOverdueDue
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {isPaid ? 'PAID' : isOverdueDue ? 'OVERDUE' : 'DUE'}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Standard monthly grid */}
-      {!(feeCategory === 'TRANSPORT' && selectedStudent.transportType === 'None') && (
+      {!(feeCategory === 'TRANSPORT' && selectedStudent.transportType === 'None') && !(feeCategory === 'EDUCATION' && customEducationLedgers && customEducationLedgers.length > 0) && (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
           {getApplicablePeriods(
             feeCategory === 'EDUCATION' ? COMBINED_EDU_TERM_CONFIG : MONTHS_CONFIG,

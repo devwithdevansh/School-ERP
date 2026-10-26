@@ -115,6 +115,17 @@ export interface FeeCategoryData {
   isActive: boolean;
 }
 
+export interface InstallmentPart {
+  name: string;
+  feeType?: string;
+  amount: number;
+  dueMonth?: string;
+  dueDate?: string;
+  order?: number;
+}
+
+export type ScheduleType = 'DEFAULT_12_2' | 'MONTHLY_12' | 'QUARTERLY_4' | 'HALF_YEARLY_2' | 'ANNUAL_1' | 'CUSTOM';
+
 export interface FeeStructureData {
   _id: string;
   academicYear?: string;
@@ -126,6 +137,8 @@ export interface FeeStructureData {
   admissionFee?: number;
   bagKitFee?: number;
   termFee?: number;
+  scheduleType?: ScheduleType;
+  installmentParts?: InstallmentPart[];
   isActive: boolean;
 }
 

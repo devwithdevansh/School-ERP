@@ -60,6 +60,40 @@ const feeStructureSchema = new mongoose.Schema(
       required: [true, 'Academic year mapping is required'],
       trim: true,
     },
+    scheduleType: {
+      type: String,
+      enum: ['DEFAULT_12_2', 'MONTHLY_12', 'QUARTERLY_4', 'HALF_YEARLY_2', 'ANNUAL_1', 'CUSTOM'],
+      default: 'DEFAULT_12_2',
+    },
+    installmentParts: [
+      {
+        name: {
+          type: String,
+          required: [true, 'Installment name is required'],
+          trim: true,
+        },
+        feeType: {
+          type: String,
+          default: 'EDUCATION',
+        },
+        amount: {
+          type: Number,
+          required: [true, 'Installment amount is required'],
+          min: [0, 'Installment amount cannot be negative'],
+        },
+        dueMonth: {
+          type: String,
+          trim: true,
+        },
+        dueDate: {
+          type: Date,
+        },
+        order: {
+          type: Number,
+          default: 1,
+        },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

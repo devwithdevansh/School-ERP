@@ -108,13 +108,21 @@ export const CollectFee: React.FC = () => {
   // -------------------------------------------------------------------
   // Dynamic fee amounts derived from DB-backed feeStructures
   // -------------------------------------------------------------------
+  // Dynamic fee amounts derived from DB-backed feeStructures
+  // -------------------------------------------------------------------
+  const currentFeeStructure = useMemo(() => {
+    if (!selectedStudent) return undefined;
+    const isDefaultYear = selectedYear === academicYears[0]?.name;
+    return feeStructures.find(
+      (f) => f.medium === selectedStudent.medium && f.standard === selectedStudent.standard && (f.academicYear === selectedYear || (!f.academicYear && isDefaultYear))
+    );
+  }, [selectedStudent, feeStructures, selectedYear, academicYears]);
+
   const studentFeeConfig = useMemo(() => {
     if (!selectedStudent) return { education: 0, term: 0, transport: 0, admission: 0, bagKit: 0 };
 
     const isDefaultYear = selectedYear === academicYears[0]?.name;
-    const fs = feeStructures.find(
-      (f) => f.medium === selectedStudent.medium && f.standard === selectedStudent.standard && (f.academicYear === selectedYear || (!f.academicYear && isDefaultYear))
-    );
+    const fs = currentFeeStructure;
 
     const annualFee = fs?.annualFee ?? 0;
     const eduParts = fs?.educationPartCount ?? 12;
@@ -132,7 +140,7 @@ export const CollectFee: React.FC = () => {
     const transport = tfs?.amount ?? 0;
 
     return { education, term, transport, admission, bagKit };
-  }, [selectedStudent, feeStructures, transportFeeStructures]);
+  }, [selectedStudent, currentFeeStructure, transportFeeStructures, selectedYear, academicYears]);
 
   // Dynamic config for selected year
   const COMBINED_EDU_TERM_CONFIG = useMemo(() => buildEduTermConfig(selectedYear), [selectedYear]);
@@ -151,6 +159,32 @@ export const CollectFee: React.FC = () => {
         (l.academicYear === selectedYear || (!l.academicYear && selectedYear === activeYearName))
     );
   }, [selectedStudent, ledgerEntries, selectedYear, activeYearName, COMBINED_EDU_TERM_CONFIG]);
+
+  // Custom education installment ledgers (if student has custom schedule e.g. Quarterly, Half-Yearly, Custom)
+  const customEducationLedgers = useMemo(() => {
+    if (!selectedStudent) return [];
+    const sId = selectedStudent._id || selectedStudent.id;
+    const isCustomPlan =
+      currentFeeStructure?.scheduleType &&
+      currentFeeStructure.scheduleType !== 'DEFAULT_12_2' &&
+      (currentFeeStructure.installmentParts?.length ?? 0) > 0;
+
+    const studentLedgers = ledgerEntries.filter(
+      (l) =>
+        l.studentId === sId &&
+        (l.feeType === 'EDUCATION' || l.feeType === 'TERM') &&
+        l.status !== 'CANCELLED' &&
+        (l.academicYear === selectedYear || (!l.academicYear && selectedYear === activeYearName))
+    );
+
+    if (isCustomPlan) {
+      return studentLedgers;
+    }
+
+    return studentLedgers.filter(
+      (l) => !STANDARD_MONTH_PERIODS.has(l.feePeriod) && l.feePeriod !== 'Term 1' && l.feePeriod !== 'Term 2'
+    );
+  }, [selectedStudent, currentFeeStructure, ledgerEntries, selectedYear, activeYearName]);
 
   // -------------------------------------------------------------------
   // Helpers
@@ -254,6 +288,16 @@ export const CollectFee: React.FC = () => {
     );
     const clickedIndex = configList.findIndex(c => c.value === period);
 
+    // If period is not in standard configList (e.g. custom installment schedule or custom ledger)
+    if (clickedIndex === -1) {
+      setSelectedFees((prev) => {
+        const exists = prev.find((p) => p.category === category && p.period === period);
+        if (exists) return prev.filter((p) => !(p.category === category && p.period === period));
+        return [...prev, { category, period }];
+      });
+      return;
+    }
+
     setSelectedFees((prev) => {
       const isCurrentlySelected = prev.some((p) => p.category === category && p.period === period);
       let newSelections = [...prev];
@@ -285,6 +329,14 @@ export const CollectFee: React.FC = () => {
 
   const selectAllPending = () => {
     if (feeCategory === 'EDUCATION') {
+      if (customEducationLedgers.length > 0) {
+        const pending = customEducationLedgers.filter((l) => l.status !== 'PAID' && l.remainingAmount > 0);
+        setSelectedFees((prev) => {
+          const otherCategories = prev.filter((p) => p.category !== 'EDUCATION' && p.category !== 'TERM');
+          return [...otherCategories, ...pending.map((p) => ({ category: p.feeType, period: p.feePeriod }))];
+        });
+        return;
+      }
       const pending = getApplicablePeriods(COMBINED_EDU_TERM_CONFIG).filter((p) => {
         const entry = getLedger(p.type, p.value);
         return entry && entry.status !== 'PAID' && entry.remainingAmount > 0;
@@ -308,6 +360,15 @@ export const CollectFee: React.FC = () => {
 
   const selectNextNMonths = (n: number) => {
     if (feeCategory === 'EDUCATION') {
+      if (customEducationLedgers.length > 0) {
+        const pending = customEducationLedgers.filter((l) => l.status !== 'PAID' && l.remainingAmount > 0);
+        const toSelect = pending.slice(0, n);
+        setSelectedFees((prev) => {
+          const otherCategories = prev.filter((p) => p.category !== 'EDUCATION' && p.category !== 'TERM');
+          return [...otherCategories, ...toSelect.map((p) => ({ category: p.feeType, period: p.feePeriod }))];
+        });
+        return;
+      }
       const pendingItems = getApplicablePeriods(COMBINED_EDU_TERM_CONFIG).filter((c) => {
         const entry = getLedger(c.type, c.value);
         return entry && entry.status !== 'PAID' && entry.remainingAmount > 0;
@@ -613,6 +674,7 @@ export const CollectFee: React.FC = () => {
                   setSelectedFees={setSelectedFees}
                   isRegenerating={isRegenerating}
                   midYearTransportLedgers={midYearTransportLedgers}
+                  customEducationLedgers={customEducationLedgers}
                   COMBINED_EDU_TERM_CONFIG={COMBINED_EDU_TERM_CONFIG}
                   MONTHS_CONFIG={MONTHS_CONFIG}
                   studentFeeConfig={studentFeeConfig}

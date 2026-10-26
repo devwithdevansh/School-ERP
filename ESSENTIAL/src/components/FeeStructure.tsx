@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../store';
-import type { FeeStructureData, TransportFeeStructureData } from '../store';
+import type { FeeStructureData, TransportFeeStructureData, ScheduleType, InstallmentPart } from '../store';
 import { AlertCircle, Bus, ChevronDown, Award, Pencil, X, Check, Loader2, Plus, Trash2, Copy } from './icons';
+import { PaymentScheduleEditor } from './FeeStructure/PaymentScheduleEditor';
 
 /* ─── Create Modal for Standard Fee ───────────────────────────────── */
 interface CreateFeeModalProps {
@@ -20,6 +21,8 @@ const CreateFeeModal: React.FC<CreateFeeModalProps> = ({ initialAcademicYear, on
   const [annualFee, setAnnualFee] = useState<number | ''>('');
   const [admissionFee, setAdmissionFee] = useState<number | ''>('');
   const [bagKitFee, setBagKitFee] = useState<number | ''>('');
+  const [scheduleType, setScheduleType] = useState<ScheduleType>('DEFAULT_12_2');
+  const [installmentParts, setInstallmentParts] = useState<InstallmentPart[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -56,6 +59,15 @@ const CreateFeeModal: React.FC<CreateFeeModalProps> = ({ initialAcademicYear, on
     if (annualFee === '' || Number(annualFee) < 0) { setError('Annual fee cannot be negative'); return; }
     if (admissionFee !== '' && Number(admissionFee) < 0) { setError('Admission fee cannot be negative'); return; }
     if (bagKitFee !== '' && Number(bagKitFee) < 0) { setError('Bag & Kit fee cannot be negative'); return; }
+
+    if (scheduleType !== 'DEFAULT_12_2') {
+      const partsTotal = installmentParts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      if (Math.abs(partsTotal - Number(annualFee)) > 1) {
+        setError(`Total of installment parts (₹${partsTotal.toLocaleString('en-IN')}) does not match the annual fee (₹${Number(annualFee).toLocaleString('en-IN')}). Please balance them or click 'Split Evenly'.`);
+        return;
+      }
+    }
+
     setError('');
     setSaving(true);
     
@@ -63,11 +75,13 @@ const CreateFeeModal: React.FC<CreateFeeModalProps> = ({ initialAcademicYear, on
       academicYear,
       standard,
       annualFee: Number(annualFee),
-      educationPartCount: EDUCATION_PARTS,
-      termPartCount: TERM_PARTS,
-      termFee: monthlyEdu,
+      educationPartCount: scheduleType === 'DEFAULT_12_2' ? EDUCATION_PARTS : (installmentParts.length || 1),
+      termPartCount: scheduleType === 'DEFAULT_12_2' ? TERM_PARTS : 0,
+      termFee: scheduleType === 'DEFAULT_12_2' ? monthlyEdu : 0,
       admissionFee: Number(admissionFee) || 0,
       bagKitFee: Number(bagKitFee) || 0,
+      scheduleType,
+      installmentParts,
     };
 
     if (medium === 'Both') {
@@ -84,16 +98,16 @@ const CreateFeeModal: React.FC<CreateFeeModalProps> = ({ initialAcademicYear, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden animate-[fadeIn_0.2s_ease-out]" onClick={e => e.stopPropagation()}>
-        <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden animate-[fadeIn_0.2s_ease-out]" onClick={e => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white px-6 py-4 flex items-center justify-between shrink-0">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">New Fee Structure</span>
             <h3 className="font-black text-lg tracking-tight mt-0.5">Add New Standard</h3>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"><X className="h-5 w-5" /></button>
         </div>
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {/* Academic Year Selector */}
           <div>
             <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">Academic Year</label>
@@ -145,6 +159,18 @@ const CreateFeeModal: React.FC<CreateFeeModalProps> = ({ initialAcademicYear, on
             <input type="number" value={annualFee} onChange={e => setAnnualFee(e.target.value === '' ? '' : Number(e.target.value))} min={0} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" />
           </div>
 
+          {/* Payment Schedule Selector & Builder */}
+          <PaymentScheduleEditor
+            annualFee={Number(annualFee) || 0}
+            scheduleType={scheduleType}
+            installmentParts={installmentParts}
+            onChange={(type, parts) => {
+              setScheduleType(type);
+              setInstallmentParts(parts);
+            }}
+            academicYear={academicYear}
+          />
+
           {/* Admission + Bag & Kit */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -160,8 +186,17 @@ const CreateFeeModal: React.FC<CreateFeeModalProps> = ({ initialAcademicYear, on
           {/* Live Preview */}
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-2">
             <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">Live Preview</p>
-            <div className="flex justify-between text-xs text-slate-600"><span>Monthly Education:</span><span className="font-bold text-slate-800">₹{monthlyEdu.toLocaleString('en-IN')} /mo</span></div>
-            <div className="flex justify-between text-xs text-slate-600"><span>Term Fee:</span><span className="font-bold text-slate-800">₹{monthlyEdu.toLocaleString('en-IN')} /term</span></div>
+            {scheduleType === 'DEFAULT_12_2' ? (
+              <>
+                <div className="flex justify-between text-xs text-slate-600"><span>Monthly Education:</span><span className="font-bold text-slate-800">₹{monthlyEdu.toLocaleString('en-IN')} /mo</span></div>
+                <div className="flex justify-between text-xs text-slate-600"><span>Term Fee:</span><span className="font-bold text-slate-800">₹{monthlyEdu.toLocaleString('en-IN')} /term</span></div>
+              </>
+            ) : (
+              <div className="flex justify-between text-xs text-slate-600">
+                <span>Installment Plan:</span>
+                <span className="font-bold text-indigo-700">{installmentParts.length} parts (₹{(Number(annualFee) || 0).toLocaleString('en-IN')})</span>
+              </div>
+            )}
             <div className="flex justify-between text-xs text-slate-600"><span>Admission Fee:</span><span className="font-bold text-slate-800">₹{(Number(admissionFee) || 0).toLocaleString('en-IN')}</span></div>
             <div className="flex justify-between text-xs text-slate-600"><span>Bag & Kit Fee:</span><span className="font-bold text-slate-800">₹{(Number(bagKitFee) || 0).toLocaleString('en-IN')}</span></div>
           </div>
@@ -263,6 +298,8 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
       ? structure.bagKitFee
       : Math.round(structure.annualFee * 0.05)
   );
+  const [scheduleType, setScheduleType] = useState<ScheduleType>(structure.scheduleType || 'DEFAULT_12_2');
+  const [installmentParts, setInstallmentParts] = useState<InstallmentPart[]>(structure.installmentParts || []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -276,15 +313,26 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
     if (annualFee === '' || Number(annualFee) < 0) { setError('Annual fee cannot be negative'); return; }
     if (admissionFee !== '' && Number(admissionFee) < 0) { setError('Admission fee cannot be negative'); return; }
     if (bagKitFee !== '' && Number(bagKitFee) < 0) { setError('Bag & Kit fee cannot be negative'); return; }
+
+    if (scheduleType !== 'DEFAULT_12_2') {
+      const partsTotal = installmentParts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      if (Math.abs(partsTotal - Number(annualFee)) > 1) {
+        setError(`Total of installment parts (₹${partsTotal.toLocaleString('en-IN')}) does not match the annual fee (₹${Number(annualFee).toLocaleString('en-IN')}). Please balance them or click 'Split Evenly'.`);
+        return;
+      }
+    }
+
     setError('');
     setSaving(true);
     const ok = await onSave(structure._id, {
       annualFee: Number(annualFee),
-      educationPartCount: EDUCATION_PARTS,
-      termPartCount: TERM_PARTS,
-      termFee: monthlyEdu,
+      educationPartCount: scheduleType === 'DEFAULT_12_2' ? EDUCATION_PARTS : (installmentParts.length || 1),
+      termPartCount: scheduleType === 'DEFAULT_12_2' ? TERM_PARTS : 0,
+      termFee: scheduleType === 'DEFAULT_12_2' ? monthlyEdu : 0,
       admissionFee: Number(admissionFee),
       bagKitFee: Number(bagKitFee),
+      scheduleType,
+      installmentParts,
     });
     setSaving(false);
     if (ok) {
@@ -296,13 +344,13 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden animate-[fadeIn_0.2s_ease-out]"
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[92vh] flex flex-col mx-4 overflow-hidden animate-[fadeIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white px-6 py-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white px-6 py-4 flex items-center justify-between shrink-0">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Edit Fee Structure ({structure.academicYear})</span>
             <h3 className="font-black text-lg tracking-tight mt-0.5">
@@ -315,7 +363,7 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
         </div>
 
         {/* Form Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {/* Annual Fee */}
           <div>
             <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">
@@ -329,6 +377,18 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </div>
+
+          {/* Payment Schedule Selector & Builder */}
+          <PaymentScheduleEditor
+            annualFee={Number(annualFee) || 0}
+            scheduleType={scheduleType}
+            installmentParts={installmentParts}
+            onChange={(type, parts) => {
+              setScheduleType(type);
+              setInstallmentParts(parts);
+            }}
+            academicYear={structure.academicYear}
+          />
 
           {/* Admission + Bag & Kit */}
           <div className="grid grid-cols-2 gap-4">
@@ -345,16 +405,27 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
           {/* Live Preview */}
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Live Preview</span>
-            <div className="grid grid-cols-2 gap-y-2 text-xs font-semibold mt-2">
-              <span className="text-slate-500">Monthly Education:</span>
-              <span className="text-right text-slate-800 font-bold">₹{monthlyEdu.toLocaleString('en-IN')} /mo</span>
-              <span className="text-slate-500">Term Fee:</span>
-              <span className="text-right text-slate-800 font-bold">₹{monthlyEdu.toLocaleString('en-IN')} /term</span>
-              <span className="text-slate-500">Admission Fee:</span>
-              <span className="text-right text-slate-800 font-bold">₹{admissionFee.toLocaleString('en-IN')}</span>
-              <span className="text-slate-500">Bag & Kit Fee:</span>
-              <span className="text-right text-slate-800 font-bold">₹{bagKitFee.toLocaleString('en-IN')}</span>
-            </div>
+            {scheduleType === 'DEFAULT_12_2' ? (
+              <div className="grid grid-cols-2 gap-y-2 text-xs font-semibold mt-2">
+                <span className="text-slate-500">Monthly Education:</span>
+                <span className="text-right text-slate-800 font-bold">₹{monthlyEdu.toLocaleString('en-IN')} /mo</span>
+                <span className="text-slate-500">Term Fee:</span>
+                <span className="text-right text-slate-800 font-bold">₹{monthlyEdu.toLocaleString('en-IN')} /term</span>
+                <span className="text-slate-500">Admission Fee:</span>
+                <span className="text-right text-slate-800 font-bold">₹{admissionFee.toLocaleString('en-IN')}</span>
+                <span className="text-slate-500">Bag & Kit Fee:</span>
+                <span className="text-right text-slate-800 font-bold">₹{bagKitFee.toLocaleString('en-IN')}</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-y-2 text-xs font-semibold mt-2">
+                <span className="text-slate-500">Installment Plan:</span>
+                <span className="text-right text-indigo-700 font-bold">{installmentParts.length} parts (₹{(Number(annualFee) || 0).toLocaleString('en-IN')})</span>
+                <span className="text-slate-500">Admission Fee:</span>
+                <span className="text-right text-slate-800 font-bold">₹{admissionFee.toLocaleString('en-IN')}</span>
+                <span className="text-slate-500">Bag & Kit Fee:</span>
+                <span className="text-right text-slate-800 font-bold">₹{bagKitFee.toLocaleString('en-IN')}</span>
+              </div>
+            )}
           </div>
 
           {/* Error / Success Messages */}
@@ -371,7 +442,7 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50">
+        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50 shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all"
@@ -391,6 +462,7 @@ const EditFeeModal: React.FC<EditFeeModalProps> = ({ structure, onClose, onSave 
     </div>
   );
 };
+
 
 
 /* ─── Edit Modal for Transport Fee ────────────────────────────────── */
@@ -607,6 +679,15 @@ export const FeeStructure: React.FC = () => {
     const admission = structure.admissionFee ?? 0;
     const bagKit = structure.bagKitFee ?? 0;
 
+    const scheduleType = structure.scheduleType || 'DEFAULT_12_2';
+    const installmentParts = structure.installmentParts || [];
+    let scheduleLabel = '12 Mo Tuition + 2 Term Fees';
+    if (scheduleType === 'MONTHLY_12') scheduleLabel = '12 Monthly Installments';
+    else if (scheduleType === 'QUARTERLY_4') scheduleLabel = 'Quarterly (4 Parts)';
+    else if (scheduleType === 'HALF_YEARLY_2') scheduleLabel = 'Half-Yearly (2 Parts)';
+    else if (scheduleType === 'ANNUAL_1') scheduleLabel = 'Annual (1 Part)';
+    else if (scheduleType === 'CUSTOM') scheduleLabel = `Custom (${installmentParts.length} Parts)`;
+
     return {
       annual,
       monthlyEdu,
@@ -615,6 +696,9 @@ export const FeeStructure: React.FC = () => {
       termParts,
       admission,
       bagKit,
+      scheduleType,
+      installmentParts,
+      scheduleLabel,
     };
   };
 
@@ -807,9 +891,16 @@ export const FeeStructure: React.FC = () => {
               )}
             </div>
             {englishDetails && (
-              <div className="bg-slate-50/50 p-4 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-slate-400">
-                <Award className="h-4 w-4 text-blue-500" />
-                <span>Includes 12 months Education & 2 Term periods</span>
+              <div className="bg-slate-50/50 p-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-blue-500 shrink-0" />
+                  <span>{englishDetails.scheduleLabel}</span>
+                </div>
+                {englishDetails.scheduleType !== 'DEFAULT_12_2' && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {englishDetails.installmentParts.length} Parts
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -894,9 +985,16 @@ export const FeeStructure: React.FC = () => {
             )}
           </div>
           {gujaratiDetails && (
-            <div className="bg-slate-50/50 p-4 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-slate-400">
-              <Award className="h-4 w-4 text-teal-500" />
-              <span>Includes 12 months Education & 2 Term periods</span>
+            <div className="bg-slate-50/50 p-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-teal-500 shrink-0" />
+                <span>{gujaratiDetails.scheduleLabel}</span>
+              </div>
+              {gujaratiDetails.scheduleType !== 'DEFAULT_12_2' && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">
+                  {gujaratiDetails.installmentParts.length} Parts
+                </span>
+              )}
             </div>
           )}
         </div>
