@@ -35,6 +35,8 @@ import { StaffLeaveManagement } from './components/StaffLeaveManagement';
 import { Messages } from './components/Messages';
 import { AcademicCalendar } from './components/AcademicCalendar';
 import { DocumentsHub } from './components/DocumentsHub';
+import { TeacherView } from './components/TeacherView';
+import { StudentView } from './components/StudentView';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
 import { generateReceiptHTML, generateReportHTML, printHTML, fetchAsBase64 } from './utils/printUtils';
@@ -88,6 +90,20 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
   // Organization admin console (platform owner)
   if (activePortal === 'ORG') {
     return currentScreen === 'org-licences' ? <OrgLicences /> : <OrgClients />;
+  }
+
+  // Teacher Workspace
+  if (activePortal === 'TEACHER' || currentScreen === 'teacher-attendance' || currentScreen === 'teacher-timetable') {
+    return <TeacherView />;
+  }
+
+  // Student / Parent Fee Workspace
+  if (
+    activePortal === 'STUDENT' ||
+    currentScreen === 'student-fees' ||
+    currentScreen === 'student-receipts'
+  ) {
+    return <StudentView onPrint={onPrint} />;
   }
 
   // If we are in ERP mode, route ERP screens

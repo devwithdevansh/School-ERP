@@ -13,13 +13,12 @@ import {
   createRazorpayOrderSchema,
   verifyRazorpayPaymentSchema,
 } from '../validations/payment.schema.js';
-// src/routes/payment.routes.js
-
-
 const router = Router();
 
 // Razorpay Server-to-Server Webhook (Signature verified, direct from Razorpay servers)
 router.post('/razorpay/webhook', PaymentController.handleRazorpayWebhook);
+router.post('/razorpay-webhook', PaymentController.handleRazorpayWebhook);
+
 
 router.use(authenticate);
 

@@ -18,16 +18,16 @@ import { type PermissionId, hasPermission } from './permissionsRegistry';
  * role / super-admin; later swap it for per-school enabled modules + role permissions
  * without touching any layout component.
  */
-export type ModuleId = 'ERP' | 'FEES' | 'ORG';
+export type ModuleId = 'ERP' | 'FEES' | 'ORG' | 'TEACHER' | 'STUDENT';
 
 /** Modules an organization can license to a client. Keep in sync with the backends' constants/modules.js. */
-export const LICENSABLE_MODULES: { id: Exclude<ModuleId, 'ORG'>; label: string; description: string }[] = [
+export const LICENSABLE_MODULES: { id: Exclude<ModuleId, 'ORG' | 'TEACHER' | 'STUDENT'>; label: string; description: string }[] = [
   { id: 'FEES', label: 'Fees', description: 'Fee collection, receipts, expenses, dues, WhatsApp reminders' },
   { id: 'ERP', label: 'Academics (ERP)', description: 'Admission, attendance, timetable, results, staff & leave' },
 ];
 
 export interface NavContext {
-  role?: 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER';
+  role?: 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER' | 'parent';
   isSuperAdmin: boolean;
   isOrgAdmin: boolean;
   /** Modules the organization enabled for this user's school (ignored for ORG_ADMIN). */
@@ -117,7 +117,8 @@ export const NAV_MODULES: NavModule[] = [
     label: 'Fees',
     short: 'Fees',
     icon: IndianRupee,
-    isVisible: (c) => !c.isOrgAdmin && c.enabledModules.includes('FEES'),
+    // Visible strictly to school staff/admin (NOT teachers, NOT parents)
+    isVisible: (c) => !c.isOrgAdmin && c.role !== 'TEACHER' && c.role !== 'parent' && c.enabledModules.includes('FEES'),
     groups: [
       { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'SCREEN_DASHBOARD' }] },
       { title: 'Fees', items: [
@@ -148,6 +149,40 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'audit-log', label: 'Audit Log', icon: Activity, permission: 'SCREEN_AUDIT', adminOnly: true, inErp: true },
         { id: 'parent-app', label: 'Parent App Preview', icon: Smartphone, disabled: true },
       ] },
+    ],
+  },
+  {
+    id: 'TEACHER',
+    label: 'Teacher Portal',
+    short: 'Teacher',
+    icon: UserCheck,
+    // Strictly role-based: visible ONLY to users with the TEACHER role
+    isVisible: (c) => !c.isOrgAdmin && c.role === 'TEACHER',
+    groups: [
+      {
+        title: 'Classroom',
+        items: [
+          { id: 'teacher-attendance', label: 'Take Attendance', icon: UserCheck },
+          { id: 'teacher-timetable', label: 'My Timetable', icon: CalendarDays },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'STUDENT',
+    label: 'Student Portal',
+    short: 'Student',
+    icon: GraduationCap,
+    // Strictly role-based: visible ONLY to parents/students
+    isVisible: (c) => !c.isOrgAdmin && c.role === 'parent',
+    groups: [
+      {
+        title: 'Fee Services',
+        items: [
+          { id: 'student-fees', label: 'Pay Pending Fees', icon: CreditCard },
+          { id: 'student-receipts', label: 'Payment Receipts', icon: Receipt },
+        ],
+      },
     ],
   },
 ];

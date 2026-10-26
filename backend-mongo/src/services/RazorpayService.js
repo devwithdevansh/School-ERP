@@ -52,6 +52,24 @@ class RazorpayService {
   }
 
   /**
+   * Verify the webhook signature from Razorpay
+   * @param {Object} params
+   * @param {string|Buffer|Object} params.body - The request body (string or object)
+   * @param {string} params.signature - The x-razorpay-signature header
+   * @returns {boolean} True if signature is valid
+   */
+  verifyWebhookSignature({ body, signature }) {
+    const secret = env.RAZORPAY_WEBHOOK_SECRET || env.RAZORPAY_KEY_SECRET;
+    if (!secret || !signature) return false;
+    const payload = typeof body === 'string' ? body : JSON.stringify(body);
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
+    return expectedSignature === signature;
+  }
+
+  /**
    * Fetch payment details directly from Razorpay
    * @param {string} paymentId - The razorpay_payment_id
    * @returns {Promise<Object|null>} The payment details or null if failed

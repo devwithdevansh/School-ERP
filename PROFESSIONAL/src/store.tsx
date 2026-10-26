@@ -37,6 +37,10 @@ export type ScreenType =
   | 'timetable'
   | 'exams'
   | 'results'
+  | 'teacher-attendance'
+  | 'teacher-timetable'
+  | 'student-fees'
+  | 'student-receipts'
   | 'certificates'
   | 'documents'
   | 'roles'
@@ -71,13 +75,13 @@ export interface CalendarEventData {
 }
 
 /** Roles: ORG_ADMIN = platform owner (manages clients/modules, sees no school data); the rest belong to one school. */
-export type UserRole = 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER';
+export type UserRole = 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER' | 'parent';
 
 // Dev-only: set VITE_SKIP_LOGIN=true in .env.local to bypass the login screen (API calls will still need a real token).
 if (import.meta.env.DEV && import.meta.env.VITE_SKIP_LOGIN === 'true' && !localStorage.getItem('currentUser')) {
   localStorage.setItem('currentUser', JSON.stringify({ name: 'Dev Admin', email: 'dev@local', role: 'ADMIN' }));
 }
-export type PortalId = 'FEES' | 'ERP' | 'ORG';
+export type PortalId = 'FEES' | 'ERP' | 'ORG' | 'TEACHER' | 'STUDENT';
 
 /** The school (client) the signed-in user belongs to, and the modules the organization enabled for it. */
 export interface ClientInfo {
@@ -85,6 +89,9 @@ export interface ClientInfo {
   name: string;
   code: string;
   enabledModules: string[];
+  contactNumber?: string;
+  email?: string;
+  address?: string;
 }
 
 export interface AcademicYearData {
@@ -478,10 +485,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   currentUserRef.current = currentUser;
   const isOrgAdmin = currentUser?.role === 'ORG_ADMIN';
   const isSuperAdmin = currentUser?.role === 'ADMIN' && (brand.superAdminEmails.length === 0 || brand.superAdminEmails.includes(String(currentUser.email).toLowerCase()));
-  const [activePortal, setActivePortal] = useState<PortalId>('FEES');
+  const [activePortal, setActivePortal] = useState<PortalId>(() => {
+    const saved = localStorage.getItem('currentUser');
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u.role === 'TEACHER') return 'TEACHER';
+        if (u.role === 'parent') return 'STUDENT';
+        if (u.role === 'ORG_ADMIN') return 'ORG';
+      } catch {}
+    }
+    return 'FEES';
+  });
   const [currentScreen, setScreenState] = useState<ScreenType>(() => {
     const saved = localStorage.getItem('currentUser');
-    return saved ? 'dashboard' : 'login';
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u.role === 'TEACHER') return 'teacher-attendance';
+        if (u.role === 'parent') return 'student-fees';
+        if (u.role === 'ORG_ADMIN') return 'org-clients';
+      } catch {}
+      return 'dashboard';
+    }
+    return 'login';
   });
   const [students, setStudents] = useState<Student[]>([]);
   const [unpaidData, setGlobalUnpaidData] = useState<any[]>([]);
@@ -987,7 +1014,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setClient(clientInfo || null);
       setCurrentUser(userObj);
-      setScreen(userObj.role === 'ORG_ADMIN' ? 'org-clients' : 'dashboard');
+      if (userObj.role === 'TEACHER') {
+        setActivePortal('TEACHER');
+        setScreen('teacher-attendance');
+      } else if (userObj.role === 'parent') {
+        setActivePortal('STUDENT');
+        setScreen('student-fees');
+      } else {
+        setScreen(userObj.role === 'ORG_ADMIN' ? 'org-clients' : 'dashboard');
+      }
       return { success: true };
     } catch (err: any) {
       console.error('Login error:', err);

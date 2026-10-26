@@ -198,7 +198,7 @@ class PaymentController {
     sendResponse(res, 201, results);
   });
 
-  /** POST /api/v1/payments/razorpay/webhook */
+  /** POST /api/v1/payments/razorpay/webhook & /api/v1/payments/razorpay-webhook */
   static handleRazorpayWebhook = catchAsync(async (req, res) => {
     const signature = req.headers['x-razorpay-signature'];
     if (!signature) {
@@ -225,35 +225,43 @@ class PaymentController {
     const event = req.body?.event;
     logger.info(`[Razorpay Webhook] Received verified event: ${event}`);
 
-    if (event === 'payment.captured' || event === 'order.paid') {
-      const paymentEntity = req.body?.payload?.payment?.entity || {};
-      const paymentId = paymentEntity.id;
-      const orderId = paymentEntity.order_id;
-      const amount = (paymentEntity.amount || 0) / 100;
-      const notes = paymentEntity.notes || {};
+    const paymentEntity = req.body?.payload?.payment?.entity || {};
+    const orderEntity = req.body?.payload?.order?.entity || {};
 
-      // 1. Upsert GatewayLog
-      if (paymentId) {
-        try {
-          await GatewayLog.findOneAndUpdate(
-            { paymentId },
-            {
-              paymentId,
-              orderId,
-              method: paymentEntity.method,
-              amount,
-              status: paymentEntity.status,
-              gateway: 'RAZORPAY',
-              rawResponse: req.body,
-            },
-            { upsert: true, new: true }
-          );
-        } catch (logErr) {
-          logger.error('[Razorpay Webhook] Error updating GatewayLog', logErr);
-        }
+    const paymentId = paymentEntity.id;
+    const orderId = paymentEntity.order_id || orderEntity.id;
+    const amount = (paymentEntity.amount || orderEntity.amount_paid || 0) / 100;
+    const method = paymentEntity.method || 'ONLINE';
+    const notes = paymentEntity.notes || orderEntity.notes || {};
+
+    // 1. Upsert GatewayLog idempotently
+    if (paymentId) {
+      try {
+        await GatewayLog.findOneAndUpdate(
+          { paymentId },
+          {
+            paymentId,
+            orderId,
+            method,
+            amount,
+            status: paymentEntity.status || 'captured',
+            gateway: 'RAZORPAY',
+            rawResponse: req.body,
+          },
+          { upsert: true, new: true }
+        );
+      } catch (logErr) {
+        logger.error('[Razorpay Webhook] Error updating GatewayLog', logErr);
       }
+    }
 
-      // 2. Check if payment already exists in Payment table
+    // Only process successful capture or paid orders
+    if (event !== 'payment.captured' && event !== 'order.paid') {
+      return res.status(200).json({ status: 'acknowledged', event });
+    }
+
+    // 2. Check if payment already exists in Payment table
+    if (paymentId) {
       const Payment = (await import('../models/Payment.js')).default;
       const existingPayment = await Payment.findOne({
         $or: [
@@ -266,52 +274,73 @@ class PaymentController {
         logger.info(`[Razorpay Webhook] Payment ${paymentId} already recorded in DB`);
         return res.status(200).json({ status: 'ok', already_processed: true });
       }
+    }
 
-      // 3. Reconcile ledgers if notes contain ledgerIds
-      const ledgerIdsStr = notes.ledgerIds || notes.ledgerId;
-      if (ledgerIdsStr) {
-        const ledgerIds = ledgerIdsStr.split(',').map((s) => s.trim()).filter(Boolean);
-        const StudentFeeLedger = (await import('../models/StudentFeeLedger.js')).default;
-        const ledgers = await StudentFeeLedger.find({ _id: { $in: ledgerIds } });
-
-        if (ledgers.length > 0) {
-          let remainingPayment = amount;
-          const paymentBatch = [];
-
-          for (const l of ledgers) {
-            if (remainingPayment <= 0) break;
-            const due = l.remainingAmount ?? (l.totalAmount - (l.paidAmount || 0));
-            if (due <= 0) continue;
-            const payAmt = Math.min(due, remainingPayment);
-            remainingPayment -= payAmt;
-
-            paymentBatch.push({
-              ledgerId: l._id.toString(),
-              amount: payAmt,
-              concessionAmount: 0,
-              method: 'ONLINE',
-              gatewayTransactionId: paymentId,
-              remark: 'Reconciled via Razorpay Webhook',
-              details: {
-                razorpay_order_id: orderId,
-                razorpay_payment_id: paymentId,
-                webhook: true
-              }
-            });
+    // 3. Extract and reconcile ledgers if notes contain ledgerIds
+    const rawLedgers = notes.ledgerIds || notes.ledgerId;
+    let ledgerIds = [];
+    if (rawLedgers) {
+      if (Array.isArray(rawLedgers)) {
+        ledgerIds = rawLedgers;
+      } else if (typeof rawLedgers === 'string') {
+        if (rawLedgers.trim().startsWith('[')) {
+          try {
+            ledgerIds = JSON.parse(rawLedgers);
+          } catch (_) {
+            ledgerIds = rawLedgers.split(',').map((s) => s.trim()).filter(Boolean);
           }
-
-          if (paymentBatch.length > 0) {
-            logger.info(`[Razorpay Webhook] Settling ${paymentBatch.length} ledgers for payment ${paymentId}`);
-            await PaymentService.createBatchPayments({
-              payments: paymentBatch,
-              performedBy: null
-            });
-          }
+        } else {
+          ledgerIds = rawLedgers.split(',').map((s) => s.trim()).filter(Boolean);
         }
       }
     }
 
-    return res.status(200).json({ status: 'ok' });
+    if (ledgerIds.length > 0) {
+      const StudentFeeLedger = (await import('../models/StudentFeeLedger.js')).default;
+      const ledgers = await StudentFeeLedger.find({ _id: { $in: ledgerIds } });
+
+      if (ledgers.length > 0) {
+        let remainingPayment = amount;
+        const paymentBatch = [];
+
+        for (const l of ledgers) {
+          if (remainingPayment <= 0) break;
+          if (l.status === 'PAID') continue;
+          const due = l.remainingAmount > 0 ? l.remainingAmount : (l.totalAmount - (l.paidAmount || 0) - (l.concessionAmount || 0));
+          if (due <= 0) continue;
+          const payAmt = Math.min(due, remainingPayment);
+          remainingPayment -= payAmt;
+
+          paymentBatch.push({
+            ledgerId: l._id.toString(),
+            amount: payAmt,
+            concessionAmount: 0,
+            method: 'ONLINE',
+            gatewayTransactionId: paymentId,
+            remark: 'Reconciled via Razorpay Webhook',
+            details: {
+              source: 'RAZORPAY_WEBHOOK',
+              event,
+              orderId,
+              paymentId,
+              method,
+              webhook: true
+            }
+          });
+        }
+
+        if (paymentBatch.length > 0) {
+          logger.info(`[Razorpay Webhook] Settling ${paymentBatch.length} ledgers for payment ${paymentId}`);
+          await PaymentService.createBatchPayments({
+            payments: paymentBatch,
+            performedBy: null
+          });
+          return res.status(200).json({ status: 'ok', reconciled: paymentBatch.length });
+        }
+      }
+    }
+
+    return res.status(200).json({ status: 'ok', message: 'logged_awaiting_reconciliation' });
   });
 }
 

@@ -4,7 +4,6 @@ import '../../../../core/config/school_brand.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/storage_keys.dart';
-import '../../../../data/models/fee_model.dart';
 import '../../../../data/repositories/fee_repository.dart';
 import '../../../../services/sound_service.dart';
 import '../../../dashboard/controllers/dashboard_controller.dart';
@@ -89,9 +88,17 @@ class FeeItem {
     return FeeStatus.upcoming;
   }
 
-  bool get isEducation => feeType.toUpperCase() == 'EDUCATION';
   bool get isTransport => feeType.toUpperCase() == 'TRANSPORT';
   bool get isTerm => feeType.toUpperCase() == 'TERM';
+  bool get isAdmission => feeType.toUpperCase() == 'ADMISSION';
+  bool get isBagKit => feeType.toUpperCase() == 'BAG_KIT' || feeType.toUpperCase() == 'OTHER';
+  bool get isEducation =>
+      feeType.toUpperCase() == 'EDUCATION' ||
+      feeType.toUpperCase() == 'INSTALLMENT' ||
+      feeType.toUpperCase() == 'CUSTOM' ||
+      feeType.toUpperCase() == 'ANNUAL' ||
+      feeType.toUpperCase() == 'TUITION' ||
+      (!isTransport && !isTerm && !isAdmission && !isBagKit);
 
   bool get isRTEConcession => concessionAmount > 0 && (isEducation || isTerm);
 
@@ -188,10 +195,10 @@ class PendingFeesController extends GetxController
 
   List<MonthGroup> monthGroupsForTerm(TermGroup term) {
     final monthlyFees = fees.where((f) => f.isEducation || f.isTransport).toList();
-    final Map<String, List<FeeItem>> groupedByMonth = {};
+    final Map<String, List<FeeItem>> groupedByName = {};
     for (final fee in monthlyFees) {
-      final name = fee.termName;
-      groupedByMonth.putIfAbsent(name, () => []).add(fee);
+      final name = fee.termName.trim();
+      groupedByName.putIfAbsent(name, () => []).add(fee);
     }
 
     final List<MonthGroup> result = [];
@@ -199,18 +206,24 @@ class PendingFeesController extends GetxController
         ? ['June', 'July', 'August', 'September', 'October', 'November']
         : ['December', 'January', 'February', 'March', 'April', 'May'];
 
+    final Set<String> matchedKeys = {};
+
+    // 1. Check standard calendar months
     for (final monthName in termMonths) {
       List<FeeItem> monthFees = [];
-      for (final entry in groupedByMonth.entries) {
+      String? matchedKey;
+      for (final entry in groupedByName.entries) {
         final key = entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
         final target = monthName.toLowerCase();
         if (key == target || key.startsWith(target) || target.startsWith(key)) {
           monthFees = entry.value;
+          matchedKey = entry.key;
           break;
         }
       }
 
       if (monthFees.isEmpty) continue;
+      if (matchedKey != null) matchedKeys.add(matchedKey);
 
       final dueDate = monthFees.isNotEmpty 
           ? monthFees.first.dueDate 
@@ -227,6 +240,46 @@ class PendingFeesController extends GetxController
         result.add(group);
       }
     }
+
+    // 2. Support arbitrary custom installment names (e.g. Installment 1, Part 2, Q1, Annual Fee)
+    for (final entry in groupedByName.entries) {
+      if (matchedKeys.contains(entry.key)) continue;
+
+      final feeItems = entry.value;
+      if (feeItems.isEmpty) continue;
+
+      final firstDueDate = feeItems.first.dueDate;
+      final m = firstDueDate.month;
+      final isTerm1ByDate = (m >= 6 && m <= 11);
+
+      final clean = entry.key.toLowerCase().trim();
+      bool belongsToTerm;
+
+      if (clean.contains('term 1') || clean.contains('installment 1') || clean.contains('part 1') || clean.contains('quarter 1') || clean.contains('1st') || clean.contains('annual') || clean.contains('full')) {
+        belongsToTerm = (term == TermGroup.term1);
+      } else if (clean.contains('term 2') || clean.contains('installment 3') || clean.contains('installment 4') || clean.contains('quarter 3') || clean.contains('quarter 4') || clean.contains('3rd') || clean.contains('4th')) {
+        belongsToTerm = (term == TermGroup.term2);
+      } else if (clean.contains('installment 2') || clean.contains('part 2') || clean.contains('quarter 2') || clean.contains('2nd')) {
+        belongsToTerm = isTerm1ByDate ? (term == TermGroup.term1) : (term == TermGroup.term2);
+      } else {
+        belongsToTerm = isTerm1ByDate ? (term == TermGroup.term1) : (term == TermGroup.term2);
+      }
+
+      if (belongsToTerm) {
+        final group = MonthGroup(
+          monthName: entry.key,
+          dueDate: firstDueDate,
+          subFees: feeItems,
+        );
+
+        if (!group.isFullyPaid) {
+          result.add(group);
+        }
+      }
+    }
+
+    // Sort all groups chronologically by due date
+    result.sort((a, b) => a.dueDate.compareTo(b.dueDate));
     return result;
   }
 
@@ -234,9 +287,14 @@ class PendingFeesController extends GetxController
     final termName = term == TermGroup.term1 ? 'Term 1' : 'Term 2';
     FeeItem? fee;
     for (final f in fees) {
-      if (f.isTerm && f.termName.toLowerCase() == termName.toLowerCase()) {
-        fee = f;
-        break;
+      if (f.isTerm) {
+        final clean = f.termName.toLowerCase();
+        if (clean == termName.toLowerCase() ||
+            (term == TermGroup.term1 && (clean.contains('term 1') || clean.contains('annual') || clean.contains('full'))) ||
+            (term == TermGroup.term2 && clean.contains('term 2'))) {
+          fee = f;
+          break;
+        }
       }
     }
     if (fee != null && !fee.isPaid) {
@@ -400,12 +458,47 @@ class PendingFeesController extends GetxController
   List<FeeItem> get educationPendingFees => pendingFees.where((f) => f.isEducation).toList();
   List<FeeItem> get termPendingFees => pendingFees.where((f) => f.isTerm).toList();
 
-  int _monthIndex(String termName) {
+  int _monthIndex(String termName, [DateTime? dueDate]) {
     final clean = termName.toLowerCase().trim();
-    if (clean == 'term 1') return 0;
-    if (clean == 'term 2') return 6;
+    if (clean == 'term 1' || clean.startsWith('term 1')) return 0;
+    if (clean == 'term 2' || clean.startsWith('term 2')) return 6;
+
     final idx = _monthOrder.indexOf(clean);
-    return idx != -1 ? idx : 99;
+    if (idx != -1) return idx;
+
+    for (int i = 0; i < _monthOrder.length; i++) {
+      final m = _monthOrder[i];
+      if (clean == m || clean.startsWith(m) || m.startsWith(clean)) {
+        return i;
+      }
+    }
+
+    // Quarterly plans
+    if (clean.contains('quarter 1') || clean.contains('q1')) return 0;
+    if (clean.contains('quarter 2') || clean.contains('q2')) return 3;
+    if (clean.contains('quarter 3') || clean.contains('q3')) return 6;
+    if (clean.contains('quarter 4') || clean.contains('q4')) return 9;
+
+    // Numbered custom installments (e.g. Installment 1, Part 2, Inst 3)
+    final match = RegExp(r'(?:installment|part|inst)\s*(\d+)', caseSensitive: false).firstMatch(clean);
+    if (match != null) {
+      final num = int.tryParse(match.group(1) ?? '1') ?? 1;
+      return (num - 1) * 3;
+    }
+
+    // Ordinal words
+    if (clean.contains('1st') || clean.contains('first')) return 0;
+    if (clean.contains('2nd') || clean.contains('second')) return 3;
+    if (clean.contains('3rd') || clean.contains('third')) return 6;
+    if (clean.contains('4th') || clean.contains('fourth')) return 9;
+    if (clean.contains('annual') || clean.contains('full')) return 0;
+
+    // Chronological fallback based on due date
+    if (dueDate != null) {
+      return _academicMonthOrder(dueDate.month) - 1;
+    }
+
+    return 99;
   }
 
   int _typePriority(FeeItem fee) {
@@ -419,9 +512,11 @@ class PendingFeesController extends GetxController
   List<FeeItem> get unifiedEducationPendingFees {
     final list = pendingFees.where((f) => f.isEducation || f.isTerm).toList()
       ..sort((a, b) {
-        final ma = _monthIndex(a.termName);
-        final mb = _monthIndex(b.termName);
+        final ma = _monthIndex(a.termName, a.dueDate);
+        final mb = _monthIndex(b.termName, b.dueDate);
         if (ma != mb) return ma.compareTo(mb);
+        final da = a.dueDate.compareTo(b.dueDate);
+        if (da != 0) return da;
         final ta = _typePriority(a);
         final tb = _typePriority(b);
         if (ta != tb) return ta.compareTo(tb);
@@ -434,8 +529,8 @@ class PendingFeesController extends GetxController
   List<FeeItem> get unifiedTransportPendingFees {
     final list = pendingFees.where((f) => f.isTransport).toList()
       ..sort((a, b) {
-        final ma = _monthIndex(a.termName);
-        final mb = _monthIndex(b.termName);
+        final ma = _monthIndex(a.termName, a.dueDate);
+        final mb = _monthIndex(b.termName, b.dueDate);
         if (ma != mb) return ma.compareTo(mb);
         return a.dueDate.compareTo(b.dueDate);
       });
