@@ -488,3 +488,33 @@ export const HelpCircle = createCustomIcon(
   </>
 );
 
+export const Share2 = createCustomIcon(
+  <>
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+    <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+  </>
+);
+
+export const IdCard = createCustomIcon(
+  <>
+    <rect width="18" height="14" x="3" y="5" rx="2" />
+    <circle cx="8" cy="11" r="2" />
+    <path d="M6 16v-.5a1.5 1.5 0 0 1 3 0v.5" />
+    <line x1="13" x2="18" y1="9" y2="9" />
+    <line x1="13" x2="16" y1="13" y2="13" />
+  </>
+);
+
+export const FileBadge = createCustomIcon(
+  <>
+    <path d="M12 22h6a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3" />
+    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+    <path d="M5 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+    <path d="m7 16.5-1.5 5.5-1.5-1.5-1.5 1.5L4 16.5" />
+  </>
+);
+
+

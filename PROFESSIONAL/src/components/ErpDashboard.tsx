@@ -65,11 +65,20 @@ const QuickModule: React.FC<{ icon: React.ReactNode; title: string; subtitle: st
 );
 
 export const ErpDashboard: React.FC = () => {
-  const { students, authFetch, setScreen, isScreenLoading } = useApp();
+  const { students, authFetch, setScreen, isScreenLoading, calendarEvents } = useApp();
 
   // Real Data
   const erpStudents = students.filter(s => s.isActive !== false && s.isMigrated === true);
   const activeCount = erpStudents.length;
+
+  const upcomingEvents = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return (calendarEvents || [])
+      .filter(ev => new Date(ev.endDate).getTime() >= today.getTime())
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, 3);
+  }, [calendarEvents]);
 
   const [pendingLeaves, setPendingLeaves] = useState<number | null>(null);
 
@@ -181,11 +190,57 @@ export const ErpDashboard: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-1">
             <QuickModule icon={<Clock className="size-5" />} title="Mark Attendance" tone="primary" subtitle="Daily student presence" onClick={() => setScreen('attendance')} />
+            <QuickModule icon={<CalendarDays className="size-5" />} title="Calendar & Roadmap" tone="success" subtitle="Holidays & academic milestones" onClick={() => setScreen('academic-calendar')} />
             <QuickModule icon={<CalendarDays className="size-5" />} title="Class Timetable" tone="warning" subtitle="Manage periods & subjects" onClick={() => setScreen('timetable')} />
             <QuickModule icon={<BookOpen className="size-5" />} title="Curriculum Mapping" tone="info" subtitle="Global subjects & mapping" onClick={() => setScreen('subjects')} />
           </CardContent>
         </Card>
       </div>
+
+      {/* Upcoming Holidays & Events Widget */}
+      {upcomingEvents.length > 0 && (
+        <Card className="border-t-4 border-t-emerald-500">
+          <CardHeader className="border-b flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-bold text-slate-800">Upcoming Holidays & School Events</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">Key dates scheduled in the official academic calendar</p>
+            </div>
+            <Button variant="link" size="sm" onClick={() => setScreen('academic-calendar')}>
+              Open Calendar <ArrowRight className="ml-1 size-3" />
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {upcomingEvents.map(ev => {
+                const s = new Date(ev.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                const e = new Date(ev.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                const isSingle = ev.startDate.split('T')[0] === ev.endDate.split('T')[0];
+                return (
+                  <div key={ev._id || ev.title} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                          {ev.type}
+                        </span>
+                        {ev.isSchoolClosed && (
+                          <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
+                            Closed
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-extrabold text-xs text-slate-800 line-clamp-1">{ev.title}</h4>
+                      {ev.description && <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{ev.description}</p>}
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-500 mt-2 block">
+                      📅 {isSingle ? s : `${s} – ${e}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -96,6 +96,27 @@ class TeacherQuickAccess extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.alt_route_rounded,
+                        label: 'Roadmap',
+                        onTap: () => Get.toNamed(AppRoutes.roadmap),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.campaign_outlined,
+                        label: 'Notices',
+                        onTap: () => Get.toNamed(AppRoutes.noticeBoard),
+                      ),
+                    ),
+                    const Expanded(child: SizedBox()),
+                  ],
+                ),
               ],
             ),
           ),

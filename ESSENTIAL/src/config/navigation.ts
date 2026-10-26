@@ -2,7 +2,8 @@ import type { ComponentType } from 'react';
 import {
   LayoutDashboard, CreditCard, AlertTriangle, Layers, Users, FileSpreadsheet, MessageSquare, Bell,
   Smartphone, Receipt, Activity, BarChart3, Settings, Wallet, BookOpen, UserCheck, CalendarDays,
-  ClipboardList, Award, ShieldCheck, GraduationCap, IndianRupee, Building2, ToggleRight, HelpCircle
+  ClipboardList, Award, ShieldCheck, GraduationCap, IndianRupee, Building2, ToggleRight, HelpCircle,
+  IdCard,
 } from '../components/icons';
 import type { ScreenType } from '../store';
 import { type PermissionId, hasPermission } from './permissionsRegistry';
@@ -93,10 +94,11 @@ export const NAV_MODULES: NavModule[] = [
       ] },
       { title: 'Academic Operations', items: [
         { id: 'attendance', label: 'Attendance', icon: UserCheck },
+        { id: 'academic-calendar', label: 'Calendar & Roadmap', icon: CalendarDays },
         { id: 'student-leave', label: 'Student Leave', icon: CalendarDays },
         { id: 'exams', label: 'Exams', icon: ClipboardList },
         { id: 'results', label: 'Results', icon: Award },
-        { id: 'certificates', label: 'Certificates', icon: Award },
+        { id: 'documents', label: 'Documents & ID Cards', icon: IdCard },
       ] },
       { title: 'Staff', items: [
         { id: 'staff-management', label: 'Staff Directory', icon: Users },

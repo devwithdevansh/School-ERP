@@ -38,7 +38,7 @@ class ProfileView extends StatelessWidget {
       await secureStorage.delete(key: StorageKeys.parentRefreshToken);
       await secureStorage.delete(key: StorageKeys.teacherRefreshToken);
     } catch (e) {
-      print('Error deleting tokens during logout: $e');
+      debugPrint('Error deleting tokens during logout: $e');
     }
     await prefs.remove(StorageKeys.parentId);
     await prefs.remove(StorageKeys.studentId);
@@ -176,6 +176,21 @@ class ProfileView extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () => _showDigitalIdCardModal(context, s),
+                icon: Icon(Icons.badge_outlined, size: 18, color: AppColors.primaryMid),
+                label: Text(
+                  'View Student Digital ID Card',
+                  style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryMid, fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: AppColors.primaryLight.withValues(alpha: 0.08),
+                  side: BorderSide(color: AppColors.primaryMid.withValues(alpha: 0.3), width: 1.2),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
               const SizedBox(height: 24),
               ],
 
@@ -208,7 +223,7 @@ class ProfileView extends StatelessWidget {
                               color: AppColors.primaryMid,
                             ),
                             value: ThemeController.to.isDark.value,
-                            activeColor: AppColors.primaryMid,
+                            activeThumbColor: AppColors.primaryMid,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             onChanged: (_) => ThemeController.to.toggleTheme(),
                           )),
@@ -219,7 +234,7 @@ class ProfileView extends StatelessWidget {
                             title: Text('App Sounds', style: AppTextStyles.bodyMedium),
                             secondary: Icon(Icons.volume_up_rounded, color: AppColors.primaryMid),
                             value: SoundService.instance.soundEnabled,
-                            activeColor: AppColors.primaryMid,
+                            activeThumbColor: AppColors.primaryMid,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             onChanged: (val) async {
                               SoundService.instance.play(AppSound.toggle);
@@ -271,4 +286,223 @@ class ProfileView extends StatelessWidget {
       ],
     );
   }
+
+  void _showDigitalIdCardModal(BuildContext context, dynamic s) {
+    if (s == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Official Student Identity Card',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // ID Card Container
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.blue.shade200, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.shade900.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Header Banner
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF1E3A8A), Color(0xFF1E40AF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'STUDENT IDENTITY CARD',
+                              style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.8),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            SchoolBrand.schoolName,
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            'ACADEMIC SESSION: ${AppConstants.academicYear}',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 9.5, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Body
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Photo Box
+                          Container(
+                            width: 76,
+                            height: 92,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF1E3A8A), width: 1.5),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6.5),
+                              child: StudentImageWidget(
+                                photoUrl: s.photoUrl,
+                                width: 76,
+                                height: 92,
+                                fit: BoxFit.cover,
+                                fallback: Center(
+                                  child: Text(
+                                    s.initials ?? 'ST',
+                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF1E3A8A)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+
+                          // Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  s.name,
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'Class: ${s.standard} - ${s.division}',
+                                    style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 11, fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                _buildCardMiniRow('Student Code:', s.studentCode),
+                                _buildCardMiniRow('Medium:', s.medium),
+                                _buildCardMiniRow('Transport:', s.transportType.isEmpty ? 'None' : s.transportType),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Footer Barcode & Signature
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            '|||| | ||||| | ||| ||||',
+                            style: TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 2),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Container(width: 70, height: 1, color: Colors.grey.shade500),
+                              const SizedBox(height: 2),
+                              const Text('Principal Sign', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.grey)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Show this digital ID card at campus entry or during school verifications.',
+                style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCardMiniRow(String label, String val) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        children: [
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(val, style: const TextStyle(fontSize: 10.5, color: Color(0xFF0F172A), fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

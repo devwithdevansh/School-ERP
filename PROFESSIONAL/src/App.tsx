@@ -33,7 +33,9 @@ import { TeacherAllocationDashboard } from './components/TeacherAllocationDashbo
 import { StudentLeaveManagement } from './components/StudentLeaveManagement';
 import { StaffLeaveManagement } from './components/StaffLeaveManagement';
 import { Messages } from './components/Messages';
+import { AcademicCalendar } from './components/AcademicCalendar';
 import { ErpPlaceholder } from './components/ErpPlaceholder';
+import { DocumentsHub } from './components/DocumentsHub';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
 import { generateReceiptHTML, generateReportHTML, printHTML, fetchAsBase64 } from './utils/printUtils';
@@ -98,6 +100,8 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
         return <Admission />;
       case 'attendance':
         return <Attendance />;
+      case 'academic-calendar':
+        return <AcademicCalendar />;
       case 'subjects':
         return <Subjects />;
       case 'timetable':
@@ -106,8 +110,9 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
         return <Exams />;
       case 'results':
         return <Results />;
+      case 'documents':
       case 'certificates':
-        return <ErpPlaceholder title="Certificates & ID Cards" />;
+        return <DocumentsHub />;
       case 'roles':
         return <RolesPermissions />;
       case 'teacher-allocation':
@@ -145,6 +150,8 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
       return <FeeStructure />;
     case 'setup':
       return <Setup />;
+    case 'academic-calendar':
+      return <AcademicCalendar />;
     case 'students':
       return <Students />;
     case 'promote-students':

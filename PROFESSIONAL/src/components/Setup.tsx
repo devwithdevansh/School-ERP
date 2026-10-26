@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../store';
 import { Calendar, Tag, Layers, Plus, Check, X, Pencil, Trash2, Info, Loader2 } from './icons';
 import { FeeStructure } from './FeeStructure'; // Reuse existing component for the Fee Structure tab
+import { CalendarPlanningTab } from './CalendarPlanningTab';
 
 // ── Edit Academic Year Modal ─────
 interface EditAYModalProps {
@@ -203,7 +204,7 @@ export const Setup: React.FC = () => {
     deleteFeeCategory
   } = useApp();
   
-  const [activeTab, setActiveTab] = useState<'academic-year' | 'fee-categories' | 'fee-structure'>('academic-year');
+  const [activeTab, setActiveTab] = useState<'academic-year' | 'fee-categories' | 'fee-structure' | 'calendar-planning'>('academic-year');
 
   const filteredCategories = React.useMemo(() => {
     return feeCategories;
@@ -333,6 +334,14 @@ export const Setup: React.FC = () => {
           }`}
         >
           <Layers className="w-4 h-4" /> Fee Structure
+        </button>
+        <button
+          onClick={() => setActiveTab('calendar-planning')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+            activeTab === 'calendar-planning' ? 'border-[#115e59] text-[#115e59]' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Calendar className="w-4 h-4" /> Calendar & Planning
         </button>
       </div>
 
@@ -642,6 +651,7 @@ export const Setup: React.FC = () => {
              <FeeStructure />
           </div>
         )}
+        {activeTab === 'calendar-planning' && <CalendarPlanningTab />}
       </div>
 
       {/* Editing Modals */}

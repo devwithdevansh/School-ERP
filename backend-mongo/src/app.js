@@ -30,6 +30,8 @@ import expenseRoutes          from './routes/expense.routes.js';
 import attendanceRoutes       from './routes/attendance.routes.js';
 import academicMasterRoutes   from './routes/academic-master.routes.js';
 import uploadRoutes           from './routes/upload.routes.js';
+import calendarRoutes         from './routes/calendar.routes.js';
+import documentRoutes         from './routes/document.routes.js';
 
 const app = express();
 
@@ -103,6 +105,8 @@ app.use(`${V1}/audit`,      CORE, auditRoutes);
 app.use(`${V1}/academic-years`, CORE, academicYearRoutes);
 app.use(`${V1}/users`,          CORE, userRoutes);
 app.use(`${V1}/academic-master`, CORE, academicMasterRoutes);
+app.use(`${V1}/calendar`,        CORE, calendarRoutes);
+app.use(`${V1}/documents`,       CORE, documentRoutes);
 app.use(`${V1}/upload`,         CORE, uploadRoutes);
 // FEES module
 app.use(`${V1}/ledgers`,    FEES, ledgerRoutes);

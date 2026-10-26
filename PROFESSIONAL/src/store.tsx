@@ -38,13 +38,37 @@ export type ScreenType =
   | 'exams'
   | 'results'
   | 'certificates'
+  | 'documents'
   | 'roles'
   | 'teacher-allocation'
   | 'student-leave'
   | 'staff-leave'
   | 'messages'
+  | 'academic-calendar'
   | 'org-clients'
   | 'org-licences';
+
+export interface CalendarEventData {
+  _id?: string;
+  academicYearId: string;
+  academicYear: string;
+  title: string;
+  description?: string;
+  type: 'HOLIDAY' | 'EVENT' | 'EXAM' | 'ACADEMIC_MILESTONE' | 'PTM' | 'VACATION';
+  category: string;
+  startDate: string;
+  endDate: string;
+  isSchoolClosed: boolean;
+  isAllDay: boolean;
+  color?: string;
+  source?: 'GOOGLE_CALENDAR' | 'ASTRONOMICAL_ENGINE' | 'CUSTOM_SCHOOL' | 'ACADEMIC_PRESET';
+  roadmap?: {
+    isRoadmapMilestone?: boolean;
+    quarter?: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'NONE';
+    term?: 'TERM_1' | 'TERM_2' | 'TERM_3' | 'ANNUAL' | 'NONE';
+    progressStatus?: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  };
+}
 
 /** Roles: ORG_ADMIN = platform owner (manages clients/modules, sees no school data); the rest belong to one school. */
 export type UserRole = 'ORG_ADMIN' | 'ADMIN' | 'STAFF' | 'TEACHER';
@@ -425,6 +449,14 @@ interface AppContextType {
   isLoadingDetails: boolean;
   isScreenLoading: boolean;
   refreshData: () => void;
+  calendarEvents: CalendarEventData[];
+  fetchCalendarEvents: (filters?: { academicYearId?: string; academicYear?: string; month?: number; year?: number }) => Promise<CalendarEventData[]>;
+  fetchCalendarSuggestions: (academicYear: string, academicYearId?: string, stateCode?: string) => Promise<CalendarEventData[]>;
+  createCalendarEvent: (data: Partial<CalendarEventData>) => Promise<boolean>;
+  updateCalendarEvent: (id: string, data: Partial<CalendarEventData>) => Promise<boolean>;
+  deleteCalendarEvent: (id: string) => Promise<boolean>;
+  bulkApplyCalendarEvents: (academicYearId: string, academicYear: string, events: CalendarEventData[], clearExistingPresets?: boolean) => Promise<{ success: boolean; count?: number; error?: string }>;
+  fetchAcademicRoadmap: (academicYearId?: string, academicYear?: string) => Promise<any>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -474,6 +506,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [results, setResults] = useState<ExamResultData[]>([]);
   const [homework, setHomework] = useState<HomeworkData[]>([]);
   const [conversations, setConversations] = useState<ConversationData[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEventData[]>([]);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
   const [selectedStudentIdForFee, setSelectedStudentIdForFee] = useState<string | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState<boolean>(() => {
@@ -771,6 +804,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           if (convRes?.ok) {
             const cv = await convRes.json();
             setConversations(cv.data || []);
+          }
+
+          const calRes = await authFetch('/api/v1/calendar');
+          if (calRes?.ok) {
+            const cal = await calRes.json();
+            setCalendarEvents(cal.data || []);
           }
         } catch (e) {
           console.error('Failed to load expenses or ERP data', e);
@@ -1740,6 +1779,123 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const fetchCalendarEvents = async (filters?: { academicYearId?: string; academicYear?: string; month?: number; year?: number }): Promise<CalendarEventData[]> => {
+    try {
+      const q = new URLSearchParams();
+      if (filters?.academicYearId) q.append('academicYearId', filters.academicYearId);
+      if (filters?.academicYear) q.append('academicYear', filters.academicYear);
+      if (filters?.month) q.append('month', filters.month.toString());
+      if (filters?.year) q.append('year', filters.year.toString());
+      const res = await authFetch(`/api/v1/calendar?${q.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch calendar events');
+      const data = await res.json();
+      const events = data.data || [];
+      setCalendarEvents(events);
+      return events;
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+
+  const fetchCalendarSuggestions = async (academicYear: string, academicYearId?: string, stateCode?: string): Promise<CalendarEventData[]> => {
+    try {
+      const q = new URLSearchParams({ academicYear });
+      if (academicYearId) q.append('academicYearId', academicYearId);
+      if (stateCode) q.append('stateCode', stateCode);
+      const res = await authFetch(`/api/v1/calendar/suggestions?${q.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch calendar suggestions');
+      const data = await res.json();
+      return data.data || [];
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+
+  const createCalendarEvent = async (data: Partial<CalendarEventData>): Promise<boolean> => {
+    try {
+      const res = await authFetch('/api/v1/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to create calendar event');
+      debouncedFetchAll();
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  };
+
+  const updateCalendarEvent = async (id: string, data: Partial<CalendarEventData>): Promise<boolean> => {
+    try {
+      const res = await authFetch(`/api/v1/calendar/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to update calendar event');
+      debouncedFetchAll();
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  };
+
+  const deleteCalendarEvent = async (id: string): Promise<boolean> => {
+    try {
+      const res = await authFetch(`/api/v1/calendar/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete calendar event');
+      debouncedFetchAll();
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  };
+
+  const bulkApplyCalendarEvents = async (
+    academicYearId: string,
+    academicYear: string,
+    events: CalendarEventData[],
+    clearExistingPresets = false
+  ): Promise<{ success: boolean; count?: number; error?: string }> => {
+    try {
+      const res = await authFetch('/api/v1/calendar/bulk-apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ academicYearId, academicYear, events, clearExistingPresets }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to bulk-apply calendar events');
+      debouncedFetchAll();
+      return { success: true, count: data.results };
+    } catch (err: any) {
+      console.error(err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const fetchAcademicRoadmap = async (academicYearId?: string, academicYear?: string): Promise<any> => {
+    try {
+      const q = new URLSearchParams();
+      if (academicYearId) q.append('academicYearId', academicYearId);
+      if (academicYear) q.append('academicYear', academicYear);
+      const res = await authFetch(`/api/v1/calendar/roadmap?${q.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch academic roadmap');
+      const data = await res.json();
+      return data.data || null;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1882,7 +2038,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setActivePortal,
         isLoadingDetails,
         isScreenLoading,
-        refreshData: debouncedFetchAll
+        refreshData: debouncedFetchAll,
+        calendarEvents,
+        fetchCalendarEvents,
+        fetchCalendarSuggestions,
+        createCalendarEvent,
+        updateCalendarEvent,
+        deleteCalendarEvent,
+        bulkApplyCalendarEvents,
+        fetchAcademicRoadmap,
       }}
     >
       {children}

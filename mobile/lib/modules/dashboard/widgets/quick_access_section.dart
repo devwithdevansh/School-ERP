@@ -22,44 +22,61 @@ class QuickAccessSection extends StatelessWidget {
           const SizedBox(height: 14),
           SurfaceCard(
             padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
               children: [
-                Expanded(
-                  child: ModuleTile(
-                    icon: Icons.menu_book_rounded,
-                    label: 'Homework',
-                    onTap: () => Get.toNamed(AppRoutes.homework),
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.menu_book_rounded,
+                        label: 'Homework',
+                        onTap: () => Get.toNamed(AppRoutes.homework),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.fact_check_outlined,
+                        label: 'Attendance',
+                        onTap: () => Get.toNamed(AppRoutes.attendance),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.emoji_events_outlined,
+                        label: 'Results',
+                        onTap: () => Get.toNamed(AppRoutes.results),
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: ModuleTile(
-                    icon: Icons.fact_check_outlined,
-                    label: 'Attendance',
-                    onTap: () => Get.toNamed(AppRoutes.attendance),
-                  ),
-                ),
-                Expanded(
-                  child: ModuleTile(
-                    icon: Icons.emoji_events_outlined,
-                    label: 'Results',
-                    onTap: () => Get.toNamed(AppRoutes.results),
-                  ),
-                ),
-                Expanded(
-                  child: ModuleTile(
-                    icon: Icons.calendar_view_week_rounded,
-                    label: 'Timetable',
-                    onTap: () => Get.toNamed(AppRoutes.timetable),
-                  ),
-                ),
-                Expanded(
-                  child: ModuleTile(
-                    icon: Icons.directions_bus_outlined,
-                    label: 'Transport',
-                    comingSoon: true,
-                    onTap: () => Get.toNamed(AppRoutes.transport),
-                  ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.calendar_view_week_rounded,
+                        label: 'Timetable',
+                        onTap: () => Get.toNamed(AppRoutes.timetable),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.alt_route_rounded,
+                        label: 'Roadmap',
+                        onTap: () => Get.toNamed(AppRoutes.roadmap),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.directions_bus_outlined,
+                        label: 'Transport',
+                        comingSoon: true,
+                        onTap: () => Get.toNamed(AppRoutes.transport),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

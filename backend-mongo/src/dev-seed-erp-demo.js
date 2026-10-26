@@ -39,6 +39,8 @@ async function main() {
   const Timetable = (await import('./models/Timetable.js')).default;
   const Exam = (await import('./models/Exam.js')).default;
   const ExamResult = (await import('./models/ExamResult.js')).default;
+  const CalendarEvent = (await import('./models/CalendarEvent.js')).default;
+  const { generateRoadmapSeedData } = await import('./scripts/seed-dummy-calendar-roadmap.js');
 
   const passwordHash = await bcrypt.hash('Demo@1234', 10);
 
@@ -190,13 +192,24 @@ async function main() {
     });
   }
 
+  const roadmapItems = await generateRoadmapSeedData(year._id, year.name);
+  await CalendarEvent.insertMany(
+    roadmapItems.map((item) => ({
+      ...item,
+      academicYearId: year._id,
+      academicYear: year.name,
+      createdBy: admin._id,
+    }))
+  );
+
   console.log('Seeded ERP demo data:');
   console.log(`  Admin login    : admin@school.local / Demo@1234`);
   console.log(`  Teacher login  : 9499710732 / Demo@1234 (mobile app, "Rana Mitrajsinh (Demo)")`);
   console.log(`  Parent login   : 9499710732 / Demo@1234 (same number — dual-role test case)`);
   console.log(`  Student        : Aarav Mitrajsinh (Demo), Std 1-A English`);
   console.log(`  Timetable      : Maths/English/Science, every Mon–Sat`);
-  console.log(`  Exams          : "Weekly Test 1" (/50) and "Final Examination" (/100), both published with results\n`);
+  console.log(`  Exams          : "Weekly Test 1" (/50) and "Final Examination" (/100), both published with results`);
+  console.log(`  Roadmap        : ${roadmapItems.length} combined events (exams, vacations, celebrations, holidays, PTMs)\n`);
 
   const { default: app } = await import('./app.js');
   const PORT = 3000;

@@ -51,13 +51,22 @@ const SheetEditor: React.FC<{
   onBack: () => void;
   onChanged: () => void;
 }> = ({ card, date, onBack, onChanged }) => {
-  const { students, fetchAttendance, saveAttendance, confirmAttendance } = useApp();
+  const { students, fetchAttendance, saveAttendance, confirmAttendance, calendarEvents } = useApp();
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [sheet, setSheet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [dirty, setDirty] = useState(false);
+
+  const todayHoliday = useMemo(() => {
+    return (calendarEvents || []).find(ev => {
+      if (!ev.isSchoolClosed) return false;
+      const s = ev.startDate ? ev.startDate.split('T')[0] : '';
+      const e = ev.endDate ? ev.endDate.split('T')[0] : '';
+      return s <= date && e >= date;
+    });
+  }, [calendarEvents, date]);
 
   const classStudents = useMemo(() => students.filter(s =>
     s.standard === card.standard &&
@@ -170,6 +179,20 @@ const SheetEditor: React.FC<{
           {STATUS_META[sheet ? (isConfirmed ? 'CONFIRMED' : 'SUBMITTED') : 'NOT_SUBMITTED'].label}
         </span>
       </div>
+
+      {todayHoliday && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-semibold rounded-2xl p-4 flex items-center gap-3">
+          <span className="text-xl">🏖️</span>
+          <div>
+            <span className="font-extrabold uppercase tracking-wide text-xs block text-emerald-800">
+              Official School Holiday: {todayHoliday.title}
+            </span>
+            <span className="text-xs text-emerald-700 font-medium">
+              This day is designated as a holiday in the Academic Calendar. Attendance is typically disabled or optional.
+            </span>
+          </div>
+        </div>
+      )}
 
       {!sheet && !loading && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-xl px-4 py-3">

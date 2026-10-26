@@ -29,6 +29,8 @@ import '../../modules/results/views/results_view.dart';
 import '../../modules/homework/views/homework_view.dart';
 import '../../modules/leave_request/views/leave_request_view.dart';
 import '../../modules/messages/views/messages_view.dart';
+import '../../modules/roadmap/bindings/roadmap_binding.dart';
+import '../../modules/roadmap/views/roadmap_view.dart';
 import '../../modules/teacher_attendance/bindings/teacher_attendance_binding.dart';
 import '../../modules/teacher_attendance/views/teacher_attendance_view.dart';
 import '../../modules/teacher_leaves/bindings/teacher_leaves_binding.dart';
@@ -143,6 +145,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.messages,
       page: () => const MessagesView(),
+    ),
+    GetPage(
+      name: AppRoutes.roadmap,
+      page: () => const RoadmapView(),
+      binding: RoadmapBinding(),
     ),
     // Teacher Modules
     GetPage(

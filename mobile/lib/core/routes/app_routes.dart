@@ -20,6 +20,7 @@ class AppRoutes {
   static const String transport       = '/transport';
   static const String leaveRequest    = '/leave-request';
   static const String messages        = '/messages';
+  static const String roadmap         = '/roadmap';
 
   // Teacher module
   static const String teacherAttendance = '/teacher-attendance';

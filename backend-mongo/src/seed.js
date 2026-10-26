@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import User from './models/User.js';
 import Client from './models/Client.js';
 import { provisionTenantDefaults } from './services/TenantProvisioningService.js';
+import { seedCalendarRoadmapForTenant } from './scripts/seed-dummy-calendar-roadmap.js';
 import { MODULE_IDS } from './constants/modules.js';
 
 const orgEmail = (process.env.SEED_ORG_EMAIL || 'org@platform.local').toLowerCase();
@@ -40,6 +41,7 @@ if (await User.findOne({ email })) {
 }
 
 await provisionTenantDefaults(client._id);
+await seedCalendarRoadmapForTenant(client._id);
 
 console.log('Done.');
 await mongoose.disconnect();
