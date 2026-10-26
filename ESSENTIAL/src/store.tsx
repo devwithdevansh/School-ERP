@@ -492,7 +492,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(0);
   const [selectedStudentIdForFee, setSelectedStudentIdForFee] = useState<string | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState<boolean>(() => {
-    return localStorage.getItem('currentUser') !== null;
+    const saved = localStorage.getItem('currentUser');
+    if (!saved) return false;
+    try {
+      const u = JSON.parse(saved);
+      if (u.role === 'ORG_ADMIN' || u.role === 'parent') return false;
+    } catch {}
+    return true;
   });
   const [isScreenLoading, setIsScreenLoading] = useState<boolean>(false);
 
@@ -590,8 +596,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const lastSyncCheckTimeRef = useRef<number>(0);
 
   const fetchAll = useCallback(async () => {
-    // Organization admins manage clients only; there is no school data to load (the API would answer 403).
-    if (isOrgAdmin) {
+    // Organization admins and Parents manage their own scopes; no school-wide admin ERP/Fees data to load.
+    if (isOrgAdmin || currentUserRef.current?.role === 'parent') {
       setIsLoadingDetails(false);
       return;
     }
@@ -604,10 +610,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Only call modules the organization licensed to this school (others would answer 403).
       // No client info (a backend without multi-tenancy) = everything.
       const mods = clientRef.current?.enabledModules ?? ['FEES', 'ERP'];
-      const hasFees = mods.includes('FEES');
+      const hasFees = mods.includes('FEES') && currentUserRef.current?.role !== 'TEACHER';
       const isStaffOrClerk = currentUserRef.current?.role === 'STAFF';
       // Staff / Clerks only have access to daily FEES operations; ERP academic endpoints require ADMIN or TEACHER.
-      const hasErp = mods.includes('ERP') && !isStaffOrClerk;
+      const hasErp = mods.includes('ERP') && !isStaffOrClerk && currentUserRef.current?.role !== 'parent';
       const skipped = () => Promise.resolve(new Response(JSON.stringify({ data: [] }), { status: 200 }));
       try {
         const [initRes, unpaidRes, subjectsRes, curriculumsRes] = await Promise.all([
@@ -829,7 +835,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const setScreen = useCallback(async (screen: ScreenType) => {
     setScreenState(screen);
-    if (!currentUser || currentUser.role === 'ORG_ADMIN' || screen === 'login') return;
+    if (!currentUser || currentUser.role === 'ORG_ADMIN' || currentUser.role === 'parent' || screen === 'login') return;
 
     const now = Date.now();
     if (now - lastSyncCheckTimeRef.current < 15000) {
@@ -843,23 +849,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const data = await res.json();
       if (data.data?.timestamp && data.data.timestamp > lastSyncTimestamp) {
         setIsScreenLoading(true);
-        await fetchAll();
-        setIsScreenLoading(false);
+        try {
+          await fetchAll();
+        } finally {
+          setIsScreenLoading(false);
+        }
       }
     } catch (err) {
       console.error('[Sync] Screen check failed:', err);
+      setIsScreenLoading(false);
     }
   }, [currentUser, lastSyncTimestamp, authFetch, fetchAll]);
 
   const userEmail = currentUser?.email;
   useEffect(() => {
-    if (userEmail) {
+    if (userEmail && currentUser?.role !== 'parent' && currentUser?.role !== 'ORG_ADMIN') {
       fetchAll();
     }
-  }, [userEmail, fetchAll]);
+  }, [userEmail, currentUser?.role, fetchAll]);
 
   useEffect(() => {
-    if (!currentUser || currentUser.role === 'ORG_ADMIN') return;
+    if (!currentUser || currentUser.role === 'ORG_ADMIN' || currentUser.role === 'parent') return;
 
     let isSubscribed = true;
 

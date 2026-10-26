@@ -234,10 +234,16 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
 };
 
 const MainAppLayout: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPrintReport: (report: any) => void }> = ({ onPrint, onPrintReport }) => {
-  const { currentScreen, isScreenLoading, isLoadingDetails, activePortal, setActivePortal, setScreen } = useApp();
+  const { currentScreen, isScreenLoading, isLoadingDetails, activePortal, setActivePortal, setScreen, currentUser } = useApp();
 
   useEffect(() => {
     const handleUrlSync = () => {
+      if (currentUser?.role === 'parent' || currentUser?.role === 'ORG_ADMIN') {
+        if (window.location.pathname.startsWith('/academics')) {
+          window.history.replaceState({}, '', '/');
+        }
+        return;
+      }
       const route = parseExamRoute();
       if (route.screen === 'exams') {
         setActivePortal('ERP');
@@ -255,7 +261,7 @@ const MainAppLayout: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
 
     window.addEventListener('popstate', handleUrlSync);
     return () => window.removeEventListener('popstate', handleUrlSync);
-  }, [setActivePortal, setScreen]);
+  }, [currentUser?.role, setActivePortal, setScreen]);
 
   if (currentScreen === 'login') {
     return <Login />;
