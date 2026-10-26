@@ -241,10 +241,17 @@ export const StudentView: React.FC<StudentViewProps> = ({ onPrint }) => {
       }
 
       // Step 1: Create Razorpay Order
+      const sId = currentStudent._id || currentStudent.id;
       const orderRes = await authFetch('/api/v1/payments/razorpay/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: selectedTotal }),
+        body: JSON.stringify({
+          amount: selectedTotal,
+          notes: {
+            studentId: sId,
+            ledgerIds: Array.from(selectedLedgerIds).join(','),
+          },
+        }),
       });
 
       const orderJson = await orderRes.json();

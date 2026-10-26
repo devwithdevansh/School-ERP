@@ -46,9 +46,14 @@ app.use(cors({
   credentials: true,
 }));
 
-// Limit body size to prevent memory-exhaustion attacks
-app.use(express.json({ limit: '50kb' }));
-app.use(express.urlencoded({ extended: true, limit: '50kb' }));
+// Limit body size to prevent memory-exhaustion attacks & capture rawBody for webhook HMAC verification
+app.use(express.json({
+  limit: '100kb',
+  verify: (req, _res, buf) => {
+    req.rawBody = buf.toString('utf8');
+  }
+}));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 // ─── Request Logger ───────────────────────────────────────────────────────────
 app.use((req, _res, next) => {

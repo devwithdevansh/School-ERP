@@ -46,6 +46,7 @@ export const batchPaymentSchema = {
 export const createRazorpayOrderSchema = {
   body: z.object({
     amount: z.number().positive(),
+    notes: z.record(z.unknown()).optional(),
   }),
 };
 

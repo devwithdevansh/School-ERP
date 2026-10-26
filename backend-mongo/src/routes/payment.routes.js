@@ -18,6 +18,9 @@ import {
 
 const router = Router();
 
+// Razorpay Server-to-Server Webhook (Signature verified, direct from Razorpay servers)
+router.post('/razorpay/webhook', PaymentController.handleRazorpayWebhook);
+
 router.use(authenticate);
 
 // Idempotency enforced on payment creation to prevent duplicate charges

@@ -35,7 +35,6 @@ import { StaffLeaveManagement } from './components/StaffLeaveManagement';
 import { TeacherView } from './components/TeacherView';
 import { StudentView } from './components/StudentView';
 import { AcademicCalendar } from './components/AcademicCalendar';
-import { ErpPlaceholder } from './components/ErpPlaceholder';
 import { DocumentsHub } from './components/DocumentsHub';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
