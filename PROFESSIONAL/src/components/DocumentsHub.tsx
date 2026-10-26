@@ -1747,25 +1747,45 @@ export const DocumentsHub: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsFlipped(!isFlipped)}
-                  className="flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200/60 hover:bg-indigo-100 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200/60 shadow-sm transition-all active:scale-95"
                 >
-                  <RefreshCw className="h-3 w-3" />
+                  <RefreshCw className={`h-3 w-3 transition-transform duration-700 ${isFlipped ? 'rotate-180' : 'rotate-0'}`} />
                   Flip to {isFlipped ? 'Front' : 'Back'}
                 </button>
               </div>
 
               {idCardPreviewStudent ? (
                 <div className="flex flex-col items-center">
-                  {/* Card Shell */}
-                  <div className="w-[300px] h-[460px] bg-white border border-slate-300 rounded-2xl shadow-2xl overflow-hidden flex flex-col justify-between relative transition-all duration-300">
-                    {/* Lanyard Punch Hole Indicator */}
-                    {idConfig.showLanyardHole && (
-                      <div className="w-16 h-3 bg-slate-200 border border-dashed border-slate-400 rounded-full mx-auto mt-2" />
-                    )}
+                  {/* 3D Perspective Card Stage */}
+                  <div
+                    className="relative w-[300px] h-[460px] cursor-pointer group"
+                    style={{ perspective: 1200 }}
+                    onClick={() => setIsFlipped((prev) => !prev)}
+                    title="Click card to flip"
+                  >
+                    {/* Inner 3D Transform Object */}
+                    <div
+                      className="w-full h-full relative shadow-2xl rounded-2xl transition-transform duration-700"
+                      style={{
+                        transformStyle: 'preserve-3d',
+                        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                        transitionTimingFunction: 'cubic-bezier(0.34, 1.3, 0.64, 1)',
+                      }}
+                    >
+                      {/* FRONT SIDE FACE */}
+                      <div
+                        className="absolute inset-0 w-full h-full bg-white border border-slate-300 rounded-2xl overflow-hidden flex flex-col justify-between"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(0deg)',
+                        }}
+                      >
+                        {/* Lanyard Punch Hole Indicator */}
+                        {idConfig.showLanyardHole && (
+                          <div className="w-16 h-3 bg-slate-200 border border-dashed border-slate-400 rounded-full mx-auto mt-2 shrink-0" />
+                        )}
 
-                    {!isFlipped ? (
-                      /* FRONT SIDE */
-                      <>
                         <div
                           className={`p-3 text-center text-white ${
                             idConfig.theme === 'navy'
@@ -1825,10 +1845,22 @@ export const DocumentsHub: React.FC = () => {
                             <span className="font-bold">PRINCIPAL</span>
                           </div>
                         </div>
-                      </>
-                    ) : (
-                      /* BACK SIDE */
-                      <>
+                      </div>
+
+                      {/* BACK SIDE FACE */}
+                      <div
+                        className="absolute inset-0 w-full h-full bg-white border border-slate-300 rounded-2xl overflow-hidden flex flex-col justify-between"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(180deg)',
+                        }}
+                      >
+                        {/* Lanyard Punch Hole Indicator */}
+                        {idConfig.showLanyardHole && (
+                          <div className="w-16 h-3 bg-slate-200 border border-dashed border-slate-400 rounded-full mx-auto mt-2 shrink-0" />
+                        )}
+
                         <div className="p-3 text-center text-white bg-slate-800">
                           <h4 className="font-bold text-xs uppercase tracking-tight">
                             EMERGENCY DETAILS & RULES
@@ -1862,11 +1894,16 @@ export const DocumentsHub: React.FC = () => {
                           <span className="font-bold font-mono">SCANNABLE QR VERIFIED</span>
                           <span className="font-bold text-slate-800">EXP: 31-MAR-2027</span>
                         </div>
-                      </>
-                    )}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-4 flex gap-2">
+                  <p className="mt-2 text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse inline-block" />
+                    Click card or button to flip
+                  </p>
+
+                  <div className="mt-3 flex gap-2">
                     <button
                       type="button"
                       onClick={() => handlePrintIdCardsSheet([idCardPreviewStudent])}
