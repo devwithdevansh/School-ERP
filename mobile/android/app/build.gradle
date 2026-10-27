@@ -9,6 +9,12 @@ plugins {
 def schoolAppId = project.hasProperty('schoolAppId') ? project.property('schoolAppId') : "com.schoolerp.school_connect"
 def schoolAppName = project.hasProperty('schoolAppName') ? project.property('schoolAppName') : "School Connect"
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace "com.schoolerp.school_connect"
     compileSdkVersion flutter.compileSdkVersion
@@ -34,9 +40,22 @@ android {
         versionName flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+                storeFile = rootProject.file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+            } else {
+                initWith signingConfigs.debug
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
 }

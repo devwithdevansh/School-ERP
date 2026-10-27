@@ -49,14 +49,14 @@ $EnvSource = Join-Path $AppDir "app.env"
 $EnvDest = Join-Path $PSScriptRoot "assets\config\app.env"
 if (Test-Path $EnvSource) {
     Copy-Item $EnvSource $EnvDest -Force
-    Write-Host "  ✓ Applied $EnvSource -> assets/config/app.env" -ForegroundColor Green
+    Write-Host "  [OK] Applied app.env -> assets/config/app.env" -ForegroundColor Green
 }
 
 # 3. Copy Google Services if present
 $GServices = Join-Path $AppDir "google-services.json"
 if (Test-Path $GServices) {
     Copy-Item $GServices (Join-Path $PSScriptRoot "android\app\google-services.json") -Force
-    Write-Host "  ✓ Applied google-services.json" -ForegroundColor Green
+    Write-Host "  [OK] Applied google-services.json" -ForegroundColor Green
 }
 
 # 4. Generate Launcher Icons if app_icon.png exists
@@ -67,15 +67,13 @@ if (Test-Path $IconSource) {
     if (Test-Path $IconFgSource) {
         Copy-Item $IconFgSource (Join-Path $PSScriptRoot "assets\images\app_icon_fg.png") -Force
     }
-    Write-Host "  ✓ Generating launcher icon mipmaps with flutter_launcher_icons..." -ForegroundColor Yellow
-    dart run flutter_launcher_icons:main
+    Write-Host "  [OK] Generating launcher icons..." -ForegroundColor Yellow
+    flutter pub run flutter_launcher_icons
 }
 
 # 5. Build Release AAB Bundle
-Write-Host "  ✓ Running flutter build appbundle..." -ForegroundColor Cyan
-flutter build appbundle --release `
-    "-PschoolAppId=$AppId" `
-    "-PschoolAppName=$Name"
+Write-Host "  Running flutter build appbundle..." -ForegroundColor Cyan
+flutter build appbundle --release --android-project-arg "schoolAppId=$AppId" --android-project-arg "schoolAppName=$Name"
 
 # 6. Copy output to dist/
 $DistDir = Join-Path $PSScriptRoot "dist"
