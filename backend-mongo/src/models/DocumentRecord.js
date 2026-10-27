@@ -22,6 +22,8 @@ const documentRecordSchema = new mongoose.Schema(
         'CHARACTER_CERTIFICATE',
         'APPRECIATION',
         'MERIT',
+        'ACADEMIC_MERIT',
+        'NOC',
         'CUSTOM',
         'ID_CARD_BATCH',
       ],

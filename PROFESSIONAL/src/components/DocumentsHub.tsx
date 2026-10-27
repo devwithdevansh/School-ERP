@@ -6,6 +6,7 @@ import {
   Award,
   IdCard,
   FileBadge,
+  FileText,
   Printer,
   Search,
   Filter,
@@ -35,23 +36,49 @@ import {
 // ── Types ──────────────────────────────────────────────────────────────────
 export type DocumentTab = 'certificates' | 'id-cards' | 'registry';
 
+export type CertificateType =
+  | 'BONAFIDE'
+  | 'CHARACTER_CERTIFICATE'
+  | 'LEAVING_CERTIFICATE'
+  | 'NOC'
+  | 'EVENT_CERTIFICATE'
+  | 'ACADEMIC_MERIT'
+  | 'APPRECIATION'
+  | 'CUSTOM';
+
 export interface CertificateFormData {
-  documentType: 'EVENT_CERTIFICATE' | 'BONAFIDE' | 'LEAVING_CERTIFICATE' | 'CHARACTER_CERTIFICATE' | 'APPRECIATION' | 'CUSTOM';
+  documentType: CertificateType;
   templateId: 'classic-gold' | 'royal-indigo' | 'emerald-prestige' | 'minimal-modern';
   title: string;
+  // Shared
+  certificateNumber: string;
+  issuedDate: string;
+  schoolName: string;
+  schoolAddress: string;
+  schoolAffiliation: string;
+  // Recognition / Award specific
   eventName: string;
   eventDate: string;
   achievement: string;
   bodyText: string;
-  certificateNumber: string;
-  issuedDate: string;
   signatory1Name: string;
   signatory1Title: string;
   signatory2Name: string;
   signatory2Title: string;
-  schoolName: string;
-  schoolAddress: string;
-  schoolAffiliation: string;
+  // Administrative specific (Bonafide, Character, etc.)
+  refNumber: string;
+  purpose: string;
+  fatherName: string;
+  motherName: string;
+  dob: string;
+  dobWords: string;
+  caste: string;
+  religion: string;
+  medium: string;
+  conduct: string;
+  includePhotoBox: boolean;
+  preparedByName: string;
+  preparedByTitle: string;
 }
 
 export interface IdCardConfig {
@@ -63,6 +90,83 @@ export interface IdCardConfig {
   emergencyContactLabel: string;
   signatoryTitle: string;
 }
+
+// ── Archetype & Helper Functions ───────────────────────────────────────────
+export const isAdministrativeDocument = (docType: string): boolean => {
+  return ['BONAFIDE', 'CHARACTER_CERTIFICATE', 'LEAVING_CERTIFICATE', 'NOC'].includes(docType);
+};
+
+export function convertDateToWords(dateStr: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+
+  const day = d.getDate();
+  const month = d.getMonth();
+  const year = d.getFullYear();
+
+  const ordinalDays = [
+    '', 'First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth',
+    'Eleventh', 'Twelfth', 'Thirteenth', 'Fourteenth', 'Fifteenth', 'Sixteenth', 'Seventeenth', 'Eighteenth', 'Nineteenth', 'Twentieth',
+    'Twenty-First', 'Twenty-Second', 'Twenty-Third', 'Twenty-Fourth', 'Twenty-Fifth', 'Twenty-Sixth', 'Twenty-Seventh', 'Twenty-Eighth', 'Twenty-Ninth', 'Thirtieth', 'Thirty-First',
+  ];
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function numToWords(n: number): string {
+    if (n === 0) return '';
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + numToWords(n % 100) : '');
+    if (n < 1000000) return numToWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + numToWords(n % 1000) : '');
+    return n.toString();
+  }
+
+  const dayWord = ordinalDays[day] || String(day);
+  const monthWord = months[month] || '';
+  const yearWord = numToWords(year);
+
+  return `${dayWord} ${monthWord} ${yearWord}`.trim();
+}
+
+export const CERTIFICATE_OPTIONS = [
+  {
+    group: 'Official School Administrative Documents (Portrait Letterhead)',
+    items: [
+      { id: 'BONAFIDE', label: 'Bonafide Certificate', icon: '📜', badge: 'Official Letterhead' },
+      { id: 'CHARACTER_CERTIFICATE', label: 'Character & Conduct Certificate', icon: '🎖️', badge: 'Official Letterhead' },
+      { id: 'LEAVING_CERTIFICATE', label: 'School Transfer / Leaving Certificate (LC)', icon: '🎓', badge: 'Official Record' },
+      { id: 'NOC', label: 'No Objection Certificate (NOC)', icon: '📄', badge: 'Official Clearance' },
+    ],
+  },
+  {
+    group: 'Merit & Recognition Awards (Landscape Canvas)',
+    items: [
+      { id: 'EVENT_CERTIFICATE', label: 'Sports & Athletics Championship', icon: '🏆', badge: 'Award Canvas' },
+      { id: 'ACADEMIC_MERIT', label: 'Academic Distinction & Merit', icon: '🏅', badge: 'Award Canvas' },
+      { id: 'APPRECIATION', label: 'Special Appreciation Certificate', icon: '⭐', badge: 'Award Canvas' },
+      { id: 'CUSTOM', label: 'Custom Recognition Award', icon: '✏️', badge: 'Custom Award' },
+    ],
+  },
+];
+
+export const PURPOSE_PRESETS = [
+  'Passport Application',
+  'Bus / Metro Travel Concession',
+  'Bank Account Opening',
+  'Aadhaar Card Update / Verification',
+  'Higher Studies / Coaching Admission',
+  'Government Scholarship Application',
+  'Visa / Immigration Documentation',
+  'Participation in State / National Level Event',
+  'General Official Institutional Verification',
+];
 
 export const DocumentsHub: React.FC = () => {
   const {
@@ -89,18 +193,31 @@ export const DocumentsHub: React.FC = () => {
   const [selectedClassDiv, setSelectedClassDiv] = useState<string>('A');
 
   const [certForm, setCertForm] = useState<CertificateFormData>({
-    documentType: 'EVENT_CERTIFICATE',
-    templateId: 'classic-gold',
-    title: 'Certificate of Achievement',
+    documentType: 'BONAFIDE',
+    templateId: 'emerald-prestige',
+    title: 'Bonafide Certificate',
     eventName: 'Annual Sports & Athletic Championship 2026',
     eventDate: new Date().toISOString().split('T')[0],
     achievement: 'First Prize - 100m Sprint',
     bodyText:
       'This certificate is proudly awarded to {studentName} of {standard} - {division} for demonstrating exemplary sportsmanship, vigor, and outstanding performance in the {eventName} held on {eventDate}.',
-    certificateNumber: `CERT/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+    certificateNumber: `REF/BON/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+    refNumber: `REF/BON/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
     issuedDate: new Date().toISOString().split('T')[0],
+    purpose: 'Passport Application',
+    fatherName: 'Parent / Guardian',
+    motherName: 'Mother Name',
+    dob: '2010-08-15',
+    dobWords: 'Fifteenth August Two Thousand Ten',
+    caste: 'General',
+    religion: 'Hindu',
+    medium: 'English',
+    conduct: 'Good',
+    includePhotoBox: true,
+    preparedByName: 'Office Superintendent',
+    preparedByTitle: 'Administrative Office',
     signatory1Name: 'Dr. R. K. Sharma',
-    signatory1Title: 'Principal',
+    signatory1Title: 'Principal / Headmaster',
     signatory2Name: 'Mrs. Ananya Verma',
     signatory2Title: 'Event & Sports In-Charge',
     schoolName: brand.schoolName || client?.name || 'Grand Heritage International Academy',
@@ -160,6 +277,34 @@ export const DocumentsHub: React.FC = () => {
     if (!selectedStudentId) return students[0] || null;
     return students.find((s) => (s._id || s.id) === selectedStudentId) || null;
   }, [students, selectedStudentId]);
+
+  // Auto-fill student profile particulars for Administrative certificates
+  useEffect(() => {
+    if (selectedCertStudent) {
+      const s = selectedCertStudent;
+      const dobStr = s.dob
+        ? typeof s.dob === 'string'
+          ? s.dob.split('T')[0]
+          : new Date(s.dob).toISOString().split('T')[0]
+        : '2010-08-15';
+      const fName = s.fatherName || s.parentName || (s.surname ? `Mr. ${s.surname}` : 'Parent / Guardian');
+      const mName = s.motherName || 'Mrs. Parent';
+      const casteVal = s.profile?.caste || s.profile?.category || 'General';
+      const relVal = s.profile?.religion || 'Hindu';
+      const medVal = s.medium || 'English';
+
+      setCertForm((prev) => ({
+        ...prev,
+        fatherName: fName,
+        motherName: mName,
+        dob: dobStr,
+        dobWords: convertDateToWords(dobStr),
+        caste: casteVal,
+        religion: relVal,
+        medium: medVal,
+      }));
+    }
+  }, [selectedCertStudent]);
 
   // Filtered students for single certificate search modal/dropdown
   const searchedCertStudents = useMemo(() => {
@@ -254,42 +399,23 @@ export const DocumentsHub: React.FC = () => {
   };
 
   // Preset Template Selectors
-  const applyCertificatePreset = (type: CertificateFormData['documentType']) => {
+  const applyCertificatePreset = (type: CertificateType) => {
     switch (type) {
-      case 'EVENT_CERTIFICATE':
-        setCertForm((prev) => ({
-          ...prev,
-          documentType: type,
-          templateId: 'classic-gold',
-          title: 'Certificate of Achievement',
-          eventName: 'Annual Sports & Athletic Championship',
-          achievement: 'First Prize - 100m Sprint',
-          bodyText:
-            'This certificate is proudly awarded to {studentName} of {standard} - {division} for demonstrating exemplary sportsmanship, vigor, and outstanding performance in the {eventName} held on {eventDate}.',
-        }));
-        break;
       case 'BONAFIDE':
         setCertForm((prev) => ({
           ...prev,
           documentType: type,
           templateId: 'emerald-prestige',
           title: 'Bonafide Certificate',
-          eventName: 'Official Academic Enrollment Record',
-          achievement: 'Regular Enrolled Student',
-          bodyText:
-            'This is to officially certify that {studentName}, Son/Daughter of General Register (GR) No. {grNo}, is a bonafide student of this institution studying in {standard} - {division} during the Academic Year {academicYear}. His/Her conduct and character during the session have been satisfactory.',
-        }));
-        break;
-      case 'LEAVING_CERTIFICATE':
-        setCertForm((prev) => ({
-          ...prev,
-          documentType: type,
-          templateId: 'minimal-modern',
-          title: 'School Transfer / Leaving Certificate',
-          eventName: 'Official Transfer Record',
-          achievement: 'Successfully Passed & Completed Session',
-          bodyText:
-            'Certified that {studentName} (GR No: {grNo}, Roll No: {rollNo}) was admitted to this school and has attended classes in {standard} - {division}. All school dues have been settled in full. The student bears good moral character and has permission to seek admission elsewhere.',
+          refNumber: `REF/BON/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          certificateNumber: `REF/BON/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          purpose: 'Passport Application',
+          conduct: 'Good',
+          includePhotoBox: true,
+          preparedByName: 'Office Superintendent',
+          preparedByTitle: 'Administrative Office',
+          signatory1Name: prev.signatory1Name || 'Dr. R. K. Sharma',
+          signatory1Title: 'Principal / Headmaster',
         }));
         break;
       case 'CHARACTER_CERTIFICATE':
@@ -298,22 +424,88 @@ export const DocumentsHub: React.FC = () => {
           documentType: type,
           templateId: 'royal-indigo',
           title: 'Character & Conduct Certificate',
-          eventName: 'Character & Behavioral Evaluation',
-          achievement: 'Exemplary Discipline & Moral Character',
+          refNumber: `REF/CHR/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          certificateNumber: `REF/CHR/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          purpose: 'Higher Studies & Institutional Admission',
+          conduct: 'Exemplary',
+          includePhotoBox: false,
+          preparedByName: 'Class Teacher / Proctor',
+          preparedByTitle: 'Faculty Committee',
+          signatory1Name: prev.signatory1Name || 'Dr. R. K. Sharma',
+          signatory1Title: 'Principal / Headmaster',
+        }));
+        break;
+      case 'LEAVING_CERTIFICATE':
+        setCertForm((prev) => ({
+          ...prev,
+          documentType: type,
+          templateId: 'minimal-modern',
+          title: 'School Transfer / Leaving Certificate (LC)',
+          refNumber: `REF/LC/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          certificateNumber: `REF/LC/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          purpose: 'Admission to Another School / College',
+          conduct: 'Good',
+          includePhotoBox: false,
+          preparedByName: 'Head Clerk',
+          preparedByTitle: 'Registrar Section',
+          signatory1Name: prev.signatory1Name || 'Dr. R. K. Sharma',
+          signatory1Title: 'Principal / Headmaster',
+        }));
+        break;
+      case 'NOC':
+        setCertForm((prev) => ({
+          ...prev,
+          documentType: type,
+          templateId: 'emerald-prestige',
+          title: 'No Objection Certificate (NOC)',
+          refNumber: `REF/NOC/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          certificateNumber: `REF/NOC/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+          purpose: 'Participation in State / National Level Event',
+          conduct: 'Good',
+          includePhotoBox: false,
+          preparedByName: 'Office Superintendent',
+          preparedByTitle: 'Administrative Office',
+          signatory1Name: prev.signatory1Name || 'Dr. R. K. Sharma',
+          signatory1Title: 'Principal / Headmaster',
+        }));
+        break;
+      case 'EVENT_CERTIFICATE':
+        setCertForm((prev) => ({
+          ...prev,
+          documentType: type,
+          templateId: 'classic-gold',
+          title: 'Certificate of Achievement',
+          eventName: 'Annual Sports & Athletic Championship 2026',
+          achievement: 'First Prize - 100m Sprint',
           bodyText:
-            'This is to certify that {studentName}, studying in {standard} - {division} (GR No: {grNo}), is known to the administration for the past academic sessions. To the best of our knowledge and records, he/she bears an exemplary moral character and pleasant disposition.',
+            'This certificate is proudly awarded to {studentName} of {standard} - {division} for demonstrating exemplary sportsmanship, vigor, and outstanding performance in the {eventName} held on {eventDate}.',
+          certificateNumber: `CERT/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
+        }));
+        break;
+      case 'ACADEMIC_MERIT':
+        setCertForm((prev) => ({
+          ...prev,
+          documentType: type,
+          templateId: 'royal-indigo',
+          title: 'Certificate of Academic Distinction',
+          eventName: 'Annual Academic Examination 2026',
+          achievement: 'First Rank with Distinction (Grade A+)',
+          bodyText:
+            'Presented to {studentName} of {standard} - {division} in honor of exceptional scholarly distinction, academic dedication, and securing top academic honors in {eventName}.',
+          certificateNumber: `CERT/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
         }));
         break;
       case 'APPRECIATION':
         setCertForm((prev) => ({
           ...prev,
           documentType: type,
-          templateId: 'classic-gold',
+          templateId: 'emerald-prestige',
           title: 'Certificate of Special Appreciation',
           eventName: 'Science & Innovation Exhibition 2026',
           achievement: 'Excellence in Scientific Inquiry & Presentation',
           bodyText:
             'In recognition of exceptional diligence, creative excellence, and dedicated participation shown by {studentName} ({standard} - {division}) in {eventName}. The school commends your remarkable contribution.',
+          certificateNumber: `CERT/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
         }));
         break;
       case 'CUSTOM':
@@ -326,6 +518,7 @@ export const DocumentsHub: React.FC = () => {
           achievement: 'Outstanding Distinction & Recognition',
           bodyText:
             'Presented to {studentName} of {standard} - {division} in honor of commendable accomplishment and distinction in {eventName} on {eventDate}.',
+          certificateNumber: `CERT/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`,
         }));
         break;
     }
@@ -338,6 +531,357 @@ export const DocumentsHub: React.FC = () => {
     const s = selectedCertStudent;
     const body = getInterpolatedBodyText(s);
 
+    if (isAdministrativeDocument(certForm.documentType)) {
+      // ══════════════════════════════════════════════════════════════════════
+      // ARCHETYPE 1: OFFICIAL SCHOOL ADMINISTRATIVE DOCUMENT (A4 PORTRAIT)
+      // ══════════════════════════════════════════════════════════════════════
+      const refNo = certForm.refNumber || certForm.certificateNumber;
+      const issueDateFormatted = certForm.issuedDate
+        ? new Date(certForm.issuedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+        : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+      const dobFormatted = certForm.dob
+        ? new Date(certForm.dob).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '15/08/2010';
+      const dobWordsText = certForm.dobWords || convertDateToWords(certForm.dob);
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${certForm.title} - ${s?.studentName || 'Student'}</title>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 12mm 15mm;
+            }
+            * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body {
+              margin: 0;
+              padding: 0;
+              background: #FFFFFF;
+              font-family: 'Times New Roman', Georgia, serif;
+              color: #0F172A;
+              width: 100%;
+              line-height: 1.6;
+            }
+            .letterhead-container {
+              width: 100%;
+              min-height: 265mm;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              border: 2px solid #CBD5E1;
+              padding: 12mm 14mm;
+              position: relative;
+              background: #FFFFFF;
+            }
+            .header-block {
+              text-align: center;
+              border-bottom: 2px solid #0F172A;
+              padding-bottom: 12px;
+              margin-bottom: 18px;
+            }
+            .school-title {
+              font-size: 24pt;
+              font-weight: 900;
+              color: #0F172A;
+              text-transform: uppercase;
+              letter-spacing: 1.5px;
+              margin: 0;
+            }
+            .school-sub {
+              font-size: 9.5pt;
+              font-weight: 700;
+              color: #334155;
+              font-family: Arial, sans-serif;
+              margin: 4px 0 2px 0;
+              letter-spacing: 0.5px;
+            }
+            .school-meta {
+              font-size: 8.5pt;
+              color: #64748B;
+              font-family: Arial, sans-serif;
+              margin: 0;
+            }
+            .meta-bar {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-family: Arial, sans-serif;
+              font-size: 9pt;
+              font-weight: 600;
+              color: #1E293B;
+              margin-bottom: 22px;
+              padding: 0 4px;
+            }
+            .doc-title-wrapper {
+              text-align: center;
+              margin: 10px 0 26px 0;
+              position: relative;
+            }
+            .doc-title {
+              display: inline-block;
+              font-size: 19pt;
+              font-weight: 900;
+              color: #0F172A;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              border-bottom: 2.5px solid #0F172A;
+              padding-bottom: 4px;
+              margin: 0;
+            }
+            .to-whom {
+              font-size: 9pt;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #64748B;
+              margin-bottom: 6px;
+              font-family: Arial, sans-serif;
+            }
+            .photo-box {
+              position: absolute;
+              top: 0;
+              right: 0;
+              width: 30mm;
+              height: 36mm;
+              border: 1.5px dashed #94A3B8;
+              border-radius: 4px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              text-align: center;
+              padding: 4px;
+              font-family: Arial, sans-serif;
+              font-size: 7pt;
+              color: #64748B;
+              background: #F8FAFC;
+            }
+            .declaration-text {
+              font-size: 12pt;
+              line-height: 1.9;
+              text-align: justify;
+              color: #1E293B;
+              margin-bottom: 22px;
+            }
+            .declaration-text strong {
+              color: #000000;
+              font-weight: 800;
+            }
+            .particulars-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 20px 0 24px 0;
+              font-size: 10pt;
+              font-family: Arial, sans-serif;
+            }
+            .particulars-table th,
+            .particulars-table td {
+              border: 1px solid #CBD5E1;
+              padding: 7px 12px;
+              text-align: left;
+            }
+            .particulars-table th {
+              background: #F1F5F9;
+              color: #334155;
+              width: 40%;
+              font-weight: 700;
+            }
+            .particulars-table td {
+              color: #0F172A;
+              font-weight: 600;
+            }
+            .purpose-box {
+              background: #F8FAFC;
+              border-left: 4px solid #0F172A;
+              padding: 10px 14px;
+              font-size: 10.5pt;
+              margin: 18px 0 26px 0;
+              color: #1E293B;
+            }
+            .closing-text {
+              font-size: 10.5pt;
+              font-style: italic;
+              color: #475569;
+              margin-bottom: 45px;
+            }
+            .signature-block {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+              margin-top: 35px;
+              padding-top: 10px;
+            }
+            .sig-item {
+              text-align: center;
+              width: 170px;
+            }
+            .sig-line {
+              width: 140px;
+              border-top: 1.5px solid #0F172A;
+              margin: 0 auto 6px auto;
+            }
+            .sig-title {
+              font-size: 10pt;
+              font-weight: 800;
+              color: #0F172A;
+              font-family: Arial, sans-serif;
+            }
+            .sig-sub {
+              font-size: 8pt;
+              color: #64748B;
+              font-family: Arial, sans-serif;
+            }
+            .official-seal-circle {
+              width: 78px;
+              height: 78px;
+              border: 2px dashed #94A3B8;
+              border-radius: 50%;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              font-family: Arial, sans-serif;
+              font-size: 7pt;
+              font-weight: 800;
+              color: #94A3B8;
+              text-align: center;
+              line-height: 1.2;
+              letter-spacing: 0.5px;
+            }
+            .footer-disclaimer {
+              border-top: 1px solid #E2E8F0;
+              margin-top: 25px;
+              padding-top: 8px;
+              display: flex;
+              justify-content: space-between;
+              font-family: Arial, sans-serif;
+              font-size: 7.5pt;
+              color: #94A3B8;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="letterhead-container">
+            <div>
+              <!-- School Header -->
+              <div class="header-block">
+                <h1 class="school-title">${certForm.schoolName}</h1>
+                <p class="school-sub">${certForm.schoolAffiliation}</p>
+                <p class="school-meta">${certForm.schoolAddress} • Contact: ${brand.phone || '+91 98765 43210'} • ${brand.email || 'office@school.edu'}</p>
+              </div>
+
+              <!-- Ref No & Date -->
+              <div class="meta-bar">
+                <div>Ref. Outward No: <strong style="font-family: monospace; font-size: 10pt;">${refNo}</strong></div>
+                <div>Date of Issue: <strong>${issueDateFormatted}</strong></div>
+              </div>
+
+              <!-- Certificate Title -->
+              <div class="doc-title-wrapper">
+                <div class="to-whom">Official Academic Attestation</div>
+                <h2 class="doc-title">${certForm.title}</h2>
+
+                ${certForm.includePhotoBox ? `
+                <div class="photo-box">
+                  <span style="font-weight: bold;">STUDENT PHOTO</span>
+                  <span style="font-size: 6pt; margin-top: 3px;">Affix Passport Photo &amp; Attest with School Seal</span>
+                </div>
+                ` : ''}
+              </div>
+
+              <!-- Formal Declaration -->
+              <p class="declaration-text">
+                This is to officially certify that <strong>Master / Kumari ${s?.studentName || 'Student Name'}</strong>,
+                Son / Daughter of <strong>Shri ${certForm.fatherName || 'Father Name'}</strong> and
+                <strong>Smt. ${certForm.motherName || 'Mother Name'}</strong>, is / was a bonafide student of this institution
+                studying in <strong>Class ${s?.standard || 'Std 10'} - Division ${s?.division || 'A'}</strong>
+                (General Register No: <strong>${s?.grNo || s?.studentCode || 'N/A'}</strong>, Roll No: <strong>${s?.rollNo || '-'}</strong>)
+                for the Academic Session <strong>${currentAcademicYear?.name || '2026-2027'}</strong>.
+              </p>
+
+              <!-- Statutory Verification Particulars -->
+              <table class="particulars-table">
+                <tbody>
+                  <tr>
+                    <th>General Register (G.R.) Number</th>
+                    <td><strong>${s?.grNo || s?.studentCode || 'N/A'}</strong></td>
+                  </tr>
+                  <tr>
+                    <th>Date of Birth (in figures)</th>
+                    <td>${dobFormatted}</td>
+                  </tr>
+                  <tr>
+                    <th>Date of Birth (in words)</th>
+                    <td><strong>${dobWordsText}</strong></td>
+                  </tr>
+                  <tr>
+                    <th>Caste / Category &amp; Religion</th>
+                    <td>${certForm.caste || 'General'} (${certForm.religion || 'Hindu'})</td>
+                  </tr>
+                  <tr>
+                    <th>Medium of Instruction</th>
+                    <td>${certForm.medium || 'English'}</td>
+                  </tr>
+                  <tr>
+                    <th>Conduct &amp; Moral Character</th>
+                    <td><strong>${certForm.conduct || 'Good'}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Purpose Statement -->
+              <div class="purpose-box">
+                This certificate is issued upon the written request of the student's parent/guardian for the specific purpose of:
+                <strong style="text-decoration: underline; text-underline-offset: 3px; font-weight: 800;"> ${certForm.purpose || 'Official Verification'}</strong>.
+              </div>
+
+              <div class="closing-text">
+                To the best of our institutional knowledge and as per official records maintained in the school General Register, the particulars recorded above are true and accurate.
+              </div>
+            </div>
+
+            <!-- Signatures Section -->
+            <div>
+              <div class="signature-block">
+                <div class="sig-item">
+                  <div class="sig-line"></div>
+                  <div class="sig-title">${certForm.preparedByName || 'Office Superintendent'}</div>
+                  <div class="sig-sub">${certForm.preparedByTitle || 'Prepared &amp; Verified By'}</div>
+                </div>
+
+                <div class="official-seal-circle">
+                  <span>OFFICIAL</span>
+                  <span style="font-size: 8pt; font-weight: 900;">★ SEAL ★</span>
+                  <span>INSTITUTION</span>
+                </div>
+
+                <div class="sig-item">
+                  <div class="sig-line"></div>
+                  <div class="sig-title">${certForm.signatory1Name}</div>
+                  <div class="sig-sub">${certForm.signatory1Title}</div>
+                </div>
+              </div>
+
+              <div class="footer-disclaimer">
+                <span>Any alteration, erasure, or unauthorized tampering invalidates this document.</span>
+                <span>U-DISE: 24070500128 • Verification: ${refNo}</span>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      printHTML(html);
+      return;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // ARCHETYPE 2: MERIT & RECOGNITION AWARD (A4 LANDSCAPE)
+    // ══════════════════════════════════════════════════════════════════════
     const themeBorderColor =
       certForm.templateId === 'classic-gold'
         ? '#D97706'
@@ -636,8 +1180,23 @@ export const DocumentsHub: React.FC = () => {
             division: s.division,
             grNo: s.grNo || s.studentCode || '',
             rollNo: s.rollNo || null,
-            achievement: certForm.achievement,
-            bodyText: getInterpolatedBodyText(s),
+            certificateNumber: certForm.refNumber || certForm.certificateNumber,
+            achievement: isAdministrativeDocument(certForm.documentType) ? certForm.purpose : certForm.achievement,
+            bodyText: isAdministrativeDocument(certForm.documentType) ? `Issued for ${certForm.purpose}` : getInterpolatedBodyText(s),
+            metadata: {
+              purpose: certForm.purpose,
+              refNumber: certForm.refNumber,
+              fatherName: certForm.fatherName,
+              motherName: certForm.motherName,
+              dob: certForm.dob,
+              dobWords: certForm.dobWords,
+              caste: certForm.caste,
+              religion: certForm.religion,
+              medium: certForm.medium,
+              conduct: certForm.conduct,
+              includePhotoBox: certForm.includePhotoBox,
+              preparedByName: certForm.preparedByName,
+            },
           },
         ];
       } else if (certRecipientMode === 'class') {
@@ -673,6 +1232,20 @@ export const DocumentsHub: React.FC = () => {
           templateId: certForm.templateId,
           signatory1: { name: certForm.signatory1Name, title: certForm.signatory1Title },
           signatory2: { name: certForm.signatory2Name, title: certForm.signatory2Title },
+          metadata: {
+            purpose: certForm.purpose,
+            refNumber: certForm.refNumber,
+            fatherName: certForm.fatherName,
+            motherName: certForm.motherName,
+            dob: certForm.dob,
+            dobWords: certForm.dobWords,
+            caste: certForm.caste,
+            religion: certForm.religion,
+            medium: certForm.medium,
+            conduct: certForm.conduct,
+            includePhotoBox: certForm.includePhotoBox,
+            preparedByName: certForm.preparedByName,
+          },
           recipients,
         }),
       });
@@ -1150,263 +1723,519 @@ export const DocumentsHub: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Form & Customization Controls */}
           <div className="lg:col-span-5 space-y-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            {/* 1. Certificate Type Presets */}
+            {/* 1. Certificate Type Dropdown */}
             <div>
-              <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
-                1. Select Document / Certificate Type
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'EVENT_CERTIFICATE', label: 'Sports & Events', icon: '🏆' },
-                  { id: 'BONAFIDE', label: 'Bonafide Certificate', icon: '📜' },
-                  { id: 'LEAVING_CERTIFICATE', label: 'Transfer / LC', icon: '🎓' },
-                  { id: 'CHARACTER_CERTIFICATE', label: 'Character Certificate', icon: '🎖️' },
-                  { id: 'APPRECIATION', label: 'Special Appreciation', icon: '⭐' },
-                  { id: 'CUSTOM', label: 'Custom Certificate', icon: '✏️' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => applyCertificatePreset(item.id as any)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left text-xs font-bold transition-all ${
-                      certForm.documentType === item.id
-                        ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
-                    }`}
-                  >
-                    <span className="text-base">{item.icon}</span>
-                    <span>{item.label}</span>
-                  </button>
-                ))}
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                  1. Select Certificate Document
+                </label>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                  isAdministrativeDocument(certForm.documentType)
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}>
+                  {isAdministrativeDocument(certForm.documentType) ? '📜 A4 Portrait Letterhead' : '🏆 A4 Landscape Award'}
+                </span>
               </div>
+
+              <div className="relative">
+                <select
+                  value={certForm.documentType}
+                  onChange={(e) => applyCertificatePreset(e.target.value as CertificateType)}
+                  className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 border-2 border-indigo-200 focus:border-indigo-600 rounded-xl text-xs font-black text-slate-800 outline-none transition-all cursor-pointer shadow-xs"
+                >
+                  {CERTIFICATE_OPTIONS.map((grp) => (
+                    <optgroup key={grp.group} label={grp.group}>
+                      {grp.items.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.icon} {item.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              <p className="text-[11px] text-slate-500 mt-1.5 font-medium leading-relaxed">
+                {isAdministrativeDocument(certForm.documentType)
+                  ? 'Official school administrative document formatted on institutional letterhead for passport, legal, concession, or higher education purposes.'
+                  : 'Commendatory honor certificate formatted on landscape ornate border canvas with recognition insignia.'}
+              </p>
             </div>
 
             {/* 2. Recipient Selection */}
-            <div className="border-t border-slate-100 pt-4">
-              <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
-                2. Target Recipient(s)
-              </label>
-              <div className="flex gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setCertRecipientMode('single')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border ${
-                    certRecipientMode === 'single'
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'border-slate-200 text-slate-600'
-                  }`}
-                >
-                  Single Student
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCertRecipientMode('class')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border ${
-                    certRecipientMode === 'class'
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'border-slate-200 text-slate-600'
-                  }`}
-                >
-                  Entire Class / Batch
-                </button>
-              </div>
+            {isAdministrativeDocument(certForm.documentType) ? (
+              <div className="border-t border-slate-100 pt-4 space-y-2">
+                <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  2. Target Student Recipient
+                </label>
 
-              {certRecipientMode === 'single' ? (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search student by name, roll no, or GR..."
+                    value={studentSearchQuery}
+                    onChange={(e) => setStudentSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="max-h-40 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1 bg-slate-50/50">
+                  {searchedCertStudents.map((s) => (
+                    <div
+                      key={s._id || s.id}
+                      onClick={() => setSelectedStudentId(s._id || s.id)}
+                      className={`flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition-colors ${
+                        (selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id)
+                          ? 'bg-indigo-600 text-white font-bold'
+                          : 'hover:bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      <div>
+                        <div>{s.studentName}</div>
+                        <div className={`text-[10px] ${(selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id) ? 'text-indigo-200' : 'text-slate-400'}`}>
+                          {s.standard} - {s.division} • GR: {s.grNo || s.studentCode || 'N/A'} • Roll: {s.rollNo || '-'}
+                        </div>
+                      </div>
+                      {(selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id) && (
+                        <Check className="h-4 w-4 shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="border-t border-slate-100 pt-4">
+                <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
+                  2. Target Recipient(s)
+                </label>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setCertRecipientMode('single')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border ${
+                      certRecipientMode === 'single'
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    Single Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCertRecipientMode('class')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold border ${
+                      certRecipientMode === 'class'
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    Entire Class / Batch
+                  </button>
+                </div>
+
+                {certRecipientMode === 'single' ? (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search student by name, roll no, or GR..."
+                        value={studentSearchQuery}
+                        onChange={(e) => setStudentSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div className="max-h-40 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1 bg-slate-50/50">
+                      {searchedCertStudents.map((s) => (
+                        <div
+                          key={s._id || s.id}
+                          onClick={() => setSelectedStudentId(s._id || s.id)}
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition-colors ${
+                            (selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id)
+                              ? 'bg-indigo-600 text-white font-bold'
+                              : 'hover:bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          <div>
+                            <div>{s.studentName}</div>
+                            <div className={`text-[10px] ${(selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id) ? 'text-indigo-200' : 'text-slate-400'}`}>
+                              {s.standard} - {s.division} • GR: {s.grNo || s.studentCode || 'N/A'} • Roll: {s.rollNo || '-'}
+                            </div>
+                          </div>
+                          {(selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id) && (
+                            <Check className="h-4 w-4 shrink-0" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Standard</label>
+                      <select
+                        value={selectedClassStd}
+                        onChange={(e) => setSelectedClassStd(e.target.value)}
+                        className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                      >
+                        {availableStandards.map((std) => (
+                          <option key={std} value={std}>{std}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Division</label>
+                      <select
+                        value={selectedClassDiv}
+                        onChange={(e) => setSelectedClassDiv(e.target.value)}
+                        className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                      >
+                        {availableDivisions.map((div) => (
+                          <option key={div} value={div}>Division {div}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2 text-[11px] text-slate-500 font-semibold mt-1">
+                      Will batch-generate certificates for all active students in {selectedClassStd} - {selectedClassDiv}.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* If Administrative Document: Show Outward Ref, Purpose, Parent names, DOB in words, Conduct, Photo Box */}
+            {isAdministrativeDocument(certForm.documentType) ? (
+              <>
+                {/* 3. Document Outward Reference & Date */}
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    3. Document Reference & Purpose
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Outward / Ref. No</label>
+                      <input
+                        type="text"
+                        value={certForm.refNumber}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, refNumber: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-mono font-bold text-indigo-900 outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Date of Issue</label>
+                      <input
+                        type="date"
+                        value={certForm.issuedDate}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, issuedDate: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase flex justify-between">
+                      <span>Purpose of Certificate</span>
+                      <span className="text-slate-400 font-normal">Select preset or type custom</span>
+                    </label>
+                    <div className="mt-1 space-y-1.5">
+                      <select
+                        value={PURPOSE_PRESETS.includes(certForm.purpose) ? certForm.purpose : 'CUSTOM'}
+                        onChange={(e) => {
+                          if (e.target.value !== 'CUSTOM') {
+                            setCertForm((prev) => ({ ...prev, purpose: e.target.value }));
+                          }
+                        }}
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                      >
+                        {PURPOSE_PRESETS.map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                        <option value="CUSTOM">Custom Purpose...</option>
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="e.g. Passport Application / Bus Pass"
+                        value={certForm.purpose}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, purpose: e.target.value }))}
+                        className="w-full p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Student Statutory Particulars */}
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    4. Student Statutory Particulars (General Register Record)
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Father's Name</label>
+                      <input
+                        type="text"
+                        value={certForm.fatherName}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, fatherName: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Mother's Name</label>
+                      <input
+                        type="text"
+                        value={certForm.motherName}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, motherName: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Date of Birth (as per G.R.)</label>
+                      <input
+                        type="date"
+                        value={certForm.dob}
+                        onChange={(e) => {
+                          const newDob = e.target.value;
+                          setCertForm((prev) => ({
+                            ...prev,
+                            dob: newDob,
+                            dobWords: convertDateToWords(newDob),
+                          }));
+                        }}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">General Conduct</label>
+                      <select
+                        value={certForm.conduct}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, conduct: e.target.value }))}
+                        className="w-full mt-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none"
+                      >
+                        <option value="Good">Good</option>
+                        <option value="Very Good">Very Good</option>
+                        <option value="Exemplary">Exemplary</option>
+                        <option value="Satisfactory">Satisfactory</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Date of Birth in Words</label>
                     <input
                       type="text"
-                      placeholder="Search student by name, roll no, or GR..."
-                      value={studentSearchQuery}
-                      onChange={(e) => setStudentSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      value={certForm.dobWords}
+                      onChange={(e) => setCertForm((prev) => ({ ...prev, dobWords: e.target.value }))}
+                      className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:border-indigo-500"
                     />
                   </div>
-                  <div className="max-h-40 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1 bg-slate-50/50">
-                    {searchedCertStudents.map((s) => (
-                      <div
-                        key={s._id || s.id}
-                        onClick={() => setSelectedStudentId(s._id || s.id)}
-                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition-colors ${
-                          (selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id)
-                            ? 'bg-indigo-600 text-white font-bold'
-                            : 'hover:bg-slate-100 text-slate-700'
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Caste / Category</label>
+                      <input
+                        type="text"
+                        value={certForm.caste}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, caste: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Religion</label>
+                      <input
+                        type="text"
+                        value={certForm.religion}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, religion: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Medium</label>
+                      <input
+                        type="text"
+                        value={certForm.medium}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, medium: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Attestation & Signatures */}
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    5. Attestation & Signatories
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={certForm.includePhotoBox}
+                      onChange={(e) => setCertForm((prev) => ({ ...prev, includePhotoBox: e.target.checked }))}
+                      className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                    />
+                    <span className="text-xs font-bold text-slate-700">Include Student Passport Photo Placeholder Box</span>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Prepared / Verified By</label>
+                      <input
+                        type="text"
+                        value={certForm.preparedByName}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, preparedByName: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Principal / Headmaster</label>
+                      <input
+                        type="text"
+                        value={certForm.signatory1Name}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, signatory1Name: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* If Recognition / Award Document: Show Border Themes, Event Name, Achievement */
+              <>
+                {/* 3. Certificate Theme Template */}
+                <div className="border-t border-slate-100 pt-4">
+                  <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
+                    3. Certificate Border & Styling Theme
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'classic-gold', name: 'Classic Gold Guilloche', bg: 'bg-amber-500' },
+                      { id: 'royal-indigo', name: 'Royal Indigo Modern', bg: 'bg-indigo-600' },
+                      { id: 'emerald-prestige', name: 'Emerald Heritage', bg: 'bg-emerald-600' },
+                      { id: 'minimal-modern', name: 'Minimalist Slate', bg: 'bg-slate-700' },
+                    ].map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => setCertForm((prev) => ({ ...prev, templateId: tpl.id as any }))}
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-bold text-left ${
+                          certForm.templateId === tpl.id
+                            ? 'border-indigo-600 ring-2 ring-indigo-500/20 bg-slate-50'
+                            : 'border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        <div>
-                          <div>{s.studentName}</div>
-                          <div className={`text-[10px] ${selectedStudentId === (s._id || s.id) ? 'text-indigo-200' : 'text-slate-400'}`}>
-                            {s.standard} - {s.division} • GR: {s.grNo || s.studentCode || 'N/A'} • Roll: {s.rollNo || '-'}
-                          </div>
-                        </div>
-                        {(selectedStudentId || students[0]?._id || students[0]?.id) === (s._id || s.id) && (
-                          <Check className="h-4 w-4 shrink-0" />
-                        )}
-                      </div>
+                        <span className={`w-3.5 h-3.5 rounded-full ${tpl.bg}`} />
+                        <span className="truncate">{tpl.name}</span>
+                      </button>
                     ))}
                   </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+
+                {/* 4. Event & Citation Fields */}
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    4. Event & Citation Customization
+                  </label>
+
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Standard</label>
-                    <select
-                      value={selectedClassStd}
-                      onChange={(e) => setSelectedClassStd(e.target.value)}
-                      className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
-                    >
-                      {availableStandards.map((std) => (
-                        <option key={std} value={std}>{std}</option>
-                      ))}
-                    </select>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Certificate Title</label>
+                    <input
+                      type="text"
+                      value={certForm.title}
+                      onChange={(e) => setCertForm((prev) => ({ ...prev, title: e.target.value }))}
+                      className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-indigo-500"
+                    />
                   </div>
+
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Division</label>
-                    <select
-                      value={selectedClassDiv}
-                      onChange={(e) => setSelectedClassDiv(e.target.value)}
-                      className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none"
-                    >
-                      {availableDivisions.map((div) => (
-                        <option key={div} value={div}>Division {div}</option>
-                      ))}
-                    </select>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Event / Competition Name</label>
+                    <input
+                      type="text"
+                      value={certForm.eventName}
+                      onChange={(e) => setCertForm((prev) => ({ ...prev, eventName: e.target.value }))}
+                      className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+                    />
                   </div>
-                  <div className="col-span-2 text-[11px] text-slate-500 font-semibold mt-1">
-                    Will batch-generate certificates for all active students in {selectedClassStd} - {selectedClassDiv}.
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Event Date</label>
+                      <input
+                        type="date"
+                        value={certForm.eventDate}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, eventDate: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Achievement / Rank</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 1st Position"
+                        value={certForm.achievement}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, achievement: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase flex justify-between">
+                      <span>Citation Body Text</span>
+                      <span className="text-slate-400 font-normal">Supports {'{studentName}'}, {'{standard}'}, etc.</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={certForm.bodyText}
+                      onChange={(e) => setCertForm((prev) => ({ ...prev, bodyText: e.target.value }))}
+                      className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs leading-relaxed outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Signatory 1 (Principal)</label>
+                      <input
+                        type="text"
+                        value={certForm.signatory1Name}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, signatory1Name: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Signatory 2 (In-Charge)</label>
+                      <input
+                        type="text"
+                        value={certForm.signatory2Name}
+                        onChange={(e) => setCertForm((prev) => ({ ...prev, signatory2Name: e.target.value }))}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
+                      />
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* 3. Certificate Theme Template */}
-            <div className="border-t border-slate-100 pt-4">
-              <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
-                3. Certificate Border & Styling Theme
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'classic-gold', name: 'Classic Gold Guilloche', bg: 'bg-amber-500' },
-                  { id: 'royal-indigo', name: 'Royal Indigo Modern', bg: 'bg-indigo-600' },
-                  { id: 'emerald-prestige', name: 'Emerald Heritage', bg: 'bg-emerald-600' },
-                  { id: 'minimal-modern', name: 'Minimalist Slate', bg: 'bg-slate-700' },
-                ].map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => setCertForm((prev) => ({ ...prev, templateId: tpl.id as any }))}
-                    className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-bold text-left ${
-                      certForm.templateId === tpl.id
-                        ? 'border-indigo-600 ring-2 ring-indigo-500/20 bg-slate-50'
-                        : 'border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className={`w-3.5 h-3.5 rounded-full ${tpl.bg}`} />
-                    <span className="truncate">{tpl.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 4. Event & Citation Fields */}
-            <div className="border-t border-slate-100 pt-4 space-y-3">
-              <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
-                4. Event & Citation Customization
-              </label>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Certificate Title</label>
-                <input
-                  type="text"
-                  value={certForm.title}
-                  onChange={(e) => setCertForm((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Event / Competition Name</label>
-                <input
-                  type="text"
-                  value={certForm.eventName}
-                  onChange={(e) => setCertForm((prev) => ({ ...prev, eventName: e.target.value }))}
-                  className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Event Date</label>
-                  <input
-                    type="date"
-                    value={certForm.eventDate}
-                    onChange={(e) => setCertForm((prev) => ({ ...prev, eventDate: e.target.value }))}
-                    className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Achievement / Rank</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 1st Position"
-                    value={certForm.achievement}
-                    onChange={(e) => setCertForm((prev) => ({ ...prev, achievement: e.target.value }))}
-                    className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase flex justify-between">
-                  <span>Citation Body Text</span>
-                  <span className="text-slate-400 font-normal">Supports {'{studentName}'}, {'{standard}'}, etc.</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={certForm.bodyText}
-                  onChange={(e) => setCertForm((prev) => ({ ...prev, bodyText: e.target.value }))}
-                  className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs leading-relaxed outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Signatory 1 (Principal)</label>
-                  <input
-                    type="text"
-                    value={certForm.signatory1Name}
-                    onChange={(e) => setCertForm((prev) => ({ ...prev, signatory1Name: e.target.value }))}
-                    className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Signatory 2 (In-Charge)</label>
-                  <input
-                    type="text"
-                    value={certForm.signatory2Name}
-                    onChange={(e) => setCertForm((prev) => ({ ...prev, signatory2Name: e.target.value }))}
-                    className="w-full mt-1 p-2 border border-slate-200 rounded-lg text-xs font-semibold"
-                  />
-                </div>
-              </div>
-            </div>
+              </>
+            )}
 
             {/* Action Buttons */}
             <div className="border-t border-slate-100 pt-4 flex gap-2">
               <button
                 type="button"
                 onClick={handlePrintCertificate}
-                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-md shadow-indigo-600/20 transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
               >
                 <Printer className="h-4 w-4" />
-                Print Certificate
+                Print Certificate ({isAdministrativeDocument(certForm.documentType) ? 'Portrait A4' : 'Landscape A4'})
               </button>
               <button
                 type="button"
                 onClick={handleSaveAndIssueCertificate}
                 disabled={isIssuing}
-                className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all disabled:opacity-50"
+                className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isIssuing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                 Issue to Registry
@@ -1424,99 +2253,210 @@ export const DocumentsHub: React.FC = () => {
           {/* Right Column: Live High-Definition Certificate Preview */}
           <div className="lg:col-span-7 space-y-3">
             <div className="flex items-center justify-between text-xs font-extrabold text-slate-500 uppercase tracking-wider px-1">
-              <span>Live Visual Preview (A4 Landscape Formatted)</span>
+              <span>
+                {isAdministrativeDocument(certForm.documentType)
+                  ? 'Live Visual Preview (A4 Portrait Letterhead Formatted)'
+                  : 'Live Visual Preview (A4 Landscape Formatted)'}
+              </span>
               <span className="text-indigo-600 font-bold flex items-center gap-1">
                 <Eye className="h-3.5 w-3.5" /> Interactive WYSIWYG
               </span>
             </div>
 
-            {/* Certificate Canvas Preview Card */}
-            <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-xl relative overflow-hidden aspect-[1.414/1]">
-              <div
-                className={`w-full h-full border-4 ${
-                  certForm.templateId === 'classic-gold'
-                    ? 'border-amber-600 bg-amber-50/20'
-                    : certForm.templateId === 'royal-indigo'
-                    ? 'border-indigo-600 bg-indigo-50/20'
-                    : certForm.templateId === 'emerald-prestige'
-                    ? 'border-emerald-600 bg-emerald-50/20'
-                    : 'border-slate-800 bg-slate-50/30'
-                } p-2 rounded-lg flex flex-col justify-between text-center relative`}
-              >
-                <div className="w-full h-full border border-dashed border-slate-400/80 p-5 flex flex-col justify-between">
-                  {/* Watermark Crest */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                    <Award className="w-64 h-64 text-slate-900" />
-                  </div>
-
-                  {/* Header */}
+            {isAdministrativeDocument(certForm.documentType) ? (
+              /* A4 PORTRAIT LETTERHEAD LIVE PREVIEW */
+              <div className="bg-slate-100 border-2 border-slate-200 rounded-2xl p-6 shadow-xl flex justify-center items-center">
+                <div className="w-full max-w-[500px] bg-white border border-slate-300 rounded-lg shadow-md p-6 flex flex-col justify-between text-left text-slate-900 font-serif min-h-[640px] relative">
                   <div>
-                    <h2 className="text-xl font-black uppercase tracking-wider text-slate-900">
-                      {certForm.schoolName}
-                    </h2>
-                    <p className="text-[10px] text-slate-500 tracking-wide font-sans mt-0.5">
-                      {certForm.schoolAddress}
+                    {/* Header */}
+                    <div className="text-center border-b-2 border-slate-900 pb-2 mb-3">
+                      <h2 className="text-base font-black uppercase tracking-wider text-slate-900">
+                        {certForm.schoolName}
+                      </h2>
+                      <p className="text-[9px] font-sans font-bold text-slate-600 mt-0.5">
+                        {certForm.schoolAffiliation}
+                      </p>
+                      <p className="text-[8px] font-sans text-slate-500 mt-0.5">
+                        {certForm.schoolAddress}
+                      </p>
+                    </div>
+
+                    {/* Ref & Date */}
+                    <div className="flex justify-between items-center text-[9px] font-sans font-semibold text-slate-700 mb-3 px-1">
+                      <div>Ref No: <span className="font-mono font-bold text-slate-900">{certForm.refNumber || certForm.certificateNumber}</span></div>
+                      <div>Date: <span className="font-bold">{certForm.issuedDate}</span></div>
+                    </div>
+
+                    {/* Title */}
+                    <div className="text-center relative my-3">
+                      <div className="text-[8px] font-sans uppercase font-bold text-slate-500 tracking-wider">Official Academic Record</div>
+                      <h3 className="text-sm font-black uppercase underline decoration-2 underline-offset-4 tracking-wider text-slate-900">
+                        {certForm.title}
+                      </h3>
+
+                      {certForm.includePhotoBox && (
+                        <div className="absolute top-0 right-0 w-16 h-20 border border-dashed border-slate-400 rounded bg-slate-50 flex flex-col items-center justify-center text-[7px] font-sans text-slate-400 text-center p-1">
+                          <span>PHOTO</span>
+                          <span className="text-[6px]">Attest with seal</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Declaration */}
+                    <p className="text-[10px] leading-relaxed text-slate-800 text-justify mb-3">
+                      This is to officially certify that <strong>Master / Kumari {selectedCertStudent?.studentName || 'Student Name'}</strong>,
+                      Son / Daughter of <strong>Shri {certForm.fatherName || 'Father Name'}</strong> and <strong>Smt. {certForm.motherName || 'Mother Name'}</strong>,
+                      is / was a bonafide student of this institution studying in <strong>Class {selectedCertStudent?.standard || 'Std 10'} - Division {selectedCertStudent?.division || 'A'}</strong> (General Register No: <strong>{selectedCertStudent?.grNo || selectedCertStudent?.studentCode || 'N/A'}</strong>, Roll No: <strong>{selectedCertStudent?.rollNo || '-'}</strong>) for the Academic Session <strong>{currentAcademicYear?.name || '2026-2027'}</strong>.
                     </p>
+
+                    {/* Table */}
+                    <table className="w-full border-collapse border border-slate-300 text-[9px] font-sans mb-3">
+                      <tbody>
+                        <tr className="border-b border-slate-200">
+                          <th className="bg-slate-50 p-1.5 text-left font-bold text-slate-600 w-2/5 border-r border-slate-200">G.R. Number</th>
+                          <td className="p-1.5 font-bold text-slate-900">{selectedCertStudent?.grNo || selectedCertStudent?.studentCode || 'N/A'}</td>
+                        </tr>
+                        <tr className="border-b border-slate-200">
+                          <th className="bg-slate-50 p-1.5 text-left font-bold text-slate-600 border-r border-slate-200">Date of Birth (figures)</th>
+                          <td className="p-1.5 text-slate-900">{certForm.dob ? new Date(certForm.dob).toLocaleDateString('en-GB') : '15/08/2010'}</td>
+                        </tr>
+                        <tr className="border-b border-slate-200">
+                          <th className="bg-slate-50 p-1.5 text-left font-bold text-slate-600 border-r border-slate-200">Date of Birth (words)</th>
+                          <td className="p-1.5 font-bold text-slate-900">{certForm.dobWords || convertDateToWords(certForm.dob)}</td>
+                        </tr>
+                        <tr className="border-b border-slate-200">
+                          <th className="bg-slate-50 p-1.5 text-left font-bold text-slate-600 border-r border-slate-200">Caste & Religion</th>
+                          <td className="p-1.5 text-slate-900">{certForm.caste || 'General'} ({certForm.religion || 'Hindu'})</td>
+                        </tr>
+                        <tr className="border-b border-slate-200">
+                          <th className="bg-slate-50 p-1.5 text-left font-bold text-slate-600 border-r border-slate-200">Medium & Conduct</th>
+                          <td className="p-1.5 text-slate-900">{certForm.medium || 'English'} • <strong>{certForm.conduct || 'Good'}</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    {/* Purpose Statement */}
+                    <div className="bg-slate-50 border-l-2 border-slate-900 p-2 text-[9px] font-sans text-slate-700 mb-2">
+                      Purpose of Issue: <strong className="underline text-slate-900">{certForm.purpose || 'Official Verification'}</strong>
+                    </div>
+
+                    <div className="text-[8.5px] italic text-slate-500 font-sans">
+                      To the best of our institutional records, the particulars recorded above are authentic.
+                    </div>
                   </div>
 
-                  {/* Title & Badge */}
-                  <div>
-                    <span className="inline-block px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-800 border border-amber-300">
-                      ★ Recognition of Excellence ★
-                    </span>
-                    <h3 className="text-2xl font-serif font-black text-slate-900 mt-1">
-                      {certForm.title}
-                    </h3>
-                  </div>
-
-                  {/* Recipient */}
-                  <div>
-                    <p className="text-[11px] font-serif italic text-slate-500">
-                      This certificate is proudly awarded to
-                    </p>
-                    <h4 className="text-2xl font-serif font-black text-indigo-950 underline decoration-amber-500 underline-offset-4 mt-0.5">
-                      {selectedCertStudent?.studentName || 'Student Full Name'}
-                    </h4>
-                  </div>
-
-                  {/* Body & Citation */}
-                  <div className="px-4">
-                    <p className="text-[11.5px] font-serif text-slate-700 leading-relaxed max-w-xl mx-auto">
-                      {getInterpolatedBodyText(selectedCertStudent)}
-                    </p>
-                    {certForm.achievement && (
-                      <div className="inline-block mt-2 px-3 py-1 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs font-black shadow-xs">
-                        🏆 {certForm.achievement}
+                  {/* Signatures */}
+                  <div className="pt-4 border-t border-slate-200">
+                    <div className="flex justify-between items-end">
+                      <div className="text-center w-24">
+                        <div className="w-20 h-px bg-slate-900 mx-auto mb-1" />
+                        <div className="text-[8px] font-sans font-bold text-slate-800">{certForm.preparedByName || 'Office Clerk'}</div>
+                        <div className="text-[7px] font-sans text-slate-400">Prepared By</div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Footer & Signatories */}
-                  <div className="flex justify-between items-end border-t border-slate-200/80 pt-3">
-                    <div className="w-36 text-center">
-                      <div className="w-28 h-px bg-slate-400 mx-auto mb-1" />
-                      <div className="text-xs font-bold text-slate-800">{certForm.signatory1Name}</div>
-                      <div className="text-[9px] text-slate-500 font-sans">{certForm.signatory1Title}</div>
-                    </div>
+                      <div className="w-12 h-12 rounded-full border border-dashed border-slate-400 flex flex-col items-center justify-center text-[6px] font-sans font-black text-slate-400">
+                        <span>OFFICIAL</span>
+                        <span>SEAL</span>
+                      </div>
 
-                    <div className="w-16 h-16 rounded-full border-2 border-amber-600 bg-amber-50 flex flex-col items-center justify-center text-[7px] font-black text-amber-900 tracking-tighter">
-                      <span>OFFICIAL</span>
-                      <span className="text-[10px]">★ SEAL ★</span>
-                      <span>ACCREDITED</span>
-                    </div>
-
-                    <div className="w-36 text-center">
-                      <div className="w-28 h-px bg-slate-400 mx-auto mb-1" />
-                      <div className="text-xs font-bold text-slate-800">{certForm.signatory2Name}</div>
-                      <div className="text-[9px] text-slate-500 font-sans">{certForm.signatory2Title}</div>
+                      <div className="text-center w-28">
+                        <div className="w-24 h-px bg-slate-900 mx-auto mb-1" />
+                        <div className="text-[8px] font-sans font-bold text-slate-800">{certForm.signatory1Name}</div>
+                        <div className="text-[7px] font-sans text-slate-400">{certForm.signatory1Title}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              /* A4 LANDSCAPE ORNATE AWARD LIVE PREVIEW */
+              <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-xl relative overflow-hidden aspect-[1.414/1]">
+                <div
+                  className={`w-full h-full border-4 ${
+                    certForm.templateId === 'classic-gold'
+                      ? 'border-amber-600 bg-amber-50/20'
+                      : certForm.templateId === 'royal-indigo'
+                      ? 'border-indigo-600 bg-indigo-50/20'
+                      : certForm.templateId === 'emerald-prestige'
+                      ? 'border-emerald-600 bg-emerald-50/20'
+                      : 'border-slate-800 bg-slate-50/30'
+                  } p-2 rounded-lg flex flex-col justify-between text-center relative`}
+                >
+                  <div className="w-full h-full border border-dashed border-slate-400/80 p-5 flex flex-col justify-between">
+                    {/* Watermark Crest */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                      <Award className="w-64 h-64 text-slate-900" />
+                    </div>
+
+                    {/* Header */}
+                    <div>
+                      <h2 className="text-xl font-black uppercase tracking-wider text-slate-900">
+                        {certForm.schoolName}
+                      </h2>
+                      <p className="text-[10px] text-slate-500 tracking-wide font-sans mt-0.5">
+                        {certForm.schoolAddress}
+                      </p>
+                    </div>
+
+                    {/* Title & Badge */}
+                    <div>
+                      <span className="inline-block px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-800 border border-amber-300">
+                        ★ Recognition of Excellence ★
+                      </span>
+                      <h3 className="text-2xl font-serif font-black text-slate-900 mt-1">
+                        {certForm.title}
+                      </h3>
+                    </div>
+
+                    {/* Recipient */}
+                    <div>
+                      <p className="text-[11px] font-serif italic text-slate-500">
+                        This certificate is proudly awarded to
+                      </p>
+                      <h4 className="text-2xl font-serif font-black text-indigo-950 underline decoration-amber-500 underline-offset-4 mt-0.5">
+                        {selectedCertStudent?.studentName || 'Student Full Name'}
+                      </h4>
+                    </div>
+
+                    {/* Body & Citation */}
+                    <div className="px-4">
+                      <p className="text-[11.5px] font-serif text-slate-700 leading-relaxed max-w-xl mx-auto">
+                        {getInterpolatedBodyText(selectedCertStudent)}
+                      </p>
+                      {certForm.achievement && (
+                        <div className="inline-block mt-2 px-3 py-1 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs font-black shadow-xs">
+                          🏆 {certForm.achievement}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer & Signatories */}
+                    <div className="flex justify-between items-end border-t border-slate-200/80 pt-3">
+                      <div className="w-36 text-center">
+                        <div className="w-28 h-px bg-slate-400 mx-auto mb-1" />
+                        <div className="text-xs font-bold text-slate-800">{certForm.signatory1Name}</div>
+                        <div className="text-[9px] text-slate-500 font-sans">{certForm.signatory1Title}</div>
+                      </div>
+
+                      <div className="w-16 h-16 rounded-full border-2 border-amber-600 bg-amber-50 flex flex-col items-center justify-center text-[7px] font-black text-amber-900 tracking-tighter">
+                        <span>OFFICIAL</span>
+                        <span className="text-[10px]">★ SEAL ★</span>
+                        <span>ACCREDITED</span>
+                      </div>
+
+                      <div className="w-36 text-center">
+                        <div className="w-28 h-px bg-slate-400 mx-auto mb-1" />
+                        <div className="text-xs font-bold text-slate-800">{certForm.signatory2Name}</div>
+                        <div className="text-[9px] text-slate-500 font-sans">{certForm.signatory2Title}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
-              <span>Verified Certificate ID: <strong className="font-mono text-slate-800">{certForm.certificateNumber}</strong></span>
+              <span>Verified Certificate ID: <strong className="font-mono text-slate-800">{certForm.refNumber || certForm.certificateNumber}</strong></span>
               <span>Class: <strong className="text-slate-800">{selectedCertStudent?.standard || 'Std 10'} - {selectedCertStudent?.division || 'A'}</strong></span>
               <span>Issue Date: <strong className="text-slate-800">{certForm.issuedDate}</strong></span>
             </div>
@@ -1942,11 +2882,14 @@ export const DocumentsHub: React.FC = () => {
                 className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
               >
                 <option value="ALL">All Document Types</option>
-                <option value="EVENT_CERTIFICATE">Sports & Events</option>
-                <option value="BONAFIDE">Bonafide</option>
+                <option value="BONAFIDE">Bonafide Certificate</option>
+                <option value="CHARACTER_CERTIFICATE">Character Certificate</option>
                 <option value="LEAVING_CERTIFICATE">Leaving / LC</option>
-                <option value="CHARACTER_CERTIFICATE">Character</option>
+                <option value="NOC">No Objection Certificate (NOC)</option>
+                <option value="EVENT_CERTIFICATE">Sports & Events</option>
+                <option value="ACADEMIC_MERIT">Academic Merit</option>
                 <option value="APPRECIATION">Appreciation</option>
+                <option value="CUSTOM">Custom Award</option>
               </select>
 
               <button
@@ -2012,17 +2955,35 @@ export const DocumentsHub: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => {
+                            const meta = item.metadata || {};
                             setCertForm((prev) => ({
                               ...prev,
+                              documentType: item.documentType || 'BONAFIDE',
                               title: item.title,
+                              certificateNumber: item.certificateNumber,
+                              refNumber: item.certificateNumber,
+                              issuedDate: item.issuedDate ? new Date(item.issuedDate).toISOString().split('T')[0] : prev.issuedDate,
                               eventName: item.eventName || prev.eventName,
                               achievement: item.achievement || prev.achievement,
                               bodyText: item.bodyText || prev.bodyText,
-                              certificateNumber: item.certificateNumber,
+                              purpose: meta.purpose || item.achievement || prev.purpose,
+                              fatherName: meta.fatherName || prev.fatherName,
+                              motherName: meta.motherName || prev.motherName,
+                              dob: meta.dob || prev.dob,
+                              dobWords: meta.dobWords || prev.dobWords,
+                              caste: meta.caste || prev.caste,
+                              religion: meta.religion || prev.religion,
+                              medium: meta.medium || prev.medium,
+                              conduct: meta.conduct || prev.conduct,
+                              includePhotoBox: meta.includePhotoBox !== undefined ? meta.includePhotoBox : prev.includePhotoBox,
+                              preparedByName: meta.preparedByName || prev.preparedByName,
                             }));
+                            if (item.studentId) {
+                              setSelectedStudentId(item.studentId);
+                            }
                             setActiveTab('certificates');
                           }}
-                          className="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="px-2.5 py-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                         >
                           View & Print
                         </button>

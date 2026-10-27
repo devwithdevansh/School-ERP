@@ -21,6 +21,9 @@ const toDto = (c, extra = {}) => ({
   contactPhone: c.contactPhone,
   address: c.address,
   notes: c.notes,
+  appId: c.appId || null,
+  appType: c.appType || 'CUSTOM',
+  branding: c.branding || {},
   createdAt: c.createdAt,
   ...extra,
 });
@@ -33,7 +36,7 @@ async function usage(clientId) {
   return { userCount: users, studentCount: students };
 }
 
-const PROFILE_FIELDS = ['name', 'contactName', 'contactEmail', 'contactPhone', 'address', 'notes'];
+const PROFILE_FIELDS = ['name', 'contactName', 'contactEmail', 'contactPhone', 'address', 'notes', 'appId', 'appType', 'branding'];
 
 class ClientService {
   static async list() {

@@ -6,6 +6,9 @@ plugins {
     id "com.google.gms.google-services"
 }
 
+def schoolAppId = project.hasProperty('schoolAppId') ? project.property('schoolAppId') : "com.schoolerp.school_connect"
+def schoolAppName = project.hasProperty('schoolAppName') ? project.property('schoolAppName') : "School Connect"
+
 android {
     namespace "com.schoolerp.school_connect"
     compileSdkVersion flutter.compileSdkVersion
@@ -23,7 +26,8 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.schoolerp.school_connect"
+        applicationId schoolAppId
+        resValue "string", "app_name", schoolAppName
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode

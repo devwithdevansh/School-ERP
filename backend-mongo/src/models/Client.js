@@ -25,6 +25,17 @@ const clientSchema = new mongoose.Schema(
     contactPhone: { type: String, trim: true, default: null },
     address: { type: String, trim: true, default: null },
     notes: { type: String, trim: true, default: null },
+    appId: { type: String, trim: true, default: null, index: true },
+    appType: { type: String, enum: ['UNIVERSAL', 'CUSTOM'], default: 'CUSTOM' },
+    branding: {
+      appName: { type: String, trim: true, default: '' },
+      tagline: { type: String, trim: true, default: '' },
+      wordmark: { type: String, trim: true, default: '' },
+      wordmarkSub: { type: String, trim: true, default: '' },
+      logoUrl: { type: String, trim: true, default: '' },
+      primaryColor: { type: String, trim: true, default: '#4f46e5' },
+      secondaryColor: { type: String, trim: true, default: '#06b6d4' },
+    },
   },
   { timestamps: true, tenantExempt: true }
 );

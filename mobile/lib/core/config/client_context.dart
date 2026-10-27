@@ -19,7 +19,29 @@ class ClientContext {
   static String? get name => _name;
 
   /// True when [module] is licensed — or when licences are unknown.
-  static bool has(String module) => _modules == null || _modules!.contains(module);
+  static bool has(String module) {
+    if (_modules == null) return true;
+    final m = module.toUpperCase();
+    if (_modules!.contains(m)) return true;
+    // Granular academic submodules are also enabled if ERP is licensed
+    if (_modules!.contains('ERP')) {
+      const erpSubmodules = {
+        'ATTENDANCE',
+        'HOMEWORK',
+        'RESULTS',
+        'EXAMS',
+        'TIMETABLE',
+        'CALENDAR',
+        'ROADMAP',
+        'TRANSPORT',
+        'LEAVE',
+        'COMMUNICATION',
+        'MESSAGES',
+      };
+      if (erpSubmodules.contains(m)) return true;
+    }
+    return false;
+  }
 
   /// Restore the last login's context. Call once from main().
   static Future<void> load() async {

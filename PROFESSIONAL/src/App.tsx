@@ -39,6 +39,7 @@ import { TeacherView } from './components/TeacherView';
 import { StudentView } from './components/StudentView';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
+import { OrgAppDeployment } from './components/org/OrgAppDeployment';
 import { generateReceiptHTML, generateReportHTML, printHTML, fetchAsBase64 } from './utils/printUtils';
 import { brand } from './config/brand';
 import { parseExamRoute } from './utils/examRouteUtils';
@@ -89,7 +90,9 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
 
   // Organization admin console (platform owner)
   if (activePortal === 'ORG') {
-    return currentScreen === 'org-licences' ? <OrgLicences /> : <OrgClients />;
+    if (currentScreen === 'org-licences') return <OrgLicences />;
+    if (currentScreen === 'org-apps') return <OrgAppDeployment />;
+    return <OrgClients />;
   }
 
   // Teacher Workspace

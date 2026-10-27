@@ -16,6 +16,9 @@ export const createClientSchema = {
     contactPhone: optionalText,
     address: optionalText,
     notes: optionalText,
+    appId: z.string().trim().nullable().optional(),
+    appType: z.enum(['UNIVERSAL', 'CUSTOM']).optional(),
+    branding: z.record(z.any()).optional(),
     admin: z.object({
       name: z.string().trim().min(2).max(100),
       email: z.string().trim().email(),
@@ -34,6 +37,9 @@ export const updateClientSchema = {
     contactPhone: optionalText,
     address: optionalText,
     notes: optionalText,
+    appId: z.string().trim().nullable().optional(),
+    appType: z.enum(['UNIVERSAL', 'CUSTOM']).optional(),
+    branding: z.record(z.any()).optional(),
   }),
 };
 

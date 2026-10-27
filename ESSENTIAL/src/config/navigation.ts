@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import {
   LayoutDashboard, CreditCard, AlertTriangle, Layers, Users, FileSpreadsheet, MessageSquare, Bell,
   Smartphone, Receipt, Activity, BarChart3, Settings, Wallet, BookOpen, UserCheck, CalendarDays,
-  ClipboardList, Award, ShieldCheck, GraduationCap, IndianRupee, Building2, ToggleRight, HelpCircle,
+  ClipboardList, Award, ShieldCheck, MessageCircle, GraduationCap, IndianRupee, Building2, ToggleRight,
   IdCard,
 } from '../components/icons';
 import type { ScreenType } from '../store';
@@ -21,9 +21,17 @@ import { type PermissionId, hasPermission } from './permissionsRegistry';
 export type ModuleId = 'ERP' | 'FEES' | 'ORG' | 'TEACHER' | 'STUDENT';
 
 /** Modules an organization can license to a client. Keep in sync with the backends' constants/modules.js. */
-export const LICENSABLE_MODULES: { id: Exclude<ModuleId, 'ORG' | 'TEACHER' | 'STUDENT'>; label: string; description: string }[] = [
-  { id: 'FEES', label: 'Fees', description: 'Fee collection, receipts, expenses, dues, WhatsApp reminders' },
-  { id: 'ERP', label: 'Academics (ERP)', description: 'Admission, attendance, timetable, results, staff & leave' },
+export const LICENSABLE_MODULES: { id: string; label: string; description: string }[] = [
+  { id: 'FEES', label: 'Fees & Payments', description: 'Fee collection, receipts, expenses, dues, WhatsApp reminders, online payments' },
+  { id: 'ATTENDANCE', label: 'Attendance', description: 'Student & teacher daily attendance, monthly register, leave tracking' },
+  { id: 'HOMEWORK', label: 'Homework', description: 'Class assignments, file submissions, teacher homework assignment portal' },
+  { id: 'RESULTS', label: 'Exams & Results', description: 'Exam creation, marks entry, report cards, result analytics' },
+  { id: 'TIMETABLE', label: 'Timetable', description: 'Class schedule, periods, teacher allocations, weekly timetable' },
+  { id: 'CALENDAR', label: 'Calendar & Events', description: 'School academic calendar, circulars, holidays, event announcements' },
+  { id: 'TRANSPORT', label: 'Transport', description: 'Bus tracking, routes, driver details, transport fees' },
+  { id: 'LEAVE', label: 'Leave Management', description: 'Student and staff leave requests, approvals, leave history' },
+  { id: 'COMMUNICATION', label: 'Chat & Messages', description: 'Parent-teacher messaging, group broadcasts, push alerts' },
+  { id: 'ERP', label: 'Academics Suite (All-In-One)', description: 'Full access to all academic modules' },
 ];
 
 export interface NavContext {
@@ -63,14 +71,15 @@ export const NAV_MODULES: NavModule[] = [
   {
     // Platform-owner console. Only ORG_ADMIN sees it (and sees nothing else).
     id: 'ORG',
-    label: 'Organization',
+    label: 'Platform & Apps',
     short: 'Org',
     icon: Building2,
     isVisible: (c) => c.isOrgAdmin,
     groups: [
-      { title: 'Clients', items: [
-        { id: 'org-clients', label: 'Clients', icon: Building2 },
+      { title: 'Clients & Apps', items: [
+        { id: 'org-clients', label: 'School Clients', icon: Building2 },
         { id: 'org-licences', label: 'Module Licences', icon: ToggleRight },
+        { id: 'org-apps', label: 'App Deployment Hub', icon: Smartphone },
       ] },
     ],
   },
@@ -80,7 +89,7 @@ export const NAV_MODULES: NavModule[] = [
     short: 'ERP',
     icon: GraduationCap,
     // licensed for the school AND (optionally, via SUPER_ADMIN_EMAILS) restricted to super admins
-    isVisible: (c) => !c.isOrgAdmin && c.role !== 'parent' && c.enabledModules.includes('ERP') && c.isSuperAdmin,
+    isVisible: (c) => !c.isOrgAdmin && c.enabledModules.includes('ERP') && c.isSuperAdmin,
     groups: [
       { title: 'Overview', items: [{ id: 'dashboard', label: 'ERP Dashboard', icon: LayoutDashboard }] },
       { title: 'Students', items: [
@@ -105,6 +114,7 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
         { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen },
       ] },
+      { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP' }] },
       { title: 'Settings', items: [
         { id: 'setup', label: 'Setup', icon: Settings },
         { id: 'audit-log', label: 'Audit Log', icon: Activity },
@@ -136,6 +146,7 @@ export const NAV_MODULES: NavModule[] = [
       { title: 'Communication', items: [
         { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, permission: 'SCREEN_WHATSAPP' },
         { id: 'notifications', label: 'Notifications', icon: Bell, permission: 'SCREEN_NOTIFICATIONS' },
+        { id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP', inErp: true },
       ] },
       { title: 'Reports', items: [
         { id: 'receipts', label: 'Receipts', icon: Receipt, permission: 'SCREEN_RECEIPTS' },
@@ -145,6 +156,7 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'setup', label: 'Setup', icon: Settings, permission: 'SCREEN_SETUP', adminOnly: true, inErp: true },
         { id: 'staff-management', label: 'Staff Directory', icon: Users, permission: 'SCREEN_STAFF', adminOnly: true, inErp: true },
         { id: 'audit-log', label: 'Audit Log', icon: Activity, permission: 'SCREEN_AUDIT', adminOnly: true, inErp: true },
+        { id: 'parent-app', label: 'Parent App Preview', icon: Smartphone, disabled: true },
       ] },
     ],
   },
@@ -153,7 +165,7 @@ export const NAV_MODULES: NavModule[] = [
     label: 'Teacher Portal',
     short: 'Teacher',
     icon: UserCheck,
-    // Strictly role-based: visible ONLY to users with the TEACHER role (like Clerk/Reception)
+    // Strictly role-based: visible ONLY to users with the TEACHER role
     isVisible: (c) => !c.isOrgAdmin && c.role === 'TEACHER',
     groups: [
       {
@@ -170,7 +182,7 @@ export const NAV_MODULES: NavModule[] = [
     label: 'Student Portal',
     short: 'Student',
     icon: GraduationCap,
-    // Strictly role-based: visible ONLY to parents/students in Essential edition
+    // Strictly role-based: visible ONLY to parents/students
     isVisible: (c) => !c.isOrgAdmin && c.role === 'parent',
     groups: [
       {

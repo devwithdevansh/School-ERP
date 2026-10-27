@@ -21,9 +21,17 @@ import { type PermissionId, hasPermission } from './permissionsRegistry';
 export type ModuleId = 'ERP' | 'FEES' | 'ORG' | 'TEACHER' | 'STUDENT';
 
 /** Modules an organization can license to a client. Keep in sync with the backends' constants/modules.js. */
-export const LICENSABLE_MODULES: { id: Exclude<ModuleId, 'ORG' | 'TEACHER' | 'STUDENT'>; label: string; description: string }[] = [
-  { id: 'FEES', label: 'Fees', description: 'Fee collection, receipts, expenses, dues, WhatsApp reminders' },
-  { id: 'ERP', label: 'Academics (ERP)', description: 'Admission, attendance, timetable, results, staff & leave' },
+export const LICENSABLE_MODULES: { id: string; label: string; description: string }[] = [
+  { id: 'FEES', label: 'Fees & Payments', description: 'Fee collection, receipts, expenses, dues, WhatsApp reminders, online payments' },
+  { id: 'ATTENDANCE', label: 'Attendance', description: 'Student & teacher daily attendance, monthly register, leave tracking' },
+  { id: 'HOMEWORK', label: 'Homework', description: 'Class assignments, file submissions, teacher homework assignment portal' },
+  { id: 'RESULTS', label: 'Exams & Results', description: 'Exam creation, marks entry, report cards, result analytics' },
+  { id: 'TIMETABLE', label: 'Timetable', description: 'Class schedule, periods, teacher allocations, weekly timetable' },
+  { id: 'CALENDAR', label: 'Calendar & Events', description: 'School academic calendar, circulars, holidays, event announcements' },
+  { id: 'TRANSPORT', label: 'Transport', description: 'Bus tracking, routes, driver details, transport fees' },
+  { id: 'LEAVE', label: 'Leave Management', description: 'Student and staff leave requests, approvals, leave history' },
+  { id: 'COMMUNICATION', label: 'Chat & Messages', description: 'Parent-teacher messaging, group broadcasts, push alerts' },
+  { id: 'ERP', label: 'Academics Suite (All-In-One)', description: 'Full access to all academic modules' },
 ];
 
 export interface NavContext {
@@ -63,14 +71,15 @@ export const NAV_MODULES: NavModule[] = [
   {
     // Platform-owner console. Only ORG_ADMIN sees it (and sees nothing else).
     id: 'ORG',
-    label: 'Organization',
+    label: 'Platform & Apps',
     short: 'Org',
     icon: Building2,
     isVisible: (c) => c.isOrgAdmin,
     groups: [
-      { title: 'Clients', items: [
-        { id: 'org-clients', label: 'Clients', icon: Building2 },
+      { title: 'Clients & Apps', items: [
+        { id: 'org-clients', label: 'School Clients', icon: Building2 },
         { id: 'org-licences', label: 'Module Licences', icon: ToggleRight },
+        { id: 'org-apps', label: 'App Deployment Hub', icon: Smartphone },
       ] },
     ],
   },

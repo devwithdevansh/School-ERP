@@ -91,6 +91,7 @@ import leaveRoutes            from './routes/leave.routes.js';
 import examRoutes             from './routes/exam.routes.js';
 import timetableRoutes        from './routes/timetable.routes.js';
 import chatRoutes             from './routes/chat.routes.js';
+import platformRoutes         from './routes/platform.routes.js';
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 const V1 = '/api/v1';
@@ -100,7 +101,8 @@ const CORE = moduleGate();
 const FEES = moduleGate('FEES');
 const ERP  = moduleGate('ERP');
 
-app.use(`${V1}/auth`,       authRoutes);
+app.use(`${V1}/platform`,     platformRoutes);     // Public mobile config & developer app registry
+app.use(`${V1}/auth`,         authRoutes);
 app.use(`${V1}/organization`, organizationRoutes); // ORG_ADMIN only
 // core
 app.use(`${V1}/parents`,    CORE, parentRoutes);

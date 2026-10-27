@@ -50,7 +50,8 @@ export type ScreenType =
   | 'messages'
   | 'academic-calendar'
   | 'org-clients'
-  | 'org-licences';
+  | 'org-licences'
+  | 'org-apps';
 
 export interface CalendarEventData {
   _id?: string;

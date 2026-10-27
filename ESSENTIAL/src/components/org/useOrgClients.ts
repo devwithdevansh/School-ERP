@@ -14,6 +14,9 @@ export interface OrgClient {
   contactPhone?: string | null;
   address?: string | null;
   notes?: string | null;
+  appId?: string | null;
+  appType?: 'UNIVERSAL' | 'CUSTOM';
+  branding?: any;
   createdAt: string;
   userCount: number;
   studentCount: number;
@@ -29,10 +32,13 @@ export interface NewClientInput {
   contactPhone?: string | null;
   address?: string | null;
   notes?: string | null;
+  appId?: string | null;
+  appType?: 'UNIVERSAL' | 'CUSTOM';
+  branding?: any;
   admin: { name: string; email: string; password: string };
 }
 
-export type ClientPatch = Partial<Pick<OrgClient, 'name' | 'status' | 'enabledModules' | 'contactName' | 'contactEmail' | 'contactPhone' | 'address' | 'notes'>>;
+export type ClientPatch = Partial<Pick<OrgClient, 'name' | 'status' | 'enabledModules' | 'contactName' | 'contactEmail' | 'contactPhone' | 'address' | 'notes' | 'appId' | 'appType' | 'branding'>>;
 
 type Result<T = void> = { ok: true; data: T } | { ok: false; error: string };
 
