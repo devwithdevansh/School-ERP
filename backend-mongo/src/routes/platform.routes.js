@@ -98,6 +98,13 @@ router.get(
     const client = await Client.findOne({ code, status: 'ACTIVE' }).lean();
     if (!client) throw new AppError('School not found. Please verify the code with your school.', 404);
 
+    if (client.plan === 'BASIC' || client.appType === 'NONE') {
+      throw new AppError(
+        `${client.name} is on the Web-Only Plan. Mobile app access is not available for this school. Please sign in via the school web portal.`,
+        403
+      );
+    }
+
     const branding = client.branding || {};
     return sendResponse(res, 200, {
       schoolCode: client.code,

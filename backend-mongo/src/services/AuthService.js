@@ -140,6 +140,15 @@ class AuthService {
       throw new AppError('Mobile number or password is wrong. Please check and try again.', 401);
     }
 
+    // Gate Web-Only (BASIC) plan from mobile app login
+    const targetClientId = isParentMatch ? parent?.clientId : teacher?.clientId;
+    if (targetClientId) {
+      const schoolClient = await Client.findById(targetClientId).lean();
+      if (schoolClient && (schoolClient.plan === 'BASIC' || schoolClient.appType === 'NONE')) {
+        throw new AppError('Your school subscription is on the Basic (Web-Only) Plan. Mobile app login is not available.', 403);
+      }
+    }
+
     // Both match -> CLASH scenario (worst case)
     if (isParentMatch && isTeacherMatch) {
       const parentSession = await AuthService._issueParentSession(parent, { logLabel: 'Unified login (dual - parent)' });
@@ -230,6 +239,11 @@ class AuthService {
     }
     if (!user) throw new AppError('Invalid credentials', 401);
     if (!user.isActive) throw new AppError('Your account has been deactivated. Contact the administrator.', 403);
+
+    const schoolClient = await requireActiveClient(user.clientId);
+    if (schoolClient && (schoolClient.plan === 'BASIC' || schoolClient.appType === 'NONE')) {
+      throw new AppError('Your school subscription is on the Basic (Web-Only) Plan. Mobile app login is not available.', 403);
+    }
 
     const session = await AuthService._issueUserSession(user, { logLabel: 'Teacher mobile login' });
 

@@ -15,6 +15,7 @@ const toDto = (c, extra = {}) => ({
   name: c.name,
   code: c.code,
   status: c.status,
+  plan: c.plan || 'STANDARD',
   enabledModules: c.enabledModules,
   contactName: c.contactName,
   contactEmail: c.contactEmail,
@@ -22,7 +23,7 @@ const toDto = (c, extra = {}) => ({
   address: c.address,
   notes: c.notes,
   appId: c.appId || null,
-  appType: c.appType || 'CUSTOM',
+  appType: c.appType || (c.plan === 'BASIC' ? 'NONE' : 'UNIVERSAL'),
   branding: c.branding || {},
   createdAt: c.createdAt,
   ...extra,
@@ -36,7 +37,7 @@ async function usage(clientId) {
   return { userCount: users, studentCount: students };
 }
 
-const PROFILE_FIELDS = ['name', 'contactName', 'contactEmail', 'contactPhone', 'address', 'notes', 'appId', 'appType', 'branding'];
+const PROFILE_FIELDS = ['name', 'plan', 'contactName', 'contactEmail', 'contactPhone', 'address', 'notes', 'appId', 'appType', 'branding'];
 
 class ClientService {
   static async list() {

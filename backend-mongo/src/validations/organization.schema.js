@@ -16,8 +16,9 @@ export const createClientSchema = {
     contactPhone: optionalText,
     address: optionalText,
     notes: optionalText,
+    plan: z.enum(['BASIC', 'STANDARD', 'CUSTOM']).optional(),
     appId: z.string().trim().nullable().optional(),
-    appType: z.enum(['UNIVERSAL', 'CUSTOM']).optional(),
+    appType: z.enum(['NONE', 'UNIVERSAL', 'CUSTOM']).optional(),
     branding: z.record(z.any()).optional(),
     admin: z.object({
       name: z.string().trim().min(2).max(100),
@@ -37,8 +38,9 @@ export const updateClientSchema = {
     contactPhone: optionalText,
     address: optionalText,
     notes: optionalText,
+    plan: z.enum(['BASIC', 'STANDARD', 'CUSTOM']).optional(),
     appId: z.string().trim().nullable().optional(),
-    appType: z.enum(['UNIVERSAL', 'CUSTOM']).optional(),
+    appType: z.enum(['NONE', 'UNIVERSAL', 'CUSTOM']).optional(),
     branding: z.record(z.any()).optional(),
   }),
 };

@@ -25,8 +25,9 @@ const clientSchema = new mongoose.Schema(
     contactPhone: { type: String, trim: true, default: null },
     address: { type: String, trim: true, default: null },
     notes: { type: String, trim: true, default: null },
+    plan: { type: String, enum: ['BASIC', 'STANDARD', 'CUSTOM'], default: 'STANDARD' },
     appId: { type: String, trim: true, default: null, index: true },
-    appType: { type: String, enum: ['UNIVERSAL', 'CUSTOM'], default: 'CUSTOM' },
+    appType: { type: String, enum: ['NONE', 'UNIVERSAL', 'CUSTOM'], default: 'UNIVERSAL' },
     branding: {
       appName: { type: String, trim: true, default: '' },
       tagline: { type: String, trim: true, default: '' },

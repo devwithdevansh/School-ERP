@@ -8,6 +8,7 @@ export interface OrgClient {
   name: string;
   code: string;
   status: ClientStatus;
+  plan?: 'BASIC' | 'STANDARD' | 'CUSTOM';
   enabledModules: string[];
   contactName?: string | null;
   contactEmail?: string | null;
@@ -15,7 +16,7 @@ export interface OrgClient {
   address?: string | null;
   notes?: string | null;
   appId?: string | null;
-  appType?: 'UNIVERSAL' | 'CUSTOM';
+  appType?: 'NONE' | 'UNIVERSAL' | 'CUSTOM';
   branding?: any;
   createdAt: string;
   userCount: number;
@@ -26,6 +27,7 @@ export interface OrgClient {
 export interface NewClientInput {
   name: string;
   code?: string;
+  plan?: 'BASIC' | 'STANDARD' | 'CUSTOM';
   enabledModules: string[];
   contactName?: string | null;
   contactEmail?: string | null;
@@ -33,12 +35,12 @@ export interface NewClientInput {
   address?: string | null;
   notes?: string | null;
   appId?: string | null;
-  appType?: 'UNIVERSAL' | 'CUSTOM';
+  appType?: 'NONE' | 'UNIVERSAL' | 'CUSTOM';
   branding?: any;
   admin: { name: string; email: string; password: string };
 }
 
-export type ClientPatch = Partial<Pick<OrgClient, 'name' | 'status' | 'enabledModules' | 'contactName' | 'contactEmail' | 'contactPhone' | 'address' | 'notes' | 'appId' | 'appType' | 'branding'>>;
+export type ClientPatch = Partial<Pick<OrgClient, 'name' | 'status' | 'plan' | 'enabledModules' | 'contactName' | 'contactEmail' | 'contactPhone' | 'address' | 'notes' | 'appId' | 'appType' | 'branding'>>;
 
 type Result<T = void> = { ok: true; data: T } | { ok: false; error: string };
 
