@@ -111,16 +111,25 @@ const ModuleManagerModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="flex h-[92vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6 backdrop-blur-sm animate-in fade-in">
+      <div className="flex h-[94vh] w-[96vw] max-w-7xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-6 py-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-black text-slate-800">{client.name}</h3>
-              <span className="font-mono text-xs text-slate-400 bg-slate-200/60 px-2 py-0.5 rounded-full">{client.code}</span>
+              <h3 className="text-xl font-black text-slate-900">{client.name}</h3>
+              <span className="font-mono text-xs text-slate-500 bg-slate-200/70 px-2.5 py-0.5 rounded-full font-bold">{client.code}</span>
+              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                plan === 'BASIC'
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                  : plan === 'CUSTOM'
+                  ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                  : 'bg-indigo-100 text-indigo-900 border border-indigo-300'
+              }`}>
+                {plan} PLAN
+              </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">Configure subscription plan, mobile delivery, and each licensed module.</p>
+            <p className="text-xs text-slate-500 mt-1">Configure subscription tier, mobile delivery options, and select licensed modules section-by-section.</p>
           </div>
           <button
             onClick={onClose}
@@ -138,76 +147,76 @@ const ModuleManagerModal: React.FC<{
             </div>
           )}
 
-          {/* Section 1: Subscription Plan & Mobile Delivery */}
+          {/* Section A: Subscription Plan & Mobile Delivery */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Plan Card */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Subscription Plan Tier</span>
                 <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                  {plan} PLAN
+                  Active: {plan}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2.5">
                 <button
                   type="button"
                   onClick={() => applyPlanPreset('BASIC')}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
                     plan === 'BASIC'
-                      ? 'border-amber-500 bg-amber-50/60 text-amber-900 shadow-sm ring-2 ring-amber-500/20'
+                      ? 'border-amber-500 bg-amber-50/70 text-amber-900 shadow-sm ring-2 ring-amber-500/20'
                       : 'border-slate-200 hover:bg-slate-50 text-slate-600'
                   }`}
                 >
-                  <span className="text-sm">🌟</span>
-                  <span className="text-xs font-bold mt-1">Basic</span>
-                  <span className="text-[9px] text-slate-400 font-semibold">Web Only</span>
+                  <span className="text-base">🌟</span>
+                  <span className="text-xs font-bold mt-1">Basic Plan</span>
+                  <span className="text-[9px] text-amber-700 font-bold uppercase tracking-wider">Web Only</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => applyPlanPreset('STANDARD')}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
                     plan === 'STANDARD'
-                      ? 'border-indigo-600 bg-indigo-50/60 text-indigo-900 shadow-sm ring-2 ring-indigo-600/20'
+                      ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-sm ring-2 ring-indigo-600/20'
                       : 'border-slate-200 hover:bg-slate-50 text-slate-600'
                   }`}
                 >
-                  <span className="text-sm">🚀</span>
+                  <span className="text-base">🚀</span>
                   <span className="text-xs font-bold mt-1">Standard</span>
-                  <span className="text-[9px] text-slate-400 font-semibold">Universal App</span>
+                  <span className="text-[9px] text-indigo-700 font-bold uppercase tracking-wider">School Connect</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => applyPlanPreset('CUSTOM')}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
                     plan === 'CUSTOM'
-                      ? 'border-purple-600 bg-purple-50/60 text-purple-900 shadow-sm ring-2 ring-purple-600/20'
+                      ? 'border-purple-600 bg-purple-50/70 text-purple-900 shadow-sm ring-2 ring-purple-600/20'
                       : 'border-slate-200 hover:bg-slate-50 text-slate-600'
                   }`}
                 >
-                  <span className="text-sm">👑</span>
+                  <span className="text-base">👑</span>
                   <span className="text-xs font-bold mt-1">Customized</span>
-                  <span className="text-[9px] text-slate-400 font-semibold">Dedicated App</span>
+                  <span className="text-[9px] text-purple-700 font-bold uppercase tracking-wider">EduConnect App</span>
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500">
-                {plan === 'BASIC' && 'Web-only delivery. Mobile login is restricted and parents/teachers are directed to web portal.'}
-                {plan === 'STANDARD' && 'Includes Web ERP + "School Connect" universal mobile app for parents & teachers.'}
-                {plan === 'CUSTOM' && 'Dedicated branded APK (e.g. "EduConnect" or school\'s own app package on Play Store).'}
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                {plan === 'BASIC' && 'Web-only delivery. All student and fee features are accessed via web browser; mobile login attempts show an Upgrade prompt.'}
+                {plan === 'STANDARD' && 'Includes full Web ERP + Universal "School Connect" Play Store app where parents & teachers log in with school code.'}
+                {plan === 'CUSTOM' && 'Dedicated custom Play Store APK with the school\'s own branding, logo, package ID, plus optional SMS & biometric integrations.'}
               </p>
             </div>
 
             {/* Mobile Delivery Mode */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Mobile App Delivery</span>
-                <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                  {appType}
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Mobile App Delivery Option</span>
+                <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                  {appType === 'NONE' ? 'Web Only' : appType === 'UNIVERSAL' ? 'School Connect' : 'EduConnect / Custom'}
                 </span>
               </div>
               <select
                 value={appType}
                 onChange={(e) => setAppType(e.target.value as any)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="NONE">🌐 Web Only — No Mobile App (Basic Plan)</option>
                 <option value="UNIVERSAL">📱 Universal App — "School Connect" (Standard Plan)</option>
@@ -215,172 +224,203 @@ const ModuleManagerModal: React.FC<{
               </select>
 
               {appType === 'CUSTOM' && (
-                <div className="space-y-1 pt-1">
-                  <label className="text-[11px] font-bold text-slate-600">Dedicated Play Store Package ID</label>
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[11px] font-bold text-slate-700">Dedicated Play Store Package ID</label>
                   <input
                     type="text"
                     value={appId}
                     onChange={(e) => setAppId(e.target.value)}
                     placeholder="com.schoolerp.educonnect"
-                    className="w-full rounded-xl border border-purple-200 bg-purple-50/30 px-3 py-1.5 text-xs font-mono text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-purple-200 bg-purple-50/40 px-3.5 py-2 text-xs font-mono text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
-                  <p className="text-[10px] text-slate-400">School app boots directly into this school context without code entry.</p>
+                  <p className="text-[10px] text-slate-400">Custom build boots directly into this school tenant without requiring manual school code lookup.</p>
                 </div>
               )}
 
               {appType === 'NONE' && (
-                <p className="text-[11px] text-amber-700 bg-amber-50/60 p-2 rounded-xl border border-amber-200">
-                  Mobile access is blocked. Any attempts to discover or login to this school on mobile will show an Upgrade prompt.
+                <p className="text-[11px] text-amber-800 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200">
+                  Mobile access is blocked. Any attempts to discover or login to this school on mobile will display an Upgrade paywall.
                 </p>
               )}
 
               {appType === 'UNIVERSAL' && (
-                <p className="text-[11px] text-indigo-700 bg-indigo-50/60 p-2 rounded-xl border border-indigo-200">
-                  Parents &amp; teachers enter school code <strong>{client.code}</strong> inside the universal <em>School Connect</em> mobile app.
+                <p className="text-[11px] text-indigo-800 bg-indigo-50/80 p-2.5 rounded-xl border border-indigo-200">
+                  Parents &amp; teachers enter school code <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-indigo-200">{client.code}</strong> inside the universal <em>School Connect</em> mobile app.
                 </p>
               )}
             </div>
           </div>
 
-          {/* Section 2: Granular Module Checklist */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          {/* Section B: Global Module Controls & Search */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h4 className="text-sm font-black text-slate-800">Licensed Product Modules</h4>
+                <h4 className="text-sm font-black text-slate-900">Section-Wise Module Configuration</h4>
                 <p className="text-xs text-slate-500">
-                  <strong>{selectedModules.length}</strong> of <strong>{LICENSABLE_MODULES.length}</strong> modules active
+                  Currently active: <strong className="text-indigo-600">{selectedModules.length}</strong> of <strong>{LICENSABLE_MODULES.length}</strong> modules
                 </p>
               </div>
 
               {/* Quick Actions */}
-              <div className="flex flex-wrap gap-1.5 text-[11px]">
+              <div className="flex flex-wrap gap-2 text-xs">
                 <button
                   type="button"
                   onClick={() => setSelectedModules(BASIC_PRESET_MODULES)}
-                  className="rounded-lg bg-amber-50 px-2.5 py-1 text-amber-800 font-bold border border-amber-200 hover:bg-amber-100"
+                  className="rounded-xl bg-amber-50 px-3 py-1.5 text-amber-800 font-bold border border-amber-300 hover:bg-amber-100 transition-colors"
                 >
-                  Select Basic ({BASIC_PRESET_MODULES.length})
+                  Apply Basic ({BASIC_PRESET_MODULES.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedModules(STANDARD_PRESET_MODULES)}
-                  className="rounded-lg bg-indigo-50 px-2.5 py-1 text-indigo-800 font-bold border border-indigo-200 hover:bg-indigo-100"
+                  className="rounded-xl bg-indigo-50 px-3 py-1.5 text-indigo-800 font-bold border border-indigo-300 hover:bg-indigo-100 transition-colors"
                 >
-                  Select Standard ({STANDARD_PRESET_MODULES.length})
+                  Apply Standard ({STANDARD_PRESET_MODULES.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedModules(CUSTOM_PRESET_MODULES)}
-                  className="rounded-lg bg-purple-50 px-2.5 py-1 text-purple-800 font-bold border border-purple-200 hover:bg-purple-100"
+                  className="rounded-xl bg-purple-50 px-3 py-1.5 text-purple-800 font-bold border border-purple-300 hover:bg-purple-100 transition-colors"
                 >
                   Select All ({CUSTOM_PRESET_MODULES.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedModules([])}
-                  className="rounded-lg bg-slate-100 px-2.5 py-1 text-slate-600 font-bold hover:bg-slate-200"
+                  className="rounded-xl bg-white px-3 py-1.5 text-slate-600 font-bold border border-slate-200 hover:bg-slate-100 transition-colors"
                 >
                   Clear All
                 </button>
               </div>
             </div>
 
-            {/* Filter and Category Tabs */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search features (e.g. Attendance, Receipts, WhatsApp, Exams)..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('ALL')}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                    activeTab === 'ALL'
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  All ({LICENSABLE_MODULES.length})
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setActiveTab(cat)}
-                    className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all ${
-                      activeTab === cat
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {CATEGORY_META[cat]?.icon} {CATEGORY_META[cat]?.label.split(' ')[0]}
-                  </button>
-                ))}
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search across all modules and sections (e.g. Attendance, Receipts, WhatsApp, Online Payment)..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              />
             </div>
+          </div>
 
-            {/* Modules Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-              {filteredModules.map((m) => {
-                const isChecked = selectedModules.includes(m.id);
-                return (
-                  <div
-                    key={m.id}
-                    onClick={() => toggleModule(m.id)}
-                    className={`flex items-start justify-between gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                      isChecked
-                        ? 'border-indigo-300 bg-indigo-50/30 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-slate-300 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-xs text-slate-900">{m.label}</span>
-                        <span
-                          className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
-                            m.tier === 'BASIC'
-                              ? 'bg-amber-100 text-amber-800'
-                              : m.tier === 'STANDARD'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-purple-100 text-purple-800'
+          {/* Section C: Section-Wise Granular Display */}
+          <div className="space-y-6">
+            {categories.map((catKey) => {
+              const meta = CATEGORY_META[catKey] || { label: catKey, icon: '📦', desc: '' };
+              const categoryModules = LICENSABLE_MODULES.filter(
+                (m) =>
+                  m.category === catKey &&
+                  (search === '' ||
+                    m.label.toLowerCase().includes(search.toLowerCase()) ||
+                    m.description.toLowerCase().includes(search.toLowerCase()) ||
+                    m.id.toLowerCase().includes(search.toLowerCase()))
+              );
+
+              if (categoryModules.length === 0) return null;
+
+              const activeInCategory = categoryModules.filter((m) => selectedModules.includes(m.id)).length;
+              const allCategoryIds = categoryModules.map((m) => m.id);
+              const isAllChecked = activeInCategory === categoryModules.length;
+
+              const toggleAllInCategory = () => {
+                if (isAllChecked) {
+                  setSelectedModules((prev) => prev.filter((id) => !allCategoryIds.includes(id)));
+                } else {
+                  setSelectedModules((prev) => Array.from(new Set([...prev, ...allCategoryIds])));
+                }
+              };
+
+              return (
+                <div key={catKey} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+                  {/* Section Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{meta.icon}</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-base font-black text-slate-900">{meta.label}</h4>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                            {activeInCategory} / {categoryModules.length} Active
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">{meta.desc}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={toggleAllInCategory}
+                      className={`text-xs font-bold px-3 py-1 rounded-lg border transition-all ${
+                        isAllChecked
+                          ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                          : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                      }`}
+                    >
+                      {isAllChecked ? 'Disable All in Section' : 'Enable All in Section'}
+                    </button>
+                  </div>
+
+                  {/* Modules in this Section (3 columns on wide screen) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {categoryModules.map((m) => {
+                      const isChecked = selectedModules.includes(m.id);
+                      return (
+                        <div
+                          key={m.id}
+                          onClick={() => toggleModule(m.id)}
+                          className={`flex items-start justify-between gap-3 p-3.5 rounded-xl border cursor-pointer select-none transition-all ${
+                            isChecked
+                              ? 'border-indigo-400 bg-indigo-50/40 shadow-sm ring-1 ring-indigo-400/20'
+                              : 'border-slate-200 bg-white hover:border-slate-300 opacity-65 hover:opacity-100'
                           }`}
                         >
-                          {m.tier}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">{m.description}</p>
-                      <p className="text-[9px] font-mono text-slate-400">ID: {m.id}</p>
-                    </div>
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-extrabold text-xs text-slate-900 leading-tight">{m.label}</span>
+                              <span
+                                className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                                  m.tier === 'BASIC'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : m.tier === 'STANDARD'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-purple-100 text-purple-800'
+                                  }`}
+                              >
+                                {m.tier}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-snug line-clamp-2">{m.description}</p>
+                            <p className="text-[9px] font-mono text-slate-400">ID: {m.id}</p>
+                          </div>
 
-                    <div className="shrink-0 pt-0.5">
-                      <div
-                        className={`h-5 w-5 rounded-lg flex items-center justify-center border transition-all ${
-                          isChecked
-                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                            : 'border-slate-300 bg-white'
-                        }`}
-                      >
-                        {isChecked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
-                      </div>
-                    </div>
+                          <div className="shrink-0 pt-0.5">
+                            <div
+                              className={`h-5 w-5 rounded-lg flex items-center justify-center border transition-all ${
+                                isChecked
+                                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                                  : 'border-slate-300 bg-white'
+                              }`}
+                            >
+                              {isChecked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-6 py-4">
-          <div className="text-xs text-slate-500">
-            Selected: <strong className="text-slate-800">{selectedModules.length}</strong> modules · Plan: <strong className="text-slate-800">{plan}</strong> · Mobile: <strong className="text-slate-800">{appType}</strong>
+          <div className="text-xs text-slate-600">
+            Selected: <strong className="text-slate-900">{selectedModules.length}</strong> modules · Plan: <strong className="text-indigo-600">{plan}</strong> · Mobile: <strong className="text-slate-900">{appType}</strong>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -394,10 +434,10 @@ const ModuleManagerModal: React.FC<{
               type="button"
               disabled={saving}
               onClick={handleSave}
-              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 disabled:opacity-50 transition-all"
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 disabled:opacity-50 transition-all"
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              Save &amp; Apply Changes
+              Save &amp; Apply All Changes
             </button>
           </div>
         </div>
