@@ -456,6 +456,7 @@ interface AppContextType {
   setActivePortal: (portal: PortalId) => void;
   isLoadingDetails: boolean;
   isScreenLoading: boolean;
+  isModuleEnabled: (moduleId: string) => boolean;
   refreshData: () => void;
   calendarEvents: CalendarEventData[];
   fetchCalendarEvents: (filters?: { academicYearId?: string; academicYear?: string; month?: number; year?: number }) => Promise<CalendarEventData[]>;
@@ -670,6 +671,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const initData = await initRes.json();
         const data = initData.data || {};
 
+        if (data.client) {
+          setClient(data.client);
+          try {
+            localStorage.setItem('clientInfo', JSON.stringify(data.client));
+          } catch {}
+        }
+
         const unpaidDataRaw = unpaidRes.ok ? await unpaidRes.json() : { data: [] };
         const unpaidData = unpaidDataRaw.data || [];
 
@@ -878,6 +886,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       fetchAll();
     }, 400);
   }, [fetchAll]);
+
+  const isModuleEnabled = useCallback((moduleId: string): boolean => {
+    if (isOrgAdmin) return true;
+    if (!client) return true;
+    const mods = client.enabledModules || [];
+    return mods.includes(moduleId);
+  }, [client, isOrgAdmin]);
 
   const setScreen = useCallback(async (screen: ScreenType) => {
     setScreenState(screen);
@@ -2074,6 +2089,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setActivePortal,
         isLoadingDetails,
         isScreenLoading,
+        isModuleEnabled,
         refreshData: debouncedFetchAll,
         calendarEvents,
         fetchCalendarEvents,

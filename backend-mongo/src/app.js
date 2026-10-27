@@ -99,6 +99,12 @@ const V1 = '/api/v1';
 // moduleGate() with no id = core routes that only need an active client. See constants/modules.js.
 const CORE = moduleGate();
 const FEES = moduleGate('FEES');
+const ATTENDANCE = moduleGate('ATTENDANCE');
+const HOMEWORK = moduleGate('HOMEWORK');
+const RESULTS = moduleGate('RESULTS');
+const TIMETABLE = moduleGate('TIMETABLE');
+const LEAVE = moduleGate('LEAVE');
+const CHAT = moduleGate('COMMUNICATION');
 const ERP  = moduleGate('ERP');
 
 app.use(`${V1}/platform`,     platformRoutes);     // Public mobile config & developer app registry
@@ -125,15 +131,15 @@ app.use(`${V1}/reports`,        FEES, reportRoutes);
 app.use(`${V1}/notifications`,  FEES, notificationRoutes);
 app.use(`${V1}/whatsapp`,       FEES, whatsappRoutes);
 app.use(`${V1}/expenses`,       FEES, expenseRoutes);
-// ERP module
+// ERP module & Granular academic operations
 app.use(`${V1}/erp/allocations`, ERP, allocationRoutes); // Mount before erpRoutes
-app.use(`${V1}/erp/homework`,   ERP, homeworkRoutes);
-app.use(`${V1}/erp/leave`,      ERP, leaveRoutes);
-app.use(`${V1}/erp/exams`,      ERP, examRoutes);
-app.use(`${V1}/erp/timetable`,  ERP, timetableRoutes);
+app.use(`${V1}/erp/homework`,   HOMEWORK, homeworkRoutes);
+app.use(`${V1}/erp/leave`,      LEAVE, leaveRoutes);
+app.use(`${V1}/erp/exams`,      RESULTS, examRoutes);
+app.use(`${V1}/erp/timetable`,  TIMETABLE, timetableRoutes);
 app.use(`${V1}/erp`,            ERP, erpRoutes);
-app.use(`${V1}/attendance`,     ERP, attendanceRoutes);
-app.use(`${V1}/chat`,           ERP, chatRoutes);
+app.use(`${V1}/attendance`,     ATTENDANCE, attendanceRoutes);
+app.use(`${V1}/chat`,           CHAT, chatRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.all('/{*splat}', (req, _res, next) => {

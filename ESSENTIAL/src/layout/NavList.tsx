@@ -22,6 +22,11 @@ export const NavList: React.FC<Props> = ({ moduleId, groups, currentScreen, ctx,
             const active = currentScreen === item.id;
             const badge = item.badge?.(ctx);
             const Icon = item.icon;
+            const isUpgrade = Boolean(
+              item.moduleRequired &&
+              !ctx.isOrgAdmin &&
+              !ctx.enabledModules.includes(item.moduleRequired)
+            );
             return (
               <li key={item.id + item.label}>
                 <button
@@ -38,7 +43,11 @@ export const NavList: React.FC<Props> = ({ moduleId, groups, currentScreen, ctx,
                   {active && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-indigo-400" />}
                   <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-indigo-300' : 'text-slate-500 group-hover:text-slate-200'}`} />
                   <span className="flex-1 truncate text-left">{item.label}</span>
-                  {badge ? (
+                  {isUpgrade ? (
+                    <span className="rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-sm">
+                      Upgrade
+                    </span>
+                  ) : badge ? (
                     <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{badge}</span>
                   ) : null}
                 </button>

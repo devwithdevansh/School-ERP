@@ -45,6 +45,7 @@ import { brand } from './config/brand';
 import { parseExamRoute } from './utils/examRouteUtils';
 import { hasPermission } from './config/permissionsRegistry';
 import { ShieldAlert } from './components/icons';
+import { UpgradePaywall } from './components/UpgradePaywall';
 
 const logoPath = brand.logo;
 const watermarkPath = brand.logo;
@@ -86,7 +87,7 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { 
 }
 
 const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPrintReport: (report: any) => void }> = ({ onPrint, onPrintReport }) => {
-  const { currentScreen, activePortal, currentUser, isSuperAdmin, setScreen } = useApp();
+  const { currentScreen, activePortal, currentUser, isSuperAdmin, isModuleEnabled, setScreen } = useApp();
 
   // Organization admin console (platform owner)
   if (activePortal === 'ORG') {
@@ -117,17 +118,17 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
       case 'admission':
         return <Admission />;
       case 'attendance':
-        return <Attendance />;
+        return isModuleEnabled('ATTENDANCE') ? <Attendance /> : <UpgradePaywall moduleId="ATTENDANCE" />;
       case 'academic-calendar':
-        return <AcademicCalendar />;
+        return isModuleEnabled('CALENDAR') ? <AcademicCalendar /> : <UpgradePaywall moduleId="CALENDAR" />;
       case 'subjects':
         return <Subjects />;
       case 'timetable':
-        return <Timetable />;
+        return isModuleEnabled('TIMETABLE') ? <Timetable /> : <UpgradePaywall moduleId="TIMETABLE" />;
       case 'exams':
-        return <Exams />;
+        return isModuleEnabled('RESULTS') ? <Exams /> : <UpgradePaywall moduleId="RESULTS" moduleName="Exams & Schedules" />;
       case 'results':
-        return <Results />;
+        return isModuleEnabled('RESULTS') ? <Results /> : <UpgradePaywall moduleId="RESULTS" moduleName="Marks & Report Cards" />;
       case 'documents':
       case 'certificates':
         return <DocumentsHub />;
@@ -136,11 +137,11 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
       case 'teacher-allocation':
         return <TeacherAllocationDashboard />;
       case 'student-leave':
-        return <StudentLeaveManagement />;
+        return isModuleEnabled('LEAVE') ? <StudentLeaveManagement /> : <UpgradePaywall moduleId="LEAVE" />;
       case 'staff-leave':
-        return <StaffLeaveManagement />;
+        return isModuleEnabled('LEAVE') ? <StaffLeaveManagement /> : <UpgradePaywall moduleId="LEAVE" />;
       case 'messages':
-        return <Messages />;
+        return isModuleEnabled('COMMUNICATION') ? <Messages /> : <UpgradePaywall moduleId="COMMUNICATION" />;
       case 'students':
         return <Students />;
       case 'staff-management':
@@ -159,17 +160,17 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
     case 'dashboard':
       return <Dashboard />;
     case 'collect-fee':
-      return <CollectFee />;
+      return isModuleEnabled('FEES') ? <CollectFee /> : <UpgradePaywall moduleId="FEES" />;
     case 'today-expenses':
-      return <TodayExpenses />;
+      return isModuleEnabled('FEES') ? <TodayExpenses /> : <UpgradePaywall moduleId="FEES" />;
     case 'unpaid-fees':
-      return <UnpaidFees />;
+      return isModuleEnabled('FEES') ? <UnpaidFees /> : <UpgradePaywall moduleId="FEES" />;
     case 'fee-structure':
-      return <FeeStructure />;
+      return isModuleEnabled('FEES') ? <FeeStructure /> : <UpgradePaywall moduleId="FEES" />;
     case 'setup':
       return <Setup />;
     case 'academic-calendar':
-      return <AcademicCalendar />;
+      return isModuleEnabled('CALENDAR') ? <AcademicCalendar /> : <UpgradePaywall moduleId="CALENDAR" />;
     case 'students':
       return <Students />;
     case 'promote-students':

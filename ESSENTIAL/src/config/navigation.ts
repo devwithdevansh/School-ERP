@@ -51,6 +51,7 @@ export interface NavItem {
   permission?: PermissionId;
   adminOnly?: boolean;
   disabled?: boolean;
+  moduleRequired?: string;
   /** Same screen also lives in the ERP module; hidden here whenever ERP is visible to the user. */
   inErp?: boolean;
   badge?: (ctx: NavContext) => number | undefined;
@@ -89,7 +90,11 @@ export const NAV_MODULES: NavModule[] = [
     short: 'ERP',
     icon: GraduationCap,
     // licensed for the school AND (optionally, via SUPER_ADMIN_EMAILS) restricted to super admins
-    isVisible: (c) => !c.isOrgAdmin && c.enabledModules.includes('ERP') && c.isSuperAdmin,
+    isVisible: (c) => !c.isOrgAdmin && (
+      c.isSuperAdmin ||
+      c.enabledModules.includes('ERP') ||
+      c.enabledModules.some((m) => ['ATTENDANCE', 'HOMEWORK', 'RESULTS', 'TIMETABLE', 'CALENDAR', 'TRANSPORT', 'LEAVE', 'COMMUNICATION'].includes(m))
+    ),
     groups: [
       { title: 'Overview', items: [{ id: 'dashboard', label: 'ERP Dashboard', icon: LayoutDashboard }] },
       { title: 'Students', items: [
@@ -99,22 +104,22 @@ export const NAV_MODULES: NavModule[] = [
       { title: 'Curriculum', items: [
         { id: 'subjects', label: 'Subjects', icon: BookOpen },
         { id: 'teacher-allocation', label: 'Teacher Allocation', icon: Users },
-        { id: 'timetable', label: 'Timetable', icon: CalendarDays },
+        { id: 'timetable', label: 'Timetable', icon: CalendarDays, moduleRequired: 'TIMETABLE' },
       ] },
       { title: 'Academic Operations', items: [
-        { id: 'attendance', label: 'Attendance', icon: UserCheck },
-        { id: 'academic-calendar', label: 'Calendar & Roadmap', icon: CalendarDays },
-        { id: 'student-leave', label: 'Student Leave', icon: CalendarDays },
-        { id: 'exams', label: 'Exams', icon: ClipboardList },
-        { id: 'results', label: 'Results', icon: Award },
+        { id: 'attendance', label: 'Attendance', icon: UserCheck, moduleRequired: 'ATTENDANCE' },
+        { id: 'academic-calendar', label: 'Calendar & Roadmap', icon: CalendarDays, moduleRequired: 'CALENDAR' },
+        { id: 'student-leave', label: 'Student Leave', icon: CalendarDays, moduleRequired: 'LEAVE' },
+        { id: 'exams', label: 'Exams', icon: ClipboardList, moduleRequired: 'RESULTS' },
+        { id: 'results', label: 'Results', icon: Award, moduleRequired: 'RESULTS' },
         { id: 'documents', label: 'Documents & ID Cards', icon: IdCard },
       ] },
       { title: 'Staff', items: [
         { id: 'staff-management', label: 'Staff Directory', icon: Users },
         { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
-        { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen },
+        { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen, moduleRequired: 'LEAVE' },
       ] },
-      { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP' }] },
+      { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP', moduleRequired: 'COMMUNICATION' }] },
       { title: 'Settings', items: [
         { id: 'setup', label: 'Setup', icon: Settings },
         { id: 'audit-log', label: 'Audit Log', icon: Activity },
@@ -127,14 +132,16 @@ export const NAV_MODULES: NavModule[] = [
     short: 'Fees',
     icon: IndianRupee,
     // Visible strictly to school staff/admin (NOT teachers, NOT parents)
-    isVisible: (c) => !c.isOrgAdmin && c.role !== 'TEACHER' && c.role !== 'parent' && c.enabledModules.includes('FEES'),
+    isVisible: (c) => !c.isOrgAdmin && c.role !== 'TEACHER' && c.role !== 'parent' && (
+      c.isSuperAdmin || c.enabledModules.includes('FEES')
+    ),
     groups: [
       { title: 'Overview', items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'SCREEN_DASHBOARD' }] },
       { title: 'Fees', items: [
-        { id: 'collect-fee', label: 'Collect Fee', icon: CreditCard, permission: 'SCREEN_COLLECT_FEE' },
-        { id: 'today-expenses', label: "Today's Expenses", icon: Wallet, permission: 'SCREEN_TODAY_EXPENSES' },
-        { id: 'unpaid-fees', label: 'Unpaid Fees', icon: AlertTriangle, permission: 'SCREEN_UNPAID_FEES', badge: (c) => c.unpaidCount || undefined },
-        { id: 'fee-structure', label: 'Fee Structure', icon: Layers, permission: 'SCREEN_FEE_STRUCTURE', adminOnly: true },
+        { id: 'collect-fee', label: 'Collect Fee', icon: CreditCard, permission: 'SCREEN_COLLECT_FEE', moduleRequired: 'FEES' },
+        { id: 'today-expenses', label: "Today's Expenses", icon: Wallet, permission: 'SCREEN_TODAY_EXPENSES', moduleRequired: 'FEES' },
+        { id: 'unpaid-fees', label: 'Unpaid Fees', icon: AlertTriangle, permission: 'SCREEN_UNPAID_FEES', badge: (c) => c.unpaidCount || undefined, moduleRequired: 'FEES' },
+        { id: 'fee-structure', label: 'Fee Structure', icon: Layers, permission: 'SCREEN_FEE_STRUCTURE', adminOnly: true, moduleRequired: 'FEES' },
       ] },
       // Group titles match the ERP module so both sidebars read the same.
       // Items flagged `inErp` are the ERP module's screens; they only show here for users without ERP access.

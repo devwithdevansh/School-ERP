@@ -14,6 +14,7 @@ import TransportFeeStructure from '../models/TransportFeeStructure.js';
 import AuditLog from '../models/AuditLog.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
+import Client from '../models/Client.js';
 const staticCache = {
   data: null,
   timestamp: 0
@@ -66,7 +67,17 @@ class DashboardController {
       staticCache.timestamp = Date.now();
     }
 
+    const clientRecord = req.client || (req.user?.clientId ? await Client.findById(req.user.clientId).lean() : null);
+    const clientData = clientRecord ? {
+      id: String(clientRecord._id),
+      name: clientRecord.name,
+      code: clientRecord.code,
+      enabledModules: clientRecord.enabledModules || [],
+      status: clientRecord.status,
+    } : null;
+
     sendResponse(res, 200, {
+      client: clientData,
       students,
       ledgers,
       transactions,
