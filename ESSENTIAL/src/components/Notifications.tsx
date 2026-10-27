@@ -165,8 +165,8 @@ export const Notifications: React.FC = () => {
       if (res.ok) {
         const d = json.data;
         const msg = (d.successCount && d.successCount > 0)
-          ? `✅ Delivered to ${d.successCount} mobile device(s)!`
-          : "✅ Delivered to student's mobile app and notification bar!";
+          ? `Delivered to ${d.successCount} mobile device(s)!`
+          : "Delivered to student's mobile app and notification bar!";
         setSendResult({
           success: true,
           message: msg,

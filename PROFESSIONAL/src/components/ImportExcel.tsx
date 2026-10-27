@@ -100,16 +100,16 @@ export const ImportExcel: React.FC = () => {
     setPromoteMsg(null);
     try {
       const res = await autoPromoteBatch(successIds);
-      let text = `✅ Auto-promoted ${res.promotedCount} student(s).`;
+      let text = `Auto-promoted ${res.promotedCount} student(s).`;
       if (res.skippedCount > 0) {
-        text += ` ⚠️ Skipped ${res.skippedCount} student(s) — `;
+        text += ` Skipped ${res.skippedCount} student(s) — `;
         // Show the first unique reason
         const firstReason = res.skipped?.[0]?.reason;
         if (firstReason) text += firstReason;
         else text += 'see server logs for details.';
       }
       if (res.groupErrors?.length > 0) {
-        text += ` ❌ ${res.groupErrors.length} group(s) failed: ${res.groupErrors[0]?.error}`;
+        text += ` ${res.groupErrors.length} group(s) failed: ${res.groupErrors[0]?.error}`;
       }
       setPromoteMsg({ type: res.promotedCount > 0 ? 'success' : 'error', text });
     } catch (err: any) {
@@ -617,7 +617,7 @@ export const ImportExcel: React.FC = () => {
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-3.5 flex gap-2.5">
                 <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="text-[10px] text-amber-800 leading-relaxed font-medium">
-                  <strong>🚌 Transport Rules:</strong>
+                  <strong>Transport Rules:</strong>
                   <ul className="list-disc pl-4 mt-1 space-y-1">
                     <li><strong>Transport Type = None</strong> or blank → Student has no transport.</li>
                     <li><strong>Transport Type filled + month blank</strong> → Student uses transport but all fees are already paid.</li>
@@ -629,7 +629,7 @@ export const ImportExcel: React.FC = () => {
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3.5 flex gap-2.5">
                 <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                 <div className="text-[10px] text-blue-800 leading-relaxed font-medium">
-                  <strong>📋 Education Fees Column (Year {activeYearName || '2026-2027'}):</strong>
+                  <strong>Education Fees Column (Year {activeYearName || '2026-2027'}):</strong>
                   <ul className="list-disc pl-4 mt-1 space-y-1">
                     <li>Write <code>paid</code> if the student has paid all education fees.</li>
                     <li>Write <code>gov paid</code> if fees are covered by the government (RTE).</li>
@@ -643,14 +643,14 @@ export const ImportExcel: React.FC = () => {
               <div className="bg-green-50 border border-green-100 rounded-xl p-3.5 flex gap-2.5">
                 <Info className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-green-800 leading-relaxed font-medium">
-                  <strong>👨‍👩‍👧 Parent Sync:</strong> If a parent's mobile already exists in the system, the new student is automatically linked to that parent as a sibling — no duplicate parent created.
+                  <strong>Parent Sync:</strong> If a parent's mobile already exists in the system, the new student is automatically linked to that parent as a sibling — no duplicate parent created.
                 </p>
               </div>
 
               <div className="bg-purple-50 border border-purple-100 rounded-xl p-3.5 flex gap-2.5">
                 <Info className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-purple-800 leading-relaxed font-medium">
-                  <strong>🎓 Standards & Promotion:</strong> When importing old students, enter their standard from the <strong>PREVIOUS</strong> academic year to match their old fees accurately. Once imported, simply use the "Promote Students" tool to bump them to their new standard.
+                  <strong>Standards &amp; Promotion:</strong> When importing old students, enter their standard from the <strong>PREVIOUS</strong> academic year to match their old fees accurately. Once imported, simply use the "Promote Students" tool to bump them to their new standard.
                 </p>
               </div>
             </div>
@@ -761,7 +761,7 @@ export const ImportExcel: React.FC = () => {
                                   </span>
                                   {row.transportAllPaid ? (
                                     <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-1.5 py-0.5 rounded block">
-                                      ✓ All Paid
+                                      All Paid
                                     </span>
                                   ) : row.transportStartMonth ? (
                                     <span className="bg-amber-50 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded block">
@@ -872,11 +872,11 @@ export const ImportExcel: React.FC = () => {
                             <span className="text-slate-400 font-mono block">Code: {res.studentCode}</span>
                             {res.transportStartMonth ? (
                               <span className="text-green-600 font-bold block text-[9px] uppercase">
-                                ✓ Transport from: {res.transportStartMonth}
+                                Transport from: {res.transportStartMonth}
                               </span>
                             ) : (
                               <span className="text-orange-500 font-bold block text-[9px] uppercase">
-                                ⚠ TransportStartMonth: null/none
+                                TransportStartMonth: null/none
                               </span>
                             )}
                           </div>

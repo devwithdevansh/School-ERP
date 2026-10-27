@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../store';
-import { Users, Plus } from './icons';
+import { Users, Plus, Zap } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -302,7 +302,7 @@ export const TeacherAllocationDashboard: React.FC = () => {
         <>
           {subjects.length > 0 && (!classCurriculum || !classCurriculum.subjects || classCurriculum.subjects.length === 0) && (
             <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-2xl text-xs font-semibold shadow-xs">
-              <span className="text-base">⚡</span>
+              <Zap className="h-4 w-4 text-blue-600 shrink-0" />
               <span>All Master Subjects are automatically available. Assigning a teacher will automatically link the subject to this curriculum!</span>
             </div>
           )}

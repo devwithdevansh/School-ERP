@@ -182,7 +182,9 @@ const SheetEditor: React.FC<{
 
       {todayHoliday && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-semibold rounded-2xl p-4 flex items-center gap-3">
-          <span className="text-xl">🏖️</span>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <CalendarIcon className="h-5 w-5" />
+          </div>
           <div>
             <span className="font-extrabold uppercase tracking-wide text-xs block text-emerald-800">
               Official School Holiday: {todayHoliday.title}

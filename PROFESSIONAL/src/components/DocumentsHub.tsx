@@ -139,19 +139,19 @@ export const CERTIFICATE_OPTIONS = [
   {
     group: 'Official School Administrative Documents (Portrait Letterhead)',
     items: [
-      { id: 'BONAFIDE', label: 'Bonafide Certificate', icon: '📜', badge: 'Official Letterhead' },
-      { id: 'CHARACTER_CERTIFICATE', label: 'Character & Conduct Certificate', icon: '🎖️', badge: 'Official Letterhead' },
-      { id: 'LEAVING_CERTIFICATE', label: 'School Transfer / Leaving Certificate (LC)', icon: '🎓', badge: 'Official Record' },
-      { id: 'NOC', label: 'No Objection Certificate (NOC)', icon: '📄', badge: 'Official Clearance' },
+      { id: 'BONAFIDE', label: 'Bonafide Certificate', badge: 'Official Letterhead' },
+      { id: 'CHARACTER_CERTIFICATE', label: 'Character & Conduct Certificate', badge: 'Official Letterhead' },
+      { id: 'LEAVING_CERTIFICATE', label: 'School Transfer / Leaving Certificate (LC)', badge: 'Official Record' },
+      { id: 'NOC', label: 'No Objection Certificate (NOC)', badge: 'Official Clearance' },
     ],
   },
   {
     group: 'Merit & Recognition Awards (Landscape Canvas)',
     items: [
-      { id: 'EVENT_CERTIFICATE', label: 'Sports & Athletics Championship', icon: '🏆', badge: 'Award Canvas' },
-      { id: 'ACADEMIC_MERIT', label: 'Academic Distinction & Merit', icon: '🏅', badge: 'Award Canvas' },
-      { id: 'APPRECIATION', label: 'Special Appreciation Certificate', icon: '⭐', badge: 'Award Canvas' },
-      { id: 'CUSTOM', label: 'Custom Recognition Award', icon: '✏️', badge: 'Custom Award' },
+      { id: 'EVENT_CERTIFICATE', label: 'Sports & Athletics Championship', badge: 'Award Canvas' },
+      { id: 'ACADEMIC_MERIT', label: 'Academic Distinction & Merit', badge: 'Award Canvas' },
+      { id: 'APPRECIATION', label: 'Special Appreciation Certificate', badge: 'Award Canvas' },
+      { id: 'CUSTOM', label: 'Custom Recognition Award', badge: 'Custom Award' },
     ],
   },
 ];
@@ -1121,7 +1121,7 @@ export const DocumentsHub: React.FC = () => {
             <!-- Body -->
             <div class="cert-body">
               ${body}
-              ${certForm.achievement ? `<br><span class="achievement-pill">🏆 ${certForm.achievement}</span>` : ''}
+              ${certForm.achievement ? `<br><span class="achievement-pill">${certForm.achievement}</span>` : ''}
             </div>
 
             <!-- Signatures -->
@@ -1734,7 +1734,7 @@ export const DocumentsHub: React.FC = () => {
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-amber-50 text-amber-800 border-amber-200'
                 }`}>
-                  {isAdministrativeDocument(certForm.documentType) ? '📜 A4 Portrait Letterhead' : '🏆 A4 Landscape Award'}
+                  {isAdministrativeDocument(certForm.documentType) ? 'A4 Portrait Letterhead' : 'A4 Landscape Award'}
                 </span>
               </div>
 
@@ -1748,7 +1748,7 @@ export const DocumentsHub: React.FC = () => {
                     <optgroup key={grp.group} label={grp.group}>
                       {grp.items.map((item) => (
                         <option key={item.id} value={item.id}>
-                          {item.icon} {item.label}
+                          {item.label}
                         </option>
                       ))}
                     </optgroup>
@@ -2424,8 +2424,9 @@ export const DocumentsHub: React.FC = () => {
                         {getInterpolatedBodyText(selectedCertStudent)}
                       </p>
                       {certForm.achievement && (
-                        <div className="inline-block mt-2 px-3 py-1 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs font-black shadow-xs">
-                          🏆 {certForm.achievement}
+                        <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs font-black shadow-xs">
+                          <Award className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                          <span>{certForm.achievement}</span>
                         </div>
                       )}
                     </div>

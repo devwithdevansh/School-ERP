@@ -12,18 +12,23 @@ import {
   Building2,
   ShieldCheck,
   Layers,
+  CreditCard,
+  GraduationCap,
+  Users,
+  Settings,
+  MessageSquare,
 } from '../icons';
 import { LICENSABLE_MODULES, type LicensableModule } from '../../config/navigation';
 import { useOrgClients, type OrgClient } from './useOrgClients';
 import { StatusBadge, Toggle } from './OrgClients';
 
-const CATEGORY_META: Record<string, { label: string; icon: string; desc: string }> = {
-  FEES: { label: 'Fees & Financials', icon: '💰', desc: 'Fee collection, dues, offline/online receipts and expenses' },
-  ACADEMICS: { label: 'Student Management & Academics', icon: '🎓', desc: 'Core student directory, admissions, curriculum, attendance and exams' },
-  STAFF: { label: 'Staff & Administration', icon: '👥', desc: 'Staff directory, role permissions and staff leave operations' },
-  SETTINGS: { label: 'Configuration & Security', icon: '⚙️', desc: 'Classes, sections, mediums and audit trails' },
-  COMMUNICATION: { label: 'Communication Hub', icon: '💬', desc: 'WhatsApp notifications, chat circulars and push alerts' },
-  INTEGRATIONS: { label: 'Advanced Integrations', icon: '🔌', desc: 'Biometric punch logs, SMS gateways and GPS transport' },
+const CATEGORY_META: Record<string, { label: string; icon: React.FC<any>; desc: string }> = {
+  FEES: { label: 'Fees & Financials', icon: CreditCard, desc: 'Fee collection, dues, offline/online receipts and expenses' },
+  ACADEMICS: { label: 'Student Management & Academics', icon: GraduationCap, desc: 'Core student directory, admissions, curriculum, attendance and exams' },
+  STAFF: { label: 'Staff & Administration', icon: Users, desc: 'Staff directory, role permissions and staff leave operations' },
+  SETTINGS: { label: 'Configuration & Security', icon: Settings, desc: 'Classes, sections, mediums and audit trails' },
+  COMMUNICATION: { label: 'Communication Hub', icon: MessageSquare, desc: 'WhatsApp notifications, chat circulars and push alerts' },
+  INTEGRATIONS: { label: 'Advanced Integrations', icon: Layers, desc: 'Biometric punch logs, SMS gateways and GPS transport' },
 };
 
 const BASIC_PRESET_MODULES = [
@@ -167,7 +172,7 @@ const ModuleManagerModal: React.FC<{
                       : 'border-slate-200 hover:bg-slate-50 text-slate-600'
                   }`}
                 >
-                  <span className="text-base">🌟</span>
+                  <Sparkles className="h-5 w-5 text-amber-600 mb-0.5" />
                   <span className="text-xs font-bold mt-1">Basic Plan</span>
                   <span className="text-[9px] text-amber-700 font-bold uppercase tracking-wider">Web Only</span>
                 </button>
@@ -180,7 +185,7 @@ const ModuleManagerModal: React.FC<{
                       : 'border-slate-200 hover:bg-slate-50 text-slate-600'
                   }`}
                 >
-                  <span className="text-base">🚀</span>
+                  <Smartphone className="h-5 w-5 text-indigo-600 mb-0.5" />
                   <span className="text-xs font-bold mt-1">Standard</span>
                   <span className="text-[9px] text-indigo-700 font-bold uppercase tracking-wider">School Connect</span>
                 </button>
@@ -193,7 +198,7 @@ const ModuleManagerModal: React.FC<{
                       : 'border-slate-200 hover:bg-slate-50 text-slate-600'
                   }`}
                 >
-                  <span className="text-base">👑</span>
+                  <Building2 className="h-5 w-5 text-purple-600 mb-0.5" />
                   <span className="text-xs font-bold mt-1">Customized</span>
                   <span className="text-[9px] text-purple-700 font-bold uppercase tracking-wider">EduConnect App</span>
                 </button>
@@ -218,9 +223,9 @@ const ModuleManagerModal: React.FC<{
                 onChange={(e) => setAppType(e.target.value as any)}
                 className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="NONE">🌐 Web Only — No Mobile App (Basic Plan)</option>
-                <option value="UNIVERSAL">📱 Universal App — "School Connect" (Standard Plan)</option>
-                <option value="CUSTOM">🚀 Custom Dedicated App — "EduConnect" / Custom APK</option>
+                <option value="NONE">Web Only — No Mobile App (Basic Plan)</option>
+                <option value="UNIVERSAL">Universal App — "School Connect" (Standard Plan)</option>
+                <option value="CUSTOM">Custom Dedicated App — "EduConnect" / Custom APK</option>
               </select>
 
               {appType === 'CUSTOM' && (
@@ -309,7 +314,8 @@ const ModuleManagerModal: React.FC<{
           {/* Section C: Section-Wise Granular Display */}
           <div className="space-y-6">
             {categories.map((catKey) => {
-              const meta = CATEGORY_META[catKey] || { label: catKey, icon: '📦', desc: '' };
+              const meta = CATEGORY_META[catKey] || { label: catKey, icon: Layers, desc: '' };
+              const IconComp = meta.icon;
               const categoryModules = LICENSABLE_MODULES.filter(
                 (m) =>
                   m.category === catKey &&
@@ -338,7 +344,9 @@ const ModuleManagerModal: React.FC<{
                   {/* Section Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">{meta.icon}</span>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                        <IconComp className="h-5 w-5" />
+                      </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="text-base font-black text-slate-900">{meta.label}</h4>
@@ -494,7 +502,7 @@ export const OrgLicences: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-base">🌟</span>
+            <Sparkles className="h-4 w-4 text-amber-600" />
             <h4 className="text-xs font-black text-amber-950 uppercase tracking-wider">Basic Plan</h4>
           </div>
           <p className="text-xs text-amber-900 font-semibold">Web ERP Only</p>
@@ -505,7 +513,7 @@ export const OrgLicences: React.FC = () => {
 
         <div className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-base">🚀</span>
+            <Smartphone className="h-4 w-4 text-indigo-600" />
             <h4 className="text-xs font-black text-indigo-950 uppercase tracking-wider">Standard Plan</h4>
           </div>
           <p className="text-xs text-indigo-900 font-semibold">Web + "School Connect" App</p>
@@ -516,7 +524,7 @@ export const OrgLicences: React.FC = () => {
 
         <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-4 space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-base">👑</span>
+            <Building2 className="h-4 w-4 text-purple-600" />
             <h4 className="text-xs font-black text-purple-950 uppercase tracking-wider">Customized Plan</h4>
           </div>
           <p className="text-xs text-purple-900 font-semibold">Web + Dedicated "EduConnect" App</p>
@@ -621,9 +629,9 @@ export const OrgLicences: React.FC = () => {
                                 : 'bg-indigo-50 text-indigo-800 border-indigo-300 focus:ring-indigo-500'
                             }`}
                           >
-                            <option value="BASIC">🌟 Basic Plan</option>
-                            <option value="STANDARD">🚀 Standard Plan</option>
-                            <option value="CUSTOM">👑 Customized Plan</option>
+                            <option value="BASIC">Basic Plan</option>
+                            <option value="STANDARD">Standard Plan</option>
+                            <option value="CUSTOM">Customized Plan</option>
                           </select>
                         </div>
                       </td>
@@ -640,9 +648,9 @@ export const OrgLicences: React.FC = () => {
                             }}
                             className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           >
-                            <option value="NONE">🌐 Web Only (No Mobile)</option>
-                            <option value="UNIVERSAL">📱 Universal App (School Connect)</option>
-                            <option value="CUSTOM">🚀 Custom App (EduConnect / Dedicated)</option>
+                            <option value="NONE">Web Only (No Mobile)</option>
+                            <option value="UNIVERSAL">Universal App (School Connect)</option>
+                            <option value="CUSTOM">Custom App (EduConnect / Dedicated)</option>
                           </select>
                           {c.appType === 'CUSTOM' && c.appId && (
                             <p className="text-[10px] font-mono text-purple-600 truncate max-w-[200px]" title={c.appId}>

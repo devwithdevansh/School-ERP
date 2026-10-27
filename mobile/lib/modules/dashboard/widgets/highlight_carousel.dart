@@ -80,7 +80,6 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
       final whenLabel = daysAgo == 0 ? 'today' : (daysAgo == 1 ? 'yesterday' : '$daysAgo days ago');
       cards.add(_HighlightData(
         type: _CardType.attendance,
-        emoji: '📌',
         title: 'Marked Absent',
         subtitle: 'Your child was absent $whenLabel${day.remarks != null ? ' — ${day.remarks}' : ''}',
         gradient: const [Color(0xFFD9534F), Color(0xFF8B2E2A)],
@@ -91,7 +90,6 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
       final latest = results.first; // backend sorts by createdAt desc
       cards.add(_HighlightData(
         type: _CardType.marks,
-        emoji: '📊',
         title: '${latest.examName} Published',
         subtitle: '${latest.subjectName}: Scored ${latest.marksObtained ?? '-'}/${latest.maxMarks}',
         gradient: const [Color(0xFF4A90D9), Brand.deep],
@@ -106,7 +104,6 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
       final dueText = days <= 0 ? 'Due today' : (days == 1 ? 'Due tomorrow' : 'Due in $days days');
       cards.add(_HighlightData(
         type: _CardType.homework,
-        emoji: '📝',
         title: 'Homework: ${next.subjectName}',
         subtitle: '${next.title} ($dueText)',
         gradient: const [Color(0xFF2E9E6E), Color(0xFF1B6B47)],
@@ -119,13 +116,12 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
     if (todayPeriods.isNotEmpty) {
       cards.add(_HighlightData(
         type: _CardType.timetable,
-        emoji: '📅',
         title: "Today's Timetable",
         subtitle: todayPeriods.map((p) {
           final sName = (p.isProxy && p.proxySubjectName != null && p.proxySubjectName!.isNotEmpty)
               ? p.proxySubjectName!
               : (p.subjectName ?? p.periodName);
-          return p.isProxy ? '⚡ $sName' : sName;
+          return p.isProxy ? '[Proxy] $sName' : sName;
         }).join(' → '),
         gradient: const [Color(0xFF7B68AE), Color(0xFF4A3F78)],
       ));
@@ -177,7 +173,6 @@ class _HighlightCarouselState extends State<HighlightCarousel> {
         child: _HighlightCard(
           data: _HighlightData(
             type: _CardType.timetable,
-            emoji: '👋',
             title: 'Welcome back!',
             subtitle: "No new results, homework, or classes to show right now.",
             gradient: [Brand.deep, Color(0xFF24407A)],
@@ -215,14 +210,12 @@ enum _CardType { marks, homework, timetable, attendance }
 
 class _HighlightData {
   final _CardType type;
-  final String emoji;
   final String title;
   final String subtitle;
   final List<Color> gradient;
 
   const _HighlightData({
     required this.type,
-    required this.emoji,
     required this.title,
     required this.subtitle,
     required this.gradient,
@@ -281,7 +274,14 @@ class _HighlightCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(data.emoji, style: const TextStyle(fontSize: 26)),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(_icon, color: Colors.white, size: 18),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(

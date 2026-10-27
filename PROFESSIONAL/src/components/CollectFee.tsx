@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../store';
 import type { Student, PaymentTransaction } from '../mockData';
 import { isPeriodOverdue } from '../utils';
-import { Plus, Check, X, Loader2 } from './icons';
+import { Plus, Check, X, Loader2, Tag, GraduationCap, AlertTriangle } from './icons';
 import { buildEduTermConfig, STANDARD_MONTH_PERIODS } from './CollectFee/utils';
 import { PaymentHistoryPanel } from './CollectFee/PaymentHistoryPanel';
 import type { TxItem } from './CollectFee/PaymentHistoryPanel';
@@ -469,7 +469,7 @@ export const CollectFee: React.FC = () => {
 
     const feesWithLedger = lineItemsArray.filter(f => f.ledgerId);
     if (feesWithLedger.length === 0) {
-      setSuccessMsg('⚠ No valid ledger entries found for selected fees. Please refresh and try again.');
+      setSuccessMsg('No valid ledger entries found for selected fees. Please refresh and try again.');
       setTimeout(() => setSuccessMsg(''), 5000);
       return;
     }
@@ -495,7 +495,7 @@ export const CollectFee: React.FC = () => {
     
     setIsProcessingPayment(false);
 
-    setSuccessMsg(`✓ Collected ₹${totalPayingNow.toLocaleString('en-IN')} for ${selectedStudent.studentName}`);
+    setSuccessMsg(`Collected ₹${totalPayingNow.toLocaleString('en-IN')} for ${selectedStudent.studentName}`);
     setSelectedFees([]);
     setLineItems({});
     setChequeNo('');
@@ -720,7 +720,7 @@ export const CollectFee: React.FC = () => {
                             : isPast ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100' : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300'
                         }`}
                       >
-                        {isPast && <span className="text-[10px]">⚠</span>}
+                        {isPast && <AlertTriangle className="h-3 w-3 text-red-600 shrink-0 inline mr-1" />}
                         {y.name}
                         {isPast && yearPendingAmt > 0 && (
                           <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black ${isSelected ? 'bg-white/20 text-white' : 'bg-red-100 text-red-700'}`}>
@@ -776,7 +776,14 @@ export const CollectFee: React.FC = () => {
                   <div className={`border rounded-xl p-5 border-l-4 ${feeCategory === 'ADMISSION' ? 'border-orange-100 bg-orange-50/50 border-l-orange-500' : 'border-slate-200 bg-slate-50 border-l-slate-600'}`}>
                     <div className="flex justify-between items-center mb-6">
                       <span className={`font-bold flex items-center gap-2 ${feeCategory === 'ADMISSION' ? 'text-orange-600' : 'text-slate-700'}`}>
-                        {feeCategory === 'ADMISSION' ? '🎓 Admission' : '🎒 Bag & Kit'}
+                        {feeCategory === 'ADMISSION' ? (
+                          <>
+                            <GraduationCap className="w-4 h-4" />
+                            <span>Admission</span>
+                          </>
+                        ) : (
+                          'Bag & Kit'
+                        )}
                       </span>
                       <span className={`font-extrabold text-lg ${feeCategory === 'ADMISSION' ? 'text-orange-500' : 'text-slate-700'}`}>
                         ₹{getStandardAmount(feeCategory, 'One-time').toLocaleString('en-IN')}
@@ -830,7 +837,10 @@ export const CollectFee: React.FC = () => {
                         return (
                           <div key={ledger._id} className="border border-slate-200 bg-white rounded-xl p-5 flex items-center justify-between shadow-sm">
                             <div>
-                              <span className="font-bold text-slate-700 flex items-center gap-2">🏷️ {ledger.feePeriod}</span>
+                              <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{ledger.feePeriod}</span>
+                              </span>
                               <span className="text-xs text-slate-400 mt-1 block">Total: ₹{ledger.totalAmount.toLocaleString('en-IN')}</span>
                             </div>
                             <div className="flex items-center gap-4">
@@ -1016,7 +1026,7 @@ export const CollectFee: React.FC = () => {
                     const ok = await addCustomFee(selectedStudent.id || selectedStudent._id || '', customFeeName.trim(), Number(customFeeAmount));
                     setIsSubmittingCustomFee(false);
                     if (ok) {
-                      setSuccessMsg(`✓ Custom fee '${customFeeName}' added successfully.`);
+                      setSuccessMsg(`Custom fee '${customFeeName}' added successfully.`);
                       setIsCustomFeeModalOpen(false);
                       setCustomFeeName('');
                       setCustomFeeAmount('');

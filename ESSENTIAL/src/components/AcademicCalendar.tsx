@@ -195,7 +195,7 @@ export const AcademicCalendar: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              📅 Month Grid
+              Month Grid
             </button>
             <button
               onClick={() => setViewMode('agenda')}
@@ -205,7 +205,7 @@ export const AcademicCalendar: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              📋 Agenda List
+              Agenda List
             </button>
             <button
               onClick={() => setViewMode('roadmap')}
@@ -215,7 +215,7 @@ export const AcademicCalendar: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              🧭 Annual Roadmap
+              Annual Roadmap
             </button>
             <button
               onClick={() => setViewMode('setup')}
@@ -225,7 +225,7 @@ export const AcademicCalendar: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              ⚙️ Manage & Suggestions
+              Manage & Suggestions
             </button>
           </div>
         </div>

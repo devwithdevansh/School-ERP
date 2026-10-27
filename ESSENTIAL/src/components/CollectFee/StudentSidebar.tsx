@@ -75,7 +75,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
       if (dueCount === 2) suffix = ' (2 MONTHS)';
       else if (dueCount >= 3) suffix = ' (3+ MONTHS)';
 
-      const prefix = isTransport ? '🚌 ' : '';
+      const prefix = isTransport ? 'Transport: ' : '';
       const text = `${prefix}₹${amount.toLocaleString('en-IN')} DUE${suffix}`;
       
       let color = 'text-blue-600 bg-blue-50 font-bold';

@@ -395,7 +395,7 @@ export const Setup: React.FC = () => {
   const handleActivateAY = async (id: string) => {
     const target = academicYears.find(y => y._id === id);
     const targetName = target ? target.name : 'this academic year';
-    if (window.confirm(`⚠️ WARNING: You are about to switch the active academic year to "${targetName}".\n\nAll future fee generation, ledger calculations, and student management features will target this year.\n\nAre you sure you want to proceed?`)) {
+    if (window.confirm(`WARNING: You are about to switch the active academic year to "${targetName}".\n\nAll future fee generation, ledger calculations, and student management features will target this year.\n\nAre you sure you want to proceed?`)) {
       setProcessingActionId(`activate-${id}`);
       await activateAcademicYear(id);
       setProcessingActionId(null);
@@ -538,8 +538,10 @@ export const Setup: React.FC = () => {
             {showAYGuide && (
               <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-5 shadow-sm space-y-4 animate-fade-in">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex gap-2">
-                    <span className="text-xl">📅</span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                      <Calendar className="w-4 h-4" />
+                    </div>
                     <div>
                       <h4 className="font-extrabold text-blue-900 text-sm">Academic Year Transition Checklist</h4>
                       <p className="text-[11px] text-blue-700/80 font-medium mt-0.5">

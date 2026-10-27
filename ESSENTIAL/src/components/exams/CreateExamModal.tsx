@@ -215,7 +215,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({ isOpen, onClos
             }`}
           >
             <Zap className="w-4 h-4 text-amber-500" />
-            ⚡ Quick Weekly Test (10s)
+            <span>Quick Weekly Test (10s)</span>
           </button>
         </div>
 

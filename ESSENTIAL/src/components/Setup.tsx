@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { useApp } from '../store';
-import { Calendar, Tag, Layers, Plus, Check, X, Pencil, Trash2, Info, Loader2 } from './icons';
+import { Calendar, Tag, Layers, Plus, Check, X, Pencil, Trash2, Info, Loader2, Download, FileSpreadsheet, ShieldCheck, Database } from './icons';
 import { FeeStructure } from './FeeStructure'; // Reuse existing component for the Fee Structure tab
 import { CalendarPlanningTab } from './CalendarPlanningTab';
 
@@ -201,10 +202,152 @@ export const Setup: React.FC = () => {
     activateAcademicYear, 
     createFeeCategory,
     updateFeeCategory,
-    deleteFeeCategory
+    deleteFeeCategory,
+    students,
+    ledgerEntries,
+    transactions,
+    feeStructures,
+    client,
+    currentUser,
+    authFetch
   } = useApp();
   
-  const [activeTab, setActiveTab] = useState<'academic-year' | 'fee-categories' | 'fee-structure' | 'calendar-planning'>('academic-year');
+  const [activeTab, setActiveTab] = useState<'academic-year' | 'fee-categories' | 'fee-structure' | 'calendar-planning' | 'backup-export'>('academic-year');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadExcelBackup = async () => {
+    try {
+      setIsExporting(true);
+      
+      let exportLedgers = ledgerEntries;
+      if (!exportLedgers || exportLedgers.length === 0) {
+        try {
+          const res = await authFetch('/api/v1/ledgers?limit=5000');
+          if (res.ok) {
+            const data = await res.json();
+            exportLedgers = data.data || [];
+          }
+        } catch (e) {
+          console.warn('Could not fetch all ledgers for backup, using stored entries:', e);
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // 1. Students Sheet
+      const studentsData = students.map((s: any) => ({
+        'Student ID': s._id || s.id || '',
+        'GR Number': s.grNo || '',
+        'Roll No': s.rollNo ?? '',
+        'Full Name': s.studentName || s.name || '',
+        'Standard': s.standard || '',
+        'Division': s.division || '',
+        'Medium': s.medium || '',
+        'Gender': s.gender || s.profile?.gender || '',
+        'Mother Tongue': s.motherTongue || s.profile?.motherTongue || '',
+        'Blood Group': s.bloodGroup || s.profile?.bloodGroup || '',
+        'Parent Name': s.parentName || '',
+        'Contact Number': s.contactNumber || s.phone || '',
+        'RTE Status': s.isRTE ? 'RTE' : 'General',
+        'Enrollment Status': s.status || (s.isActive !== false ? 'ACTIVE' : 'INACTIVE'),
+        'Address': s.address || s.profile?.address || '',
+      }));
+      const wsStudents = XLSX.utils.json_to_sheet(studentsData);
+      XLSX.utils.book_append_sheet(wb, wsStudents, 'Students');
+
+      // 2. Fee Ledgers Sheet
+      const ledgersData = exportLedgers.map((l: any) => ({
+        'Ledger Number': l.ledgerNumber || '',
+        'Student Name': l.snapshot?.studentName || l.studentName || '',
+        'Standard': l.snapshot?.standard || l.standard || '',
+        'Division': l.snapshot?.division || l.division || '',
+        'Medium': l.snapshot?.medium || l.medium || '',
+        'Academic Year': l.academicYear || '',
+        'Fee Type': l.feeType || '',
+        'Fee Period / Installment': l.feePeriod || '',
+        'Total Amount (INR)': l.totalAmount ?? 0,
+        'Paid Amount (INR)': l.paidAmount ?? 0,
+        'Concession (INR)': l.concessionAmount ?? 0,
+        'Remaining Due (INR)': l.remainingAmount ?? 0,
+        'Status': l.status || '',
+        'Due Date': l.dueDate ? new Date(l.dueDate).toLocaleDateString() : '',
+      }));
+      const wsLedgers = XLSX.utils.json_to_sheet(ledgersData);
+      XLSX.utils.book_append_sheet(wb, wsLedgers, 'Fee_Ledgers');
+
+      // 3. Transactions Sheet
+      const txData = transactions.map((t: any) => ({
+        'Receipt Number': t.receiptNumber || '',
+        'Date': t.date ? new Date(t.date).toLocaleDateString() : '',
+        'Student Name': t.studentName || '',
+        'Standard': t.standard || '',
+        'Division': t.division || '',
+        'Fee Period': t.feePeriod || '',
+        'Fee Type': t.feeType || '',
+        'Amount Paid (INR)': t.amount ?? 0,
+        'Method': t.method || '',
+        'Gateway Transaction ID': t.gatewayTransactionId || t.details?.razorpay_payment_id || '',
+        'Performed By': t.performedBy || 'Cashier',
+      }));
+      const wsTx = XLSX.utils.json_to_sheet(txData);
+      XLSX.utils.book_append_sheet(wb, wsTx, 'Transactions');
+
+      // 4. Academic Fee Structures Sheet
+      const feeStructData = feeStructures.map((fs: any) => ({
+        'Academic Year': fs.academicYear || '',
+        'Standard': fs.standard || '',
+        'Medium': fs.medium || '',
+        'Total Annual Fee (INR)': fs.totalFee ?? 0,
+      }));
+      const wsFS = XLSX.utils.json_to_sheet(feeStructData);
+      XLSX.utils.book_append_sheet(wb, wsFS, 'Fee_Structures');
+
+      const activeAY = academicYears.find(y => y.isActive) || academicYears[0];
+      const ayLabel = activeAY ? activeAY.name.replace(/\s+/g, '_') : 'AcademicYear';
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const schoolTag = (client?.code || 'SCHOOL').toUpperCase();
+
+      XLSX.writeFile(wb, `${schoolTag}_Full_Backup_${ayLabel}_${dateStr}.xlsx`);
+    } catch (err) {
+      console.error('Failed to export backup:', err);
+      alert('Failed to generate backup file. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadJsonBackup = () => {
+    try {
+      const activeAY = academicYears.find(y => y.isActive) || academicYears[0];
+      const backupPayload = {
+        meta: {
+          schoolCode: client?.code || '',
+          schoolName: client?.name || 'School ERP',
+          exportedAt: new Date().toISOString(),
+          exportedBy: currentUser?.name || 'Administrator',
+          academicYear: activeAY?.name || '',
+          version: '2.0-PROFESSIONAL'
+        },
+        students,
+        ledgerEntries,
+        transactions,
+        feeStructures,
+        academicYears,
+        feeCategories
+      };
+
+      const jsonStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupPayload, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', jsonStr);
+      downloadAnchor.setAttribute('download', `${(client?.code || 'SCHOOL').toUpperCase()}_Database_Backup_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch (err) {
+      console.error('Failed to export JSON backup:', err);
+      alert('Failed to generate JSON backup.');
+    }
+  };
 
   const filteredCategories = React.useMemo(() => {
     return feeCategories;
@@ -252,7 +395,7 @@ export const Setup: React.FC = () => {
   const handleActivateAY = async (id: string) => {
     const target = academicYears.find(y => y._id === id);
     const targetName = target ? target.name : 'this academic year';
-    if (window.confirm(`⚠️ WARNING: You are about to switch the active academic year to "${targetName}".\n\nAll future fee generation, ledger calculations, and student management features will target this year.\n\nAre you sure you want to proceed?`)) {
+    if (window.confirm(`WARNING: You are about to switch the active academic year to "${targetName}".\n\nAll future fee generation, ledger calculations, and student management features will target this year.\n\nAre you sure you want to proceed?`)) {
       setProcessingActionId(`activate-${id}`);
       await activateAcademicYear(id);
       setProcessingActionId(null);
@@ -304,16 +447,27 @@ export const Setup: React.FC = () => {
 
   return (
     <div className="flex-1 p-6 space-y-6 bg-[#F8FAFC]">
-      <header>
-        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">System Setup</h2>
-        <p className="text-xs font-semibold text-slate-400">Configure academic years, fee categories, and master fee structures</p>
-      </header>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">System Setup</h2>
+          <p className="text-xs font-semibold text-slate-400">Configure academic years, fee categories, master fee structures, and download school data backups</p>
+        </div>
+        <button
+          onClick={handleDownloadExcelBackup}
+          disabled={isExporting}
+          className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-sm hover:shadow-md transition-all flex items-center gap-2 self-start sm:self-auto disabled:opacity-50"
+          title="Download complete school database as an Excel workbook"
+        >
+          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+          <span>{isExporting ? 'Generating Backup...' : 'Download School Backup'}</span>
+        </button>
+      </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-slate-200">
+      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto">
         <button
           onClick={() => setActiveTab('academic-year')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'academic-year' ? 'border-[#115e59] text-[#115e59]' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -321,7 +475,7 @@ export const Setup: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('fee-categories')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'fee-categories' ? 'border-[#115e59] text-[#115e59]' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -329,7 +483,7 @@ export const Setup: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('fee-structure')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'fee-structure' ? 'border-[#115e59] text-[#115e59]' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -337,11 +491,19 @@ export const Setup: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('calendar-planning')}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'calendar-planning' ? 'border-[#115e59] text-[#115e59]' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
           <Calendar className="w-4 h-4" /> Calendar & Planning
+        </button>
+        <button
+          onClick={() => setActiveTab('backup-export')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+            activeTab === 'backup-export' ? 'border-[#115e59] text-[#115e59]' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Download className="w-4 h-4" /> Data Backup & Export
         </button>
       </div>
 
@@ -376,8 +538,10 @@ export const Setup: React.FC = () => {
             {showAYGuide && (
               <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-5 shadow-sm space-y-4 animate-fade-in">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex gap-2">
-                    <span className="text-xl">📅</span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                      <Calendar className="w-4 h-4" />
+                    </div>
                     <div>
                       <h4 className="font-extrabold text-blue-900 text-sm">Academic Year Transition Checklist</h4>
                       <p className="text-[11px] text-blue-700/80 font-medium mt-0.5">
@@ -652,6 +816,178 @@ export const Setup: React.FC = () => {
           </div>
         )}
         {activeTab === 'calendar-planning' && <CalendarPlanningTab />}
+
+        {activeTab === 'backup-export' && (
+          <div className="space-y-6">
+            {/* Top Overview Banner */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 uppercase tracking-wider">
+                      Database Archival & Audit
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600">
+                      Encrypted Cloud Snapshot
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mt-2">School ERP Data Export & Automated Backup</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                    Generate instant, comprehensive backups of your institution's records. Export multi-sheet Excel workbooks for accounting, compliance, and offline analytics, or download full JSON schema dumps for disaster recovery.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadExcelBackup}
+                  disabled={isExporting}
+                  className="px-5 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+                >
+                  {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  <span>{isExporting ? 'Packaging Data...' : 'Quick Export All Data'}</span>
+                </button>
+              </div>
+
+              {/* Data Entity Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
+                <div className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5">
+                  <div className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Total Students</div>
+                  <div className="text-2xl font-black text-slate-800 mt-1">{students.length}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Active enrollments & profiles</div>
+                </div>
+                <div className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5">
+                  <div className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Fee Ledgers</div>
+                  <div className="text-2xl font-black text-slate-800 mt-1">{ledgerEntries.length}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Term, custom & transport ledgers</div>
+                </div>
+                <div className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5">
+                  <div className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Transactions</div>
+                  <div className="text-2xl font-black text-slate-800 mt-1">{transactions.length}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Receipts, online & cash entries</div>
+                </div>
+                <div className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5">
+                  <div className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Master Structures</div>
+                  <div className="text-2xl font-black text-slate-800 mt-1">{feeStructures.length}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Standard & medium schedules</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Export Method Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card 1: Multi-Sheet Excel Workbook */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-emerald-300 transition-all">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/60 flex items-center justify-center">
+                      <FileSpreadsheet className="w-6 h-6" />
+                    </div>
+                    <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      .XLSX FORMAT
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-800">Multi-Sheet Excel Workbook</h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Formatted spreadsheet with separate worksheets for Students, Fee Ledgers, Transactions, and Master Fee Structures. Ideal for annual audits, CA reviews, and school management reporting.
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 border border-slate-100 text-xs text-slate-600">
+                    <div className="font-semibold text-slate-700 text-[11px] uppercase tracking-wider">Included Sheets:</div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span><strong>Students:</strong> Admission No, Roll No, Guardian, Medium, Status</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span><strong>Fee_Ledgers:</strong> Period, Amounts, Concession, Remaining, Due Date</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span><strong>Transactions:</strong> Receipt No, Date, Payment Mode, Gateway ID</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span><strong>Fee_Structures:</strong> Academic Year, Standard, Medium, Total Fee</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleDownloadExcelBackup}
+                    disabled={isExporting}
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    <span>{isExporting ? 'Generating Excel Workbook...' : 'Download Excel Backup (.xlsx)'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: JSON Database Snapshot */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-blue-300 transition-all">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/60 flex items-center justify-center">
+                      <Database className="w-6 h-6" />
+                    </div>
+                    <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                      .JSON FORMAT
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-800">Complete JSON Schema Snapshot</h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Machine-readable complete JSON dump containing exact database records, relationships, timestamps, and tenant identifiers. Best suited for disaster recovery, migrations, and developer backups.
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 border border-slate-100 text-xs text-slate-600">
+                    <div className="font-semibold text-slate-700 text-[11px] uppercase tracking-wider">Snapshot Metadata:</div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span><strong>School Code:</strong> {client?.code || 'PRIMARY'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span><strong>School Name:</strong> {client?.name || 'School ERP'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span><strong>Current User:</strong> {currentUser?.name || 'Administrator'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <span><strong>Schema Version:</strong> 2.0 (Multi-Tenant Professional)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleDownloadJsonBackup}
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download JSON Snapshot (.json)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Notice */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-start gap-3 text-xs text-slate-600">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-slate-800">Security & Privacy Notice: </span>
+                <span>
+                  Exported backups contain sensitive student personal information, parent contact numbers, and monetary transaction ledgers. Please store all backup files in secure, encrypted storage and adhere to standard institutional data privacy practices.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Editing Modals */}

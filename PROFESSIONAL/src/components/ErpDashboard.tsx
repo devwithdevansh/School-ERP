@@ -231,8 +231,9 @@ export const ErpDashboard: React.FC = () => {
                       <h4 className="font-extrabold text-xs text-slate-800 line-clamp-1">{ev.title}</h4>
                       {ev.description && <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{ev.description}</p>}
                     </div>
-                    <span className="text-[11px] font-bold text-slate-500 mt-2 block">
-                      📅 {isSingle ? s : `${s} – ${e}`}
+                    <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1.5">
+                      <CalendarDays className="h-3 w-3 text-slate-400" />
+                      <span>{isSingle ? s : `${s} – ${e}`}</span>
                     </span>
                   </div>
                 );

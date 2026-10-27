@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, Building2, Check, Copy, ToggleRight, Loader2, Plus, Globe, ArrowRight, ShieldCheck, RefreshCw } from '../icons';
+import { Smartphone, Building2, Check, Copy, ToggleRight, Loader2, Plus, Globe, ArrowRight, ShieldCheck, RefreshCw, Search, Sliders } from '../icons';
 import { LICENSABLE_MODULES } from '../../config/navigation';
 import { useOrgClients, type OrgClient } from './useOrgClients';
 import { Toggle, StatusBadge } from './OrgClients';
@@ -110,33 +110,36 @@ export const OrgAppDeployment: React.FC = () => {
       <div className="flex gap-2 border-b border-slate-200">
         <button
           onClick={() => setActiveTab('apps')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
             activeTab === 'apps'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          📱 Registered Play Store Apps (2)
+          <Smartphone className="h-4 w-4" />
+          <span>Registered Play Store Apps (2)</span>
         </button>
         <button
           onClick={() => setActiveTab('modules')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
             activeTab === 'modules'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          🎛️ Granular Feature Flags Matrix
+          <Sliders className="h-4 w-4" />
+          <span>Granular Feature Flags Matrix</span>
         </button>
         <button
           onClick={() => setActiveTab('inspector')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors cursor-pointer ${
             activeTab === 'inspector'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          🔍 Live Mobile Config Inspector
+          <Search className="h-4 w-4" />
+          <span>Live Mobile Config Inspector</span>
         </button>
       </div>
 

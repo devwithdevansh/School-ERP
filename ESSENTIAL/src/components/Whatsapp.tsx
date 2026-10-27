@@ -198,7 +198,7 @@ export const Whatsapp: React.FC = () => {
       if (res.ok) {
         setSendResult({
           success: true,
-          message: `✅ Message queued for delivery. Check history for status.`,
+          message: `Message queued for delivery. Check history for status.`,
         });
         setBody(''); setParentSearch(''); setStudentSearchQuery(''); setSelectedStudentForMsg(null);
       } else {
@@ -290,7 +290,7 @@ export const Whatsapp: React.FC = () => {
                   </p>
                 ) : templateName === 'account_credentials' ? (
                   <p className="text-[10px] text-emerald-600 mt-1">
-                    🔑 <strong>Account Credentials:</strong> Sends each parent their login ID (registered mobile number) and generated password via WhatsApp Authentication Template. Password is derived from their phone number automatically.
+                    <strong>Account Credentials:</strong> Sends each parent their login ID (registered mobile number) and generated password via WhatsApp Authentication Template. Password is derived from their phone number automatically.
                   </p>
                 ) : (
                   <p className="text-[10px] text-slate-400 mt-1">Pre-approved templates bypass the 24-hour rule.</p>
@@ -309,7 +309,7 @@ export const Whatsapp: React.FC = () => {
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                   />
                   {isUploadingImage && <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1"><RefreshCw className="h-3 w-3 animate-spin" /> Uploading image to cloud...</p>}
-                  {!isUploadingImage && imageUrl && <p className="text-[10px] text-emerald-600 mt-1">✅ Image uploaded successfully</p>}
+                  {!isUploadingImage && imageUrl && <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Image uploaded successfully</p>}
                   {!isUploadingImage && !imageUrl && <p className="text-[10px] text-slate-400 mt-1">Please select an image file to upload.</p>}
                 </div>
               )}
@@ -493,7 +493,7 @@ export const Whatsapp: React.FC = () => {
                     <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed break-words">
                       {language === 'gu' ? (
                         <>
-                          📢 ફી બાકી અંગે સૂચના{"\n\n"}
+                          ફી બાકી અંગે સૂચના{"\n\n"}
                           માનનીય વાલીશ્રી,{"\n\n"}
                           આપને વિનમ્ર યાદ અપાવવામાં આવે છે કે નીચે દર્શાવેલ વિદ્યાર્થીની શાળાની ફી હજુ સુધી ભરવામાં આવી નથી.{"\n\n"}
                           વિદ્યાર્થીનું નામ: Jane Doe{"\n"}
@@ -506,7 +506,7 @@ export const Whatsapp: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          📢 Fee Due Notice{"\n\n"}
+                          Fee Due Notice{"\n\n"}
                           Respected Parent,{"\n\n"}
                           This is a gentle reminder that the school fee for the student mentioned below has not been paid yet.{"\n\n"}
                           Student Name: Jane Doe{"\n"}
@@ -529,7 +529,7 @@ export const Whatsapp: React.FC = () => {
                     <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed break-words">
                       {language === 'gu' ? (
                         <>
-                          📢 મહત્વપૂર્ણ સૂચના – નવું સોફ્ટવેર{"\n\n"}
+                          મહત્વપૂર્ણ સૂચના – નવું સોફ્ટવેર{"\n\n"}
                           માનનીય વાલીશ્રી,{"\n\n"}
                           શાળાની ફી સંબંધિત માહિતી હવે નવા સોફ્ટવેર દ્વારા ઉપલબ્ધ થશે.{"\n\n"}
                           વાલીઓને વિનંતી છે કે આપેલ લિંકનો ઉપયોગ કરીને સોફ્ટવેર ડાઉનલોડ કરો.{"\n\n"}
@@ -537,7 +537,7 @@ export const Whatsapp: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          📢 Important Notice – New Software{"\n\n"}
+                          Important Notice – New Software{"\n\n"}
                           Dear Parents,{"\n\n"}
                           The school’s fee-related information will now be available through the new software.{"\n\n"}
                           Parents are requested to download the software using the given link.{"\n\n"}

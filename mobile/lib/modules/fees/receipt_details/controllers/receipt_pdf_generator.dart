@@ -510,7 +510,7 @@ class ReceiptPdfGenerator {
                                 child: pw.Row(
                                   children: [
                                     pw.SizedBox(width: 25),
-                                    pw.Expanded(child: pw.Text('✦ Concession Applied', style: pw.TextStyle(color: PdfColor.fromHex('#b45309'), fontSize: 8, fontStyle: pw.FontStyle.italic, fontWeight: pw.FontWeight.bold))),
+                                    pw.Expanded(child: pw.Text('Concession Applied', style: pw.TextStyle(color: PdfColor.fromHex('#b45309'), fontSize: 8, fontStyle: pw.FontStyle.italic, fontWeight: pw.FontWeight.bold))),
                                     pw.SizedBox(width: 80),
                                     pw.SizedBox(width: 80, child: pw.Text('-${totalConcession.toInt()} Rs.', textAlign: pw.TextAlign.right, style: pw.TextStyle(color: PdfColor.fromHex('#b45309'), fontSize: 8, fontWeight: pw.FontWeight.bold))),
                                   ]

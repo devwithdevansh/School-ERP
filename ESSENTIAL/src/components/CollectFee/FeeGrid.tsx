@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Loader2 } from '../icons';
+import { Check, Loader2, BookOpen, Bus, GraduationCap } from '../icons';
 import type { Student } from '../../mockData';
 import type { buildEduTermConfig } from './utils';
 
@@ -85,7 +85,17 @@ export const FeeGrid: React.FC<FeeGridProps> = ({
             feeCategory === 'EDUCATION' ? 'text-blue-700' : 'text-emerald-700'
           }`}
         >
-          {feeCategory === 'EDUCATION' ? '📚 Education & Term Fee' : '🚌 Transport Fee'}
+          {feeCategory === 'EDUCATION' ? (
+            <>
+              <BookOpen className="w-4 h-4" />
+              <span>Education & Term Fee</span>
+            </>
+          ) : (
+            <>
+              <Bus className="w-4 h-4" />
+              <span>Transport Fee</span>
+            </>
+          )}
         </span>
         <span
           className={`font-extrabold text-lg ${
@@ -120,7 +130,7 @@ export const FeeGrid: React.FC<FeeGridProps> = ({
       {/* RTE banner */}
       {feeCategory === 'EDUCATION' && selectedStudent.isRTE && (
         <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-          <span className="text-lg leading-none mt-0.5">🎓</span>
+          <GraduationCap className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
           <div>
             <h5 className="font-extrabold text-blue-800 text-xs uppercase tracking-wide">RTE Quota Student</h5>
             <p className="text-xs text-blue-600/90 mt-1 leading-relaxed font-semibold">

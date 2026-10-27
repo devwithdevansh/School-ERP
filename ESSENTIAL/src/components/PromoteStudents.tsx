@@ -195,8 +195,10 @@ export const PromoteStudents: React.FC = () => {
       {showPromoInfo && (
         <div className="bg-indigo-50/60 border border-indigo-150 rounded-2xl p-5 shadow-sm space-y-3.5 animate-fade-in mb-6">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex gap-2">
-              <span className="text-xl">🎓</span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                <GraduationCap className="w-4 h-4" />
+              </div>
               <div>
                 <h4 className="font-extrabold text-indigo-900 text-sm">Understanding the Promotion Process</h4>
                 <p className="text-[11px] text-indigo-700/80 font-medium mt-0.5">

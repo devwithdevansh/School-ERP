@@ -229,7 +229,7 @@ export const PublishTab: React.FC<PublishTabProps> = ({
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                     sub.isComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                   }`}>
-                    {sub.isComplete ? 'Complete ✓' : `${sub.missing} Missing`}
+                    {sub.isComplete ? 'Complete' : `${sub.missing} Missing`}
                   </span>
                 </div>
 

@@ -34,19 +34,19 @@ class _TeacherHighlightCarouselState extends State<TeacherHighlightCarousel> {
         {
           'title': 'Leaves to Review',
           'subtitle': '$leavesCount Pending Requests',
-          'emoji': '📋',
+          'icon': Icons.assignment_outlined,
           'gradient': [Brand.accent, Brand.accent.withValues(alpha: 0.8)],
         },
         {
           'title': 'Next Class',
           'subtitle': nextClassText,
-          'emoji': '📚',
+          'icon': Icons.menu_book_rounded,
           'gradient': [Brand.deep, Brand.deep.withValues(alpha: 0.8)],
         },
         {
           'title': 'Pending Marks',
           'subtitle': 'Check Exam Module',
-          'emoji': '📝',
+          'icon': Icons.edit_note_rounded,
           'gradient': [AppColors.teal, AppColors.teal.withValues(alpha: 0.8)],
         },
       ];
@@ -119,7 +119,14 @@ class _TeacherHighlightCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(data['emoji'], style: const TextStyle(fontSize: 22)),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(data['icon'] as IconData, color: Colors.white, size: 18),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(

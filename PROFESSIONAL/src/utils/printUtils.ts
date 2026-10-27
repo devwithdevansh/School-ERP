@@ -360,7 +360,7 @@ export function generateReceiptHTML(
     <tr style="background:rgba(255,251,235,0.7);page-break-inside:avoid;">
       <td style="padding:7px 12px;border-right:1px solid #e2e8f4;font-family:'JetBrains Mono',monospace;"></td>
       <td style="padding:7px 12px;color:#b45309;font-style:italic;font-weight:700;border-right:1px solid #e2e8f4;">
-        ✦ Concession Applied
+        Concession Applied
       </td>
       <td style="border-right:1px solid #e2e8f4;"></td>
       <td style="padding:7px 12px;text-align:right;color:#b45309;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap;">−${(transaction.concessionAmount || 0).toLocaleString("en-IN")} &nbsp;₹</td>
@@ -634,11 +634,11 @@ export function generateReceiptHTML(
     <!-- Right Navy Block (Full height, overlapping, with top-left curve) -->
     <div style="position: absolute; bottom: 0; right: 0; width: 70%; height: 40px; background: #134e4a; z-index: 2; border-top-left-radius: 35px; display: flex; align-items: center; justify-content: flex-end; padding-right: 25px; padding-left: 45px; color: #fff; font-size: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
       <div style="display: flex; gap: 12px; font-weight: 600; align-items: center; letter-spacing: 0.5px; padding-left: 25px;">
-        <span>📞 ${SCH.phone}</span>
+        <span>Phone: ${SCH.phone}</span>
         <span style="opacity: 0.4;">|</span>
-        <span>✉️ ${SCH.email}</span>
+        <span>Email: ${SCH.email}</span>
         <span style="opacity: 0.4;">|</span>
-        <span>🌐 ${esc(brand.website)}</span>
+        <span>Web: ${esc(brand.website)}</span>
       </div>
     </div>
   </div>

@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Sparkles,
   ArrowRight,
+  Settings,
 } from './icons';
 
 interface ModuleMetadata {
@@ -258,8 +259,8 @@ export const UpgradePaywall: React.FC<{
         {isOrgAdmin && (
           <div className="rounded-xl border border-indigo-200 bg-indigo-50/90 p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 text-indigo-950">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-[11px]">
-                ⚙
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">
+                <Settings className="h-3.5 w-3.5" />
               </span>
               <span>
                 <strong>Platform Operator Notice:</strong> You are viewing this page as an Organization Admin.

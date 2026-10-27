@@ -64,7 +64,7 @@ export const RolesPermissions: React.FC = () => {
     }
 
     setTempPermissions((prev) =>
-      prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId]
+      prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
     );
   };
 
@@ -510,8 +510,9 @@ export const RolesPermissions: React.FC = () => {
               You are about to authorize <strong>"{highRiskPrompt.label}"</strong> for{' '}
               <strong>{selectedUser?.name}</strong>.
             </p>
-            <div className="mt-3 rounded-2xl bg-rose-50 border border-rose-100 p-3 text-[11px] text-rose-800 font-medium">
-              ⚠️ This feature can permanently modify academic cohorts, advance student grades, or bulk overwrite financial ledger balances.
+            <div className="mt-3 rounded-2xl bg-rose-50 border border-rose-100 p-3 text-[11px] text-rose-800 font-medium flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
+              <span>This feature can permanently modify academic cohorts, advance student grades, or bulk overwrite financial ledger balances.</span>
             </div>
             <div className="mt-6 flex gap-3">
               <button

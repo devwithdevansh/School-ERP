@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../store';
-import { CalendarDays, Plus, Trash2, Clock, MapPin } from './icons';
+import { CalendarDays, Plus, Trash2, Clock, MapPin, Zap, X } from './icons';
 import { getActiveStandards } from '../utils/standardUtils';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -548,7 +548,7 @@ export const Timetable: React.FC = () => {
                     <optgroup label="Allocated for this Subject">
                       {getAllocatedTeachersForSubject(newPeriod.subjectId).map((t: any, idx: number) => (
                         <option key={`alloc-${t._id}`} value={t._id}>
-                          ★ {t.name} (Teacher {idx + 1})
+                          {t.name} (Teacher {idx + 1})
                         </option>
                       ))}
                     </optgroup>
@@ -630,7 +630,7 @@ export const Timetable: React.FC = () => {
                         <div className="mt-2.5 p-2 rounded-lg bg-amber-100/80 border border-amber-300 text-amber-900 text-xs">
                           <div className="flex items-center justify-between mb-1">
                             <span className="inline-flex items-center gap-1 font-extrabold text-[10px] uppercase text-amber-800 bg-amber-200 px-1.5 py-0.5 rounded">
-                              <span>⚡</span> PROXY
+                              <Zap className="w-3 h-3 text-amber-800 shrink-0" /> PROXY
                             </span>
                             {currentUser?.role === 'ADMIN' && (
                               <button
@@ -663,7 +663,7 @@ export const Timetable: React.FC = () => {
                               className="text-[10px] font-semibold text-slate-400 hover:text-amber-600 flex items-center gap-1 transition-colors cursor-pointer"
                               title="Set proxy/substitute teacher for this period"
                             >
-                              <span>⚡</span> Set Proxy
+                              <Zap className="w-3 h-3 text-amber-600 shrink-0" /> Set Proxy
                             </button>
                           </div>
                         )
@@ -684,7 +684,7 @@ export const Timetable: React.FC = () => {
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div>
                 <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="text-amber-500">⚡</span> Proxy / Substitution
+                  <Zap className="w-5 h-5 text-amber-500 shrink-0" /> Proxy / Substitution
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {proxyModalPeriod.periodName} ({proxyModalPeriod.startTime} - {proxyModalPeriod.endTime}) • Std {proxyModalPeriod.standard}-{proxyModalPeriod.division}
@@ -694,7 +694,7 @@ export const Timetable: React.FC = () => {
                 onClick={() => setProxyModalPeriod(null)}
                 className="text-slate-400 hover:text-slate-600 size-8 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

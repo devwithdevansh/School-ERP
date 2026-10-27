@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Layers, ShieldCheck, CheckCircle2, AlertCircle, Edit3, Lock } from '../icons';
+import { Calendar, Clock, Layers, ShieldCheck, CheckCircle2, AlertCircle, Edit3, Lock, Zap } from '../icons';
 
 interface ExamOverviewTabProps {
   exam: any;
@@ -51,10 +51,11 @@ export const ExamOverviewTab: React.FC<ExamOverviewTabProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
             <div className="flex items-center gap-2.5 mb-2">
-              <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider ${
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-wider ${
                 exam.type === 'WEEKLY' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-indigo-400/20 text-indigo-200 border border-indigo-400/30'
               }`}>
-                {exam.type === 'WEEKLY' ? '⚡ Weekly Assessment' : 'Term / Final Examination'}
+                {exam.type === 'WEEKLY' && <Zap className="w-3 h-3 text-amber-300" />}
+                <span>{exam.type === 'WEEKLY' ? 'Weekly Assessment' : 'Term / Final Examination'}</span>
               </span>
               {getStatusBadge(exam.status)}
             </div>
@@ -200,7 +201,7 @@ export const ExamOverviewTab: React.FC<ExamOverviewTabProps> = ({
                     <td className="py-3.5 px-4 text-center">
                       {sub.entryStatus === 'SUBMITTED' ? (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          Submitted ✓
+                          Submitted
                         </span>
                       ) : sub.entryStatus === 'IN_PROGRESS' ? (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">

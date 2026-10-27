@@ -33,7 +33,7 @@ export const globalErrorHandler = (err, req, res, next) => {
       });
     } else {
       // Programming or other unknown error
-      logger.error('ERROR 💥', err);
+      logger.error('ERROR', err);
       res.status(500).json({
         success: false,
         status: 'error',

@@ -11,6 +11,7 @@ import {
   Info,
   Loader2,
   CheckCircle,
+  Sparkles,
 } from './icons';
 
 interface CalendarPlanningTabProps {
@@ -364,7 +365,7 @@ export const CalendarPlanningTab: React.FC<CalendarPlanningTabProps> = ({ initia
             onClick={handleOpenWizard}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 shadow-md shadow-teal-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span className="text-sm">✨</span> Auto-Suggest Planner
+            <Sparkles className="w-4 h-4" /> Auto-Suggest Planner
           </button>
 
           {/* Add Custom Event */}
@@ -467,7 +468,7 @@ export const CalendarPlanningTab: React.FC<CalendarPlanningTabProps> = ({ initia
               onClick={handleOpenWizard}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 shadow-md transition-all"
             >
-              <span className="text-sm">✨</span> Launch Auto-Suggest Planner
+              <Sparkles className="w-4 h-4" /> Launch Auto-Suggest Planner
             </button>
           </div>
         ) : (
@@ -590,7 +591,7 @@ export const CalendarPlanningTab: React.FC<CalendarPlanningTabProps> = ({ initia
                   Universal Smart Suggestions Engine
                 </span>
                 <h3 className="font-black text-xl tracking-tight mt-0.5 flex items-center gap-2">
-                  <span>✨</span> Auto-Suggest Holidays & Milestones for {selectedAY?.name}
+                  <Sparkles className="w-5 h-5 text-teal-300 shrink-0" /> Auto-Suggest Holidays & Milestones for {selectedAY?.name}
                 </h3>
                 <p className="text-xs text-slate-300 mt-1">
                   Dynamically calculated from Google Calendar & astronomical festival rules (Diwali, Eid, Holi, etc.)

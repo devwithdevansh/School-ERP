@@ -506,8 +506,9 @@ export const MarksEntryTab: React.FC<MarksEntryTabProps> = ({
                             {row.studentName}
                           </span>
                           {row.isAbsentInDailyAttendance && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
-                              ⚠️ Absent in Attendance
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                              <AlertTriangle className="h-3 w-3 text-rose-600 shrink-0" />
+                              <span>Absent in Attendance</span>
                             </span>
                           )}
                         </div>
