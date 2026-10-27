@@ -891,7 +891,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (isOrgAdmin) return true;
     if (!client) return true;
     const mods = client.enabledModules || [];
-    return mods.includes(moduleId);
+    if (mods.includes(moduleId)) return true;
+    if (moduleId === 'FEES' && (mods.includes('FEES') || mods.includes('FEES_COLLECT'))) return true;
+    if (moduleId === 'ATTENDANCE' && mods.includes('ATTENDANCE')) return true;
+    if (moduleId === 'RESULTS' && (mods.includes('RESULTS') || mods.includes('EXAMS'))) return true;
+    if (moduleId === 'TIMETABLE' && mods.includes('TIMETABLE')) return true;
+    if (moduleId === 'CALENDAR' && mods.includes('CALENDAR')) return true;
+    if (moduleId === 'LEAVE' && (mods.includes('LEAVE') || mods.includes('STUDENT_LEAVE') || mods.includes('STAFF_LEAVE'))) return true;
+    if (moduleId === 'COMMUNICATION' && (mods.includes('COMMUNICATION') || mods.includes('WHATSAPP'))) return true;
+    return false;
   }, [client, isOrgAdmin]);
 
   const setScreen = useCallback(async (screen: ScreenType) => {

@@ -113,6 +113,7 @@ export const CheckCircle = createRadixWrapper(CheckCircledIcon);
 export const XCircle = createRadixWrapper(CrossCircledIcon);
 export const Activity = createRadixWrapper(ActivityLogIcon);
 export const Filter = createRadixWrapper(MixerHorizontalIcon);
+export const Sliders = createRadixWrapper(MixerHorizontalIcon);
 export const RotateCcw = createRadixWrapper(ResetIcon);
 export const RefreshCw = createRadixWrapper(ResetIcon);
 export const Send = createRadixWrapper(PaperPlaneIcon);
