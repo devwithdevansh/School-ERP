@@ -49,6 +49,10 @@ export type ScreenType =
   | 'staff-leave'
   | 'messages'
   | 'academic-calendar'
+  | 'safe-reach'
+  | 'student-voice'
+  | 'counseling'
+  | 'academic-intelligence'
   | 'org-clients'
   | 'org-licences'
   | 'org-apps';

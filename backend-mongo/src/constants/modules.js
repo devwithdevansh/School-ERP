@@ -38,6 +38,12 @@ export const MODULE_CATALOG = [
   { id: 'CALENDAR', label: 'Calendar & Roadmap', category: 'ACADEMICS', tier: 'BASIC', description: 'School academic calendar, holiday list and roadmap events' },
   { id: 'LEAVE', label: 'Leave Suite (All-In-One)', category: 'ACADEMICS', tier: 'STANDARD', description: 'Comprehensive student and staff leave management' },
   { id: 'TRANSPORT', label: 'Transport', category: 'INTEGRATIONS', tier: 'CUSTOM', description: 'Bus tracking, routes, driver details, transport fees' },
+
+  // Safety & Wellbeing
+  { id: 'SAFE_REACH', label: 'SafeReach', category: 'COMMUNICATION', tier: 'STANDARD', description: 'Consent-based trip tracking, automatic home-arrival confirmation, and parent delay alerts' },
+  { id: 'STUDENT_VOICE', label: 'Student Voice', category: 'COMMUNICATION', tier: 'STANDARD', description: 'Confidential concern submissions, staff review queue, and resolution tracking' },
+  { id: 'COUNSELING', label: 'Student Counseling', category: 'ACADEMICS', tier: 'STANDARD', description: 'Educator-reviewed counseling recommendations, support plans, and progress tracking' },
+  { id: 'ACADEMIC_INTELLIGENCE', label: 'Academic Intelligence', category: 'ACADEMICS', tier: 'STANDARD', description: 'Concept mastery trends, learning-gap alerts, and improvement plans per student' },
 ];
 
 export const MODULE_IDS = MODULE_CATALOG.map((m) => m.id);

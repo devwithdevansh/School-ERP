@@ -43,6 +43,15 @@ import '../../modules/teacher_messages/bindings/teacher_messages_binding.dart';
 import '../../modules/teacher_messages/views/teacher_messages_view.dart';
 import '../../modules/teacher_homework/bindings/teacher_homework_binding.dart';
 import '../../modules/teacher_homework/views/teacher_homework_view.dart';
+import '../../modules/student_voice/bindings/student_voice_binding.dart';
+import '../../modules/student_voice/views/student_voice_view.dart';
+import '../../modules/student_voice/views/student_voice_staff_view.dart';
+import '../../modules/counseling/bindings/counseling_binding.dart';
+import '../../modules/counseling/views/counseling_view.dart';
+import '../../modules/academic_intelligence/bindings/academic_intelligence_binding.dart';
+import '../../modules/academic_intelligence/views/academic_intelligence_view.dart';
+import '../../modules/safereach/bindings/safereach_binding.dart';
+import '../../modules/safereach/views/safereach_view.dart';
 import '../design/motion.dart';
 import '../theme/app_colors.dart';
 import '../ui/transitions.dart';
@@ -181,6 +190,32 @@ class AppPages {
       name: AppRoutes.teacherHomework,
       page: () => const TeacherHomeworkView(),
       binding: TeacherHomeworkBinding(),
+    ),
+    // New Features
+    GetPage(
+      name: AppRoutes.studentVoice,
+      page: () => const StudentVoiceView(),
+      binding: StudentVoiceBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.studentVoiceStaff,
+      page: () => const StudentVoiceStaffView(),
+      binding: StudentVoiceBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.counseling,
+      page: () => const CounselingView(),
+      binding: CounselingBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.academicIntelligence,
+      page: () => const AcademicIntelligenceView(),
+      binding: AcademicIntelligenceBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.safeReach,
+      page: () => const SafeReachView(),
+      binding: SafeReachBinding(),
     ),
   ]
       .map((p) => p.copy(

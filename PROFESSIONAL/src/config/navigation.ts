@@ -67,6 +67,12 @@ export const LICENSABLE_MODULES: LicensableModule[] = [
   { id: 'CALENDAR', label: 'Calendar & Roadmap', category: 'ACADEMICS', tier: 'BASIC', description: 'School academic calendar, holiday list and roadmap events' },
   { id: 'LEAVE', label: 'Leave Suite (All-In-One)', category: 'ACADEMICS', tier: 'STANDARD', description: 'Comprehensive student and staff leave management' },
   { id: 'TRANSPORT', label: 'Transport', category: 'INTEGRATIONS', tier: 'CUSTOM', description: 'Bus tracking, routes, driver details, transport fees' },
+
+  // Safety, Wellbeing & Intelligence
+  { id: 'SAFE_REACH', label: 'SafeReach', category: 'COMMUNICATION', tier: 'STANDARD', description: 'Consent-based trip tracking, automatic home-arrival confirmation, and parent delay alerts' },
+  { id: 'STUDENT_VOICE', label: 'Student Voice', category: 'COMMUNICATION', tier: 'STANDARD', description: 'Confidential concern submissions, staff review queue, and resolution tracking' },
+  { id: 'COUNSELING', label: 'Student Counseling', category: 'ACADEMICS', tier: 'STANDARD', description: 'Educator-reviewed counseling recommendations, support plans, and progress tracking' },
+  { id: 'ACADEMIC_INTELLIGENCE', label: 'Academic Intelligence', category: 'ACADEMICS', tier: 'STANDARD', description: 'Concept mastery trends, learning-gap alerts, and improvement plans per student' },
 ];
 
 export interface NavContext {
@@ -155,6 +161,12 @@ export const NAV_MODULES: NavModule[] = [
         { id: 'staff-leave', label: 'Staff Leave', icon: BookOpen, moduleRequired: 'LEAVE' },
       ] },
       { title: 'Communication', items: [{ id: 'messages', label: 'Messages', icon: MessageCircle, permission: 'SCREEN_WHATSAPP', moduleRequired: 'COMMUNICATION' }] },
+      { title: 'Safety & Wellbeing', items: [
+        { id: 'safe-reach', label: 'SafeReach', icon: ShieldCheck, moduleRequired: 'SAFE_REACH' },
+        { id: 'student-voice', label: 'Student Voice', icon: MessageCircle, moduleRequired: 'STUDENT_VOICE' },
+        { id: 'counseling', label: 'Counseling', icon: BookOpen, moduleRequired: 'COUNSELING' },
+        { id: 'academic-intelligence', label: 'Academic Intelligence', icon: Award, moduleRequired: 'ACADEMIC_INTELLIGENCE' },
+      ] },
       { title: 'Settings', items: [
         { id: 'setup', label: 'Setup', icon: Settings },
         { id: 'audit-log', label: 'Audit Log', icon: Activity },

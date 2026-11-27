@@ -263,6 +263,26 @@ class ApiClient {
     });
   }
 
+  /// Perform a PUT request.
+  static Future<http.Response> put(String path, Map<String, dynamic> body) async {
+    return _handleRequest(() async {
+      final token = await getParentToken();
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'User-Agent': 'SchoolConnectApp/1.0.0',
+      };
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      return await http.put(
+        Uri.parse('$baseUrl$path'),
+        headers: headers,
+        body: json.encode(body),
+      ).timeout(_timeout);
+    });
+  }
+
   /// Perform a DELETE request with a JSON body.
   static Future<http.Response> delete(String path, Map<String, dynamic> body) async {
     return _handleRequest(() async {

@@ -30,8 +30,12 @@ import expenseRoutes          from './routes/expense.routes.js';
 import attendanceRoutes       from './routes/attendance.routes.js';
 import academicMasterRoutes   from './routes/academic-master.routes.js';
 import uploadRoutes           from './routes/upload.routes.js';
-import calendarRoutes         from './routes/calendar.routes.js';
-import documentRoutes         from './routes/document.routes.js';
+import calendarRoutes              from './routes/calendar.routes.js';
+import documentRoutes              from './routes/document.routes.js';
+import studentVoiceRoutes          from './routes/student-voice.routes.js';
+import counselingRoutes            from './routes/counseling.routes.js';
+import academicIntelligenceRoutes  from './routes/academic-intelligence.routes.js';
+import safereachRoutes             from './routes/safereach.routes.js';
 
 const app = express();
 
@@ -140,6 +144,17 @@ app.use(`${V1}/erp/timetable`,  TIMETABLE, timetableRoutes);
 app.use(`${V1}/erp`,            ERP, erpRoutes);
 app.use(`${V1}/attendance`,     ATTENDANCE, attendanceRoutes);
 app.use(`${V1}/chat`,           CHAT, chatRoutes);
+
+// ─── New Features ─────────────────────────────────────────────────────────────
+const SAFE_REACH            = moduleGate('SAFE_REACH');
+const STUDENT_VOICE         = moduleGate('STUDENT_VOICE');
+const COUNSELING            = moduleGate('COUNSELING');
+const ACADEMIC_INTELLIGENCE = moduleGate('ACADEMIC_INTELLIGENCE');
+
+app.use(`${V1}/safereach`,             SAFE_REACH,            safereachRoutes);
+app.use(`${V1}/student-voice`,         STUDENT_VOICE,         studentVoiceRoutes);
+app.use(`${V1}/counseling`,            COUNSELING,            counselingRoutes);
+app.use(`${V1}/academic-intelligence`, ACADEMIC_INTELLIGENCE, academicIntelligenceRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.all('/{*splat}', (req, _res, next) => {

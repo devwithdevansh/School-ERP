@@ -78,6 +78,48 @@ class QuickAccessSection extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.shield_outlined,
+                        label: 'SafeReach',
+                        onTap: () => Get.toNamed(AppRoutes.safeReach),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.insights_rounded,
+                        label: 'Mastery',
+                        onTap: () => Get.toNamed(AppRoutes.academicIntelligence),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.support_agent_rounded,
+                        label: 'Counseling',
+                        onTap: () => Get.toNamed(AppRoutes.counseling),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.record_voice_over_outlined,
+                        label: 'My Voice',
+                        onTap: () => Get.toNamed(AppRoutes.studentVoice),
+                      ),
+                    ),
+                    const Expanded(child: SizedBox()),
+                    const Expanded(child: SizedBox()),
+                  ],
+                ),
               ],
             ),
           ),

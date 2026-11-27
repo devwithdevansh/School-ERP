@@ -40,6 +40,10 @@ import { StudentView } from './components/StudentView';
 import { OrgClients } from './components/org/OrgClients';
 import { OrgLicences } from './components/org/OrgLicences';
 import { OrgAppDeployment } from './components/org/OrgAppDeployment';
+import { SafeReach } from './components/SafeReach';
+import { StudentVoice } from './components/StudentVoice';
+import { Counseling } from './components/Counseling';
+import { AcademicIntelligence } from './components/AcademicIntelligence';
 import { generateReceiptHTML, generateReportHTML, printHTML, fetchAsBase64 } from './utils/printUtils';
 import { brand } from './config/brand';
 import { parseExamRoute } from './utils/examRouteUtils';
@@ -142,6 +146,14 @@ const ScreenContent: React.FC<{ onPrint: (tx: PaymentTransaction) => void, onPri
         return isModuleEnabled('LEAVE') ? <StaffLeaveManagement /> : <UpgradePaywall moduleId="LEAVE" />;
       case 'messages':
         return isModuleEnabled('COMMUNICATION') ? <Messages /> : <UpgradePaywall moduleId="COMMUNICATION" />;
+      case 'safe-reach':
+        return isModuleEnabled('SAFE_REACH') ? <SafeReach /> : <UpgradePaywall moduleId="SAFE_REACH" />;
+      case 'student-voice':
+        return isModuleEnabled('STUDENT_VOICE') ? <StudentVoice /> : <UpgradePaywall moduleId="STUDENT_VOICE" />;
+      case 'counseling':
+        return isModuleEnabled('COUNSELING') ? <Counseling /> : <UpgradePaywall moduleId="COUNSELING" />;
+      case 'academic-intelligence':
+        return isModuleEnabled('ACADEMIC_INTELLIGENCE') ? <AcademicIntelligence /> : <UpgradePaywall moduleId="ACADEMIC_INTELLIGENCE" />;
       case 'students':
         return <Students />;
       case 'staff-management':

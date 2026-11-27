@@ -114,6 +114,33 @@ class TeacherQuickAccess extends StatelessWidget {
                         onTap: () => Get.toNamed(AppRoutes.noticeBoard),
                       ),
                     ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.record_voice_over_outlined,
+                        label: 'Voice Queue',
+                        onTap: () => Get.toNamed(AppRoutes.studentVoiceStaff),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.support_agent_rounded,
+                        label: 'Counseling',
+                        onTap: () => Get.toNamed(AppRoutes.counseling),
+                      ),
+                    ),
+                    Expanded(
+                      child: ModuleTile(
+                        icon: Icons.insights_rounded,
+                        label: 'Mastery',
+                        onTap: () => Get.toNamed(AppRoutes.academicIntelligence),
+                      ),
+                    ),
                     const Expanded(child: SizedBox()),
                   ],
                 ),

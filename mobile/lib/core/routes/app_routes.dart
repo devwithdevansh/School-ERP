@@ -29,4 +29,11 @@ class AppRoutes {
   static const String teacherLeaves     = '/teacher-leaves';
   static const String teacherMessages   = '/teacher-messages';
   static const String teacherHomework   = '/teacher-homework';
+
+  // New Features
+  static const String studentVoice         = '/student-voice';
+  static const String studentVoiceStaff    = '/student-voice-staff';
+  static const String counseling           = '/counseling';
+  static const String academicIntelligence = '/academic-intelligence';
+  static const String safeReach            = '/safe-reach';
 }
