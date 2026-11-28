@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useApp } from '../store';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,9 +41,14 @@ type StatusFilter = 'all' | 'active' | 'arrived' | 'delayed' | 'cancelled';
 const API = '/api/v1/safereach';
 
 async function apiFetch(path: string, options?: RequestInit) {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options?.headers as Record<string, string> | undefined),
+    },
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -66,7 +72,9 @@ function minutesOverdue(expected?: string): number {
 }
 
 function getStudentName(s: TripRecord['studentId'] | ConsentRecord['studentId']): string {
-  if (typeof s === 'object' && 'name' in s) return s.name;
+  if (typeof s === 'object') {
+    return (s as any).studentName || (s as any).name || 'Student';
+  }
   return String(s);
 }
 
@@ -246,7 +254,7 @@ const TodayTab: React.FC<TodayTabProps> = ({ academicYearId, refreshTick, onRefr
     setError('');
     try {
       const data = await apiFetch(`/trip/today?academicYearId=${academicYearId}`);
-      setTrips(data.data || []);
+      setTrips(Array.isArray(data) ? data : (data.data || []));
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -383,7 +391,7 @@ const ConsentTab: React.FC<ConsentTabProps> = ({ academicYearId, students }) => 
   const fetchConsent = useCallback(async (studentId: string) => {
     try {
       const data = await apiFetch(`/consent/${studentId}?academicYearId=${academicYearId}`);
-      setConsents(prev => ({ ...prev, [studentId]: data.data }));
+      setConsents(prev => ({ ...prev, [studentId]: (data.data || data) }));
     } catch {
       // 404 means no record yet — ignore
     }
@@ -550,7 +558,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ students }) => {
     setError('');
     try {
       const data = await apiFetch(`/trip/history?studentId=${selectedStudent}&limit=${limit}`);
-      setTrips(data.data || []);
+      setTrips(Array.isArray(data) ? data : (data.data || []));
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -637,9 +645,26 @@ interface SafeReachProps {
 }
 
 const SafeReach: React.FC<SafeReachProps> = ({
-  academicYearId = '',
-  students = [],
+  academicYearId: propYearId = '',
+  students: propStudents = [],
 }) => {
+  const { activeStudents, students: appStudents, academicYears } = useApp();
+
+  const academicYearId = useMemo(() => {
+    if (propYearId) return propYearId;
+    const active = academicYears?.find(y => y.isActive);
+    return active?._id || academicYears?.[0]?._id || '';
+  }, [propYearId, academicYears]);
+
+  const students = useMemo(() => {
+    if (propStudents && propStudents.length > 0) return propStudents;
+    const list = (activeStudents && activeStudents.length > 0) ? activeStudents : appStudents;
+    return (list || []).map(s => ({
+      _id: s._id,
+      name: s.studentName || (s as any).name || 'Student',
+    }));
+  }, [propStudents, activeStudents, appStudents]);
+
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [refreshTick, setRefreshTick] = useState(0);
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);

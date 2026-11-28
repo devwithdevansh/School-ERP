@@ -1031,6 +1031,18 @@ class StudentService {
     if (includeInactive !== 'true' && includeInactive !== true) {
       actualFilter.isActive = true;
     }
+    if (actualFilter.search && typeof actualFilter.search === 'string') {
+      const escaped = actualFilter.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (escaped) {
+        const regex = new RegExp(escaped, 'i');
+        actualFilter.$or = [
+          { studentName: regex },
+          { studentCode: regex },
+          { grNo: regex },
+        ];
+      }
+      delete actualFilter.search;
+    }
     return studentRepository.find(actualFilter, null, pagination);
   }
 

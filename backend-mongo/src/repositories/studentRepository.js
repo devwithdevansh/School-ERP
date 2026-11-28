@@ -10,16 +10,16 @@ const studentRepository = {
   },
 
   async findById(id, projection = null, opts = {}) {
-    return Student.findById(id, projection, opts).populate('parentId').lean();
+    return Student.findById(id, projection, opts).populate('parentId').lean({ virtuals: true });
   },
 
   async findOne(filter, projection = null, opts = {}) {
-    return Student.findOne(filter, projection, opts).populate('parentId').lean();
+    return Student.findOne(filter, projection, opts).populate('parentId').lean({ virtuals: true });
   },
 
   async find(filter = {}, projection = null, opts = {}) {
     const { limit = 20, skip = 0, sort = { createdAt: -1 }, session } = opts;
-    return Student.find(filter, projection, { limit, skip, sort, session }).populate('parentId').lean();
+    return Student.find(filter, projection, { limit, skip, sort, session }).populate('parentId').lean({ virtuals: true });
   },
 
   async findDistinct(field, filter = {}) {

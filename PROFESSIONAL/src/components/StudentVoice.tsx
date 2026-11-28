@@ -45,8 +45,9 @@ const STATUS_COLORS: Record<VoiceStatus, string> = {
 };
 
 export const StudentVoice: React.FC = () => {
-  const { currentUser } = useApp();
+  const { currentUser, activeStudents, students: appStudents } = useApp();
   const isParent = currentUser?.role === 'parent';
+  const availableStudents = useMemo(() => (activeStudents && activeStudents.length > 0 ? activeStudents : appStudents) || [], [activeStudents, appStudents]);
 
   const [items, setItems] = useState<VoiceItem[]>([]);
   const [staffList, setStaffList] = useState<Array<{ _id: string; name: string; role: string }>>([]);
@@ -62,6 +63,7 @@ export const StudentVoice: React.FC = () => {
   const [formCategory, setFormCategory] = useState<VoiceCategory>('academic');
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
+  const [formStudentId, setFormStudentId] = useState('');
   const [formAnonymous, setFormAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -131,11 +133,13 @@ export const StudentVoice: React.FC = () => {
           title: formTitle.trim(),
           description: formDescription.trim(),
           isAnonymous: formAnonymous,
+          studentId: formAnonymous ? undefined : (formStudentId || undefined),
         }),
       });
       if (res.ok) {
         setFormTitle('');
         setFormDescription('');
+        setFormStudentId('');
         setFormAnonymous(false);
         setShowNewModal(false);
         await loadData();
@@ -314,6 +318,16 @@ export const StudentVoice: React.FC = () => {
 
               <p className="text-sm text-slate-700 whitespace-pre-wrap">{selected.description}</p>
 
+              {selected.studentId && !selected.isAnonymous && (
+                <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700 flex items-center justify-between">
+                  <span className="text-slate-500 font-semibold">Student:</span>
+                  <span className="font-bold text-slate-800">
+                    {selected.studentId.studentName || (selected.studentId as any).name}
+                    {selected.studentId.standard ? ` (Std ${selected.studentId.standard}-${selected.studentId.division || ''})` : ''}
+                  </span>
+                </div>
+              )}
+
               {!isParent && (
                 <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3">
                   <div>
@@ -419,6 +433,23 @@ export const StudentVoice: React.FC = () => {
                   <option value="other">Other</option>
                 </select>
               </div>
+              {!formAnonymous && availableStudents.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Related Student (Optional)</label>
+                  <select
+                    value={formStudentId}
+                    onChange={(e) => setFormStudentId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">— General / Not specific to one student —</option>
+                    {availableStudents.map((s) => (
+                      <option key={s._id} value={s._id}>
+                        {s.studentName}{s.standard ? ` (Std ${s.standard}-${s.division || 'A'})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Title</label>
                 <input

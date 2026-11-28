@@ -20,7 +20,7 @@ class AcademicIntelligenceController {
       .sort({ chapterNumber: 1, sequence: 1 })
       .lean();
 
-    sendResponse(res, 200, { status: 'success', results: tags.length, data: tags });
+    sendResponse(res, 200, tags);
   });
 
   /**
@@ -42,7 +42,7 @@ class AcademicIntelligenceController {
       createdBy: req.user._id,
     });
 
-    sendResponse(res, 201, { status: 'success', data: tag });
+    sendResponse(res, 201, tag);
   });
 
   /**
@@ -76,12 +76,9 @@ class AcademicIntelligenceController {
     const result = await ConceptTag.bulkWrite(ops, { ordered: false });
 
     sendResponse(res, 200, {
-      status: 'success',
-      data: {
-        matched: result.matchedCount,
-        upserted: result.upsertedCount,
-        modified: result.modifiedCount,
-      },
+      matched: result.matchedCount,
+      upserted: result.upsertedCount,
+      modified: result.modifiedCount,
     });
   });
 
@@ -137,7 +134,7 @@ class AcademicIntelligenceController {
 
     const data = await MasteryRecord.aggregate(pipeline);
 
-    sendResponse(res, 200, { status: 'success', results: data.length, data });
+    sendResponse(res, 200, data);
   });
 
   /**
@@ -177,7 +174,7 @@ class AcademicIntelligenceController {
 
     const data = await MasteryRecord.aggregate(pipeline);
 
-    sendResponse(res, 200, { status: 'success', results: data.length, data });
+    sendResponse(res, 200, data);
   });
 
   /**
@@ -217,12 +214,9 @@ class AcademicIntelligenceController {
     const result = await MasteryRecord.bulkWrite(ops, { ordered: false });
 
     sendResponse(res, 200, {
-      status: 'success',
-      data: {
-        matched: result.matchedCount,
-        upserted: result.upsertedCount,
-        modified: result.modifiedCount,
-      },
+      matched: result.matchedCount,
+      upserted: result.upsertedCount,
+      modified: result.modifiedCount,
     });
   });
 
@@ -242,7 +236,7 @@ class AcademicIntelligenceController {
       .sort({ createdAt: -1 })
       .lean();
 
-    sendResponse(res, 200, { status: 'success', results: plans.length, data: plans });
+    sendResponse(res, 200, plans);
   });
 
   /**
@@ -265,7 +259,7 @@ class AcademicIntelligenceController {
       targetDate,
     });
 
-    sendResponse(res, 201, { status: 'success', data: plan });
+    sendResponse(res, 201, plan);
   });
 
   /**
@@ -287,7 +281,7 @@ class AcademicIntelligenceController {
     const plan = await ImprovementPlan.findByIdAndUpdate(id, { $set: updates }, { new: true, runValidators: true });
     if (!plan) return next(new AppError('Improvement plan not found', 404));
 
-    sendResponse(res, 200, { status: 'success', data: plan });
+    sendResponse(res, 200, plan);
   });
 }
 

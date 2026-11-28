@@ -1,18 +1,23 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useApp } from '../store';
 
 async function apiGet(url: string, params?: Record<string, string | number>) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   const qs = params
     ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()
     : '';
   const res = await fetch(`${url}${qs}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message || 'Request failed');
+  }
   return res.json();
 }
 
 async function apiSend(url: string, method: 'POST' | 'PATCH', body: unknown) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   const res = await fetch(url, {
     method,
     headers: {
@@ -21,7 +26,10 @@ async function apiSend(url: string, method: 'POST' | 'PATCH', body: unknown) {
     },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error('Request failed');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message || 'Request failed');
+  }
   return res.json();
 }
 
@@ -214,7 +222,8 @@ const MasteryHeatmap: React.FC<{ studentId: string; subjects: { _id: string; nam
     setLoading(true);
     try {
       const data = await apiGet(`${BASE}/mastery/student/${studentId}`, { subjectId });
-      setMastery(data.data ?? []);
+      const list = Array.isArray(data) ? data : (data.data ?? []);
+      setMastery(list);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [studentId, subjectId]);
 
@@ -319,7 +328,8 @@ const LearningGaps: React.FC<{ studentId: string; onPlanCreated: () => void }> =
     setLoading(true);
     try {
       const data = await apiGet(`${BASE}/gaps/student/${studentId}`, { threshold });
-      setGaps(data.data ?? []);
+      const list = Array.isArray(data) ? data : (data.data ?? []);
+      setGaps(list);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [studentId, threshold]);
 
@@ -382,7 +392,8 @@ const ImprovementPlansTab: React.FC<{ studentId: string; refresh: number }> = ({
     setLoading(true);
     try {
       const data = await apiGet(`${BASE}/plans/student/${studentId}`);
-      setPlans(data.data ?? []);
+      const list = Array.isArray(data) ? data : (data.data ?? []);
+      setPlans(list);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [studentId]);
 
@@ -453,7 +464,7 @@ const ImprovementPlansTab: React.FC<{ studentId: string; refresh: number }> = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const AcademicIntelligence: React.FC = () => {
-  const [sections, setSections] = useState<Section[]>([]);
+  const { activeStudents, students: appStudents, subjects: appSubjects } = useApp();
   const [subjects, setSubjects] = useState<{ _id: string; name: string }[]>([]);
   const [selectedSection, setSelectedSection] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -461,20 +472,45 @@ const AcademicIntelligence: React.FC = () => {
   const [planRefresh, setPlanRefresh] = useState(0);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
+  // Group students by Class (standard) and Division from the store
+  const sections = useMemo(() => {
+    const list = (activeStudents && activeStudents.length > 0 ? activeStudents : appStudents) || [];
+    const map = new Map<string, { _id: string; className: string; division: string; students: { _id: string; name: string; rollNo?: string }[] }>();
+    for (const st of list) {
+      const std = st.standard || 'General';
+      const div = st.division || 'A';
+      const key = `${std}-${div}`;
+      if (!map.has(key)) {
+        map.set(key, { _id: key, className: `Std ${std}`, division: div, students: [] });
+      }
+      map.get(key)!.students.push({
+        _id: st._id,
+        name: st.studentName || (st as any).name || 'Student',
+        rollNo: st.rollNo != null ? String(st.rollNo) : undefined,
+      });
+    }
+    return Array.from(map.values()).sort((a, b) => a.className.localeCompare(b.className, undefined, { numeric: true }));
+  }, [activeStudents, appStudents]);
+
   useEffect(() => {
-    const fetchMeta = async () => {
-      setLoadingMeta(true);
+    const fetchSubjects = async () => {
+      if (appSubjects && appSubjects.length > 0) {
+        setSubjects(appSubjects.map(s => ({ _id: s._id, name: s.name })));
+        setLoadingMeta(false);
+        return;
+      }
       try {
-        const [secRes, subRes] = await Promise.all([
-          apiGet('/api/v1/sections', { includeStudents: 'true' }),
-          apiGet('/api/v1/subjects'),
-        ]);
-        setSections(secRes.data ?? secRes);
-        setSubjects(subRes.data ?? subRes);
-      } catch { /* ignore */ } finally { setLoadingMeta(false); }
+        const res = await apiGet('/api/v1/academic-master/subjects');
+        const list = Array.isArray(res) ? res : (res.data || []);
+        setSubjects(list.map((s: any) => ({ _id: s._id, name: s.name })));
+      } catch {
+        /* ignore */
+      } finally {
+        setLoadingMeta(false);
+      }
     };
-    fetchMeta();
-  }, []);
+    fetchSubjects();
+  }, [appSubjects]);
 
   const currentSection = sections.find((s) => s._id === selectedSection);
   const students = currentSection?.students ?? [];

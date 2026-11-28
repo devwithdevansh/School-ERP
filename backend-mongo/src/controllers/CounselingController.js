@@ -19,7 +19,7 @@ class CounselingController {
       visibility,
     });
 
-    sendResponse(res, 201, { data: record, message: 'Counseling record created successfully' });
+    sendResponse(res, 201, record, 'Counseling record created successfully');
   });
 
   // GET /counseling/student/:studentId
@@ -45,7 +45,7 @@ class CounselingController {
       .populate('createdBy', 'name email')
       .populate('closedBy', 'name');
 
-    sendResponse(res, 200, { data: records, results: records.length });
+    sendResponse(res, 200, records);
   });
 
   // GET /counseling/mine
@@ -55,7 +55,7 @@ class CounselingController {
       .populate('studentId', 'studentName standard division medium photoUrl')
       .populate('closedBy', 'name');
 
-    sendResponse(res, 200, { data: records, results: records.length });
+    sendResponse(res, 200, records);
   });
 
   // PATCH /counseling/:id
@@ -78,7 +78,7 @@ class CounselingController {
     });
 
     await record.save();
-    sendResponse(res, 200, { data: record, message: 'Counseling record updated' });
+    sendResponse(res, 200, record, 'Counseling record updated');
   });
 
   // PATCH /counseling/:id/milestone/:idx
@@ -120,7 +120,7 @@ class CounselingController {
     }
 
     await record.save();
-    sendResponse(res, 200, { data: record, message: 'Milestone updated' });
+    sendResponse(res, 200, record, 'Milestone updated');
   });
 
   // POST /counseling/:id/milestone
@@ -143,7 +143,7 @@ class CounselingController {
     record.supportPlan.push({ milestone, targetDate, status: status || 'pending' });
     await record.save();
 
-    sendResponse(res, 201, { data: record, message: 'Milestone added' });
+    sendResponse(res, 201, record, 'Milestone added');
   });
 
   // PATCH /counseling/:id/close
@@ -167,7 +167,7 @@ class CounselingController {
     record.closedBy = req.user.id;
 
     await record.save();
-    sendResponse(res, 200, { data: record, message: 'Counseling record closed' });
+    sendResponse(res, 200, record, 'Counseling record closed');
   });
 
   // PATCH /counseling/:id/consent
@@ -179,7 +179,7 @@ class CounselingController {
     record.visibility = 'with_parent_consent';
     await record.save();
 
-    sendResponse(res, 200, { data: record, message: 'Parent consent granted' });
+    sendResponse(res, 200, record, 'Parent consent granted');
   });
 }
 

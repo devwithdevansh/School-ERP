@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useApp } from '../store';
 
 // ---- Types ----
 interface Milestone {
@@ -10,7 +11,7 @@ interface Milestone {
 
 interface CounselingRecord {
   _id: string;
-  studentId: string | { _id: string; name: string; admissionNumber?: string };
+  studentId: string | { _id: string; studentName?: string; name?: string; admissionNumber?: string; studentCode?: string };
   createdBy: { _id: string; name: string; email: string };
   type: 'academic' | 'behavioural' | 'social' | 'emotional';
   trigger?: { source?: string; refId?: string | null };
@@ -26,8 +27,13 @@ interface CounselingRecord {
 
 interface Student {
   _id: string;
-  name: string;
+  name?: string;
+  studentName?: string;
   admissionNumber?: string;
+  studentCode?: string;
+  grNo?: string;
+  standard?: string;
+  division?: string;
 }
 
 // ---- Constants ----
@@ -496,6 +502,7 @@ function ParentView() {
 
 // ---- Admin / Teacher View ----
 function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: string; currentUserRole: string }) {
+  const { activeStudents, students: appStudents } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -505,18 +512,29 @@ function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: s
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<CounselingRecord | null>(null);
 
+  const studentDisplayName = (s: Student) => s.studentName || s.name || 'Student';
+  const studentDisplayCode = (s: Student) => s.studentCode || s.admissionNumber || s.grNo || (s.standard ? `Std ${s.standard}-${s.division}` : '');
+
   const searchStudents = useCallback(async (q: string) => {
     if (!q.trim()) { setStudents([]); return; }
     setSearchLoading(true);
     try {
       const data = await apiFetch(`/api/v1/students?search=${encodeURIComponent(q)}&limit=10`);
-      setStudents(data.data || []);
+      const list = Array.isArray(data) ? data : (data.data || []);
+      setStudents(list);
     } catch {
-      setStudents([]);
+      // Fallback to local filter from app store
+      const all = (activeStudents?.length ? activeStudents : appStudents) || [];
+      const lower = q.toLowerCase();
+      const filtered = all.filter(s =>
+        (s.studentName && s.studentName.toLowerCase().includes(lower)) ||
+        (s.studentCode && s.studentCode.toLowerCase().includes(lower))
+      ).slice(0, 10);
+      setStudents(filtered);
     } finally {
       setSearchLoading(false);
     }
-  }, []);
+  }, [activeStudents, appStudents]);
 
   useEffect(() => {
     const timer = setTimeout(() => searchStudents(searchQuery), 400);
@@ -527,7 +545,8 @@ function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: s
     setRecordsLoading(true);
     try {
       const data = await apiFetch(`${BASE}/student/${studentId}`);
-      setRecords(data.data || []);
+      const list = Array.isArray(data) ? data : (data.data || []);
+      setRecords(list);
     } catch {
       setRecords([]);
     } finally {
@@ -538,7 +557,7 @@ function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: s
   const handleSelectStudent = (s: Student) => {
     setSelectedStudent(s);
     setStudents([]);
-    setSearchQuery(s.name);
+    setSearchQuery(studentDisplayName(s));
     loadRecords(s._id);
   };
 
@@ -561,7 +580,7 @@ function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: s
         <input
           type="text"
           className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10"
-          placeholder="Search student by name..."
+          placeholder="Search student by name or code..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -576,8 +595,8 @@ function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: s
                 className="px-4 py-2.5 cursor-pointer hover:bg-blue-50 text-sm text-gray-700 flex items-center justify-between"
                 onClick={() => handleSelectStudent(s)}
               >
-                <span>{s.name}</span>
-                {s.admissionNumber && <span className="text-xs text-gray-400">{s.admissionNumber}</span>}
+                <span className="font-medium">{studentDisplayName(s)}</span>
+                {studentDisplayCode(s) && <span className="text-xs text-gray-400">{studentDisplayCode(s)}</span>}
               </li>
             ))}
           </ul>
@@ -588,7 +607,7 @@ function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: s
       {selectedStudent && (
         <div>
           <div className="text-sm text-gray-500 mb-3">
-            Showing counseling records for <span className="font-semibold text-gray-700">{selectedStudent.name}</span>
+            Showing counseling records for <span className="font-semibold text-gray-700">{studentDisplayName(selectedStudent)}</span>
           </div>
           {recordsLoading ? (
             <div className="space-y-3">

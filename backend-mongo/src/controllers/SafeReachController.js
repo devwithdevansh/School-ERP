@@ -83,7 +83,7 @@ const SafeReachController = {
       { new: true, upsert: true, runValidators: true }
     );
 
-    sendResponse(res, 200, { data: consent, message: 'Consent updated successfully' });
+    sendResponse(res, 200, consent, 'Consent updated successfully');
   }),
 
   /**
@@ -92,7 +92,11 @@ const SafeReachController = {
    */
   getConsent: catchAsync(async (req, res, next) => {
     const { studentId } = req.params;
-    const { academicYearId } = req.query;
+    let { academicYearId } = req.query;
+    if (!academicYearId) {
+      const activeYear = await (await import('../models/AcademicYear.js')).default.findOne({ isActive: true });
+      if (activeYear) academicYearId = activeYear._id;
+    }
 
     const filter = { studentId };
     if (academicYearId) filter.academicYearId = academicYearId;
@@ -105,7 +109,7 @@ const SafeReachController = {
       return next(new AppError('No consent record found for this student', 404));
     }
 
-    sendResponse(res, 200, { data: consent });
+    sendResponse(res, 200, consent);
   }),
 
   /**
@@ -160,7 +164,7 @@ const SafeReachController = {
       startedBy: req.user._id,
     });
 
-    sendResponse(res, 201, { data: trip, message: 'Trip started successfully' });
+    sendResponse(res, 201, trip, 'Trip started successfully');
   }),
 
   /**
@@ -223,14 +227,11 @@ const SafeReachController = {
           body: `Your child has arrived home safely.`,
         });
 
-        return sendResponse(res, 200, {
-          data: trip,
-          message: 'Location updated — arrival auto-confirmed (inside geofence)',
-        });
+        return sendResponse(res, 200, trip, 'Location updated — arrival auto-confirmed (inside geofence)');
       }
     }
 
-    sendResponse(res, 200, { data: trip, message: 'Location updated' });
+    sendResponse(res, 200, trip, 'Location updated');
   }),
 
   /**
@@ -262,7 +263,7 @@ const SafeReachController = {
       });
     }
 
-    sendResponse(res, 200, { data: trip, message: 'Arrival confirmed' });
+    sendResponse(res, 200, trip, 'Arrival confirmed');
   }),
 
   /**
@@ -282,7 +283,7 @@ const SafeReachController = {
     trip.endTime = new Date();
     await trip.save();
 
-    sendResponse(res, 200, { data: trip, message: 'Trip cancelled' });
+    sendResponse(res, 200, trip, 'Trip cancelled');
   }),
 
   /**
@@ -290,7 +291,12 @@ const SafeReachController = {
    * Returns today's trips. Admin/staff: all students. Parent: filtered by their child.
    */
   getTodayStatus: catchAsync(async (req, res) => {
-    const { academicYearId, studentId } = req.query;
+    const { studentId } = req.query;
+    let { academicYearId } = req.query;
+    if (!academicYearId) {
+      const activeYear = await (await import('../models/AcademicYear.js')).default.findOne({ isActive: true });
+      if (activeYear) academicYearId = activeYear._id;
+    }
     const { start, end } = todayRange();
 
     const filter = { date: { $gte: start, $lte: end } };
@@ -302,7 +308,7 @@ const SafeReachController = {
       .populate('startedBy', 'name role')
       .sort({ startTime: -1 });
 
-    sendResponse(res, 200, { data: trips, count: trips.length });
+    sendResponse(res, 200, trips);
   }),
 
   /**
@@ -321,7 +327,7 @@ const SafeReachController = {
       .sort({ date: -1, startTime: -1 })
       .limit(Number(limit));
 
-    sendResponse(res, 200, { data: trips, count: trips.length });
+    sendResponse(res, 200, trips);
   }),
 };
 

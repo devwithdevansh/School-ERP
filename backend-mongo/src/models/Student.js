@@ -101,8 +101,15 @@ const studentSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual for backward-compatibility with frontends expecting student.name
+studentSchema.virtual('name').get(function () {
+  return this.studentName;
+});
 
 // Indexes
 
