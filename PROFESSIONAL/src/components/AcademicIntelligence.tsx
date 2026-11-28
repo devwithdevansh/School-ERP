@@ -484,7 +484,7 @@ const AcademicIntelligence: React.FC = () => {
         map.set(key, { _id: key, className: `Std ${std}`, division: div, students: [] });
       }
       map.get(key)!.students.push({
-        _id: st._id,
+        _id: st._id || '',
         name: st.studentName || (st as any).name || 'Student',
         rollNo: st.rollNo != null ? String(st.rollNo) : undefined,
       });
@@ -495,14 +495,14 @@ const AcademicIntelligence: React.FC = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       if (appSubjects && appSubjects.length > 0) {
-        setSubjects(appSubjects.map(s => ({ _id: s._id, name: s.name })));
+        setSubjects(appSubjects.map(s => ({ _id: s._id, name: s.subjectName || (s as any).name || 'Subject' })));
         setLoadingMeta(false);
         return;
       }
       try {
         const res = await apiGet('/api/v1/academic-master/subjects');
         const list = Array.isArray(res) ? res : (res.data || []);
-        setSubjects(list.map((s: any) => ({ _id: s._id, name: s.name })));
+        setSubjects(list.map((s: any) => ({ _id: s._id, name: s.subjectName || s.name || 'Subject' })));
       } catch {
         /* ignore */
       } finally {

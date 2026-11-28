@@ -530,7 +530,7 @@ function AdminTeacherView({ currentUserId, currentUserRole }: { currentUserId: s
         (s.studentName && s.studentName.toLowerCase().includes(lower)) ||
         (s.studentCode && s.studentCode.toLowerCase().includes(lower))
       ).slice(0, 10);
-      setStudents(filtered);
+      setStudents(filtered.map(s => ({ ...s, _id: s._id || '' } as Student)));
     } finally {
       setSearchLoading(false);
     }

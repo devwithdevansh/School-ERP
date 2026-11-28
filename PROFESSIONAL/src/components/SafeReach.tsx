@@ -656,12 +656,12 @@ const SafeReach: React.FC<SafeReachProps> = ({
     return active?._id || academicYears?.[0]?._id || '';
   }, [propYearId, academicYears]);
 
-  const students = useMemo(() => {
+  const students: { _id: string; name: string }[] = useMemo(() => {
     if (propStudents && propStudents.length > 0) return propStudents;
     const list = (activeStudents && activeStudents.length > 0) ? activeStudents : appStudents;
     return (list || []).map(s => ({
-      _id: s._id,
-      name: s.studentName || (s as any).name || 'Student',
+      _id: s._id || '',
+      name: (s.studentName || (s as any).name || 'Student') as string,
     }));
   }, [propStudents, activeStudents, appStudents]);
 
