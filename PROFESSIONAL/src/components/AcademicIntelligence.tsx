@@ -1,14 +1,29 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
+
+async function apiGet(url: string, params?: Record<string, string | number>) {
+  const token = localStorage.getItem('token');
+  const qs = params
+    ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()
+    : '';
+  const res = await fetch(`${url}${qs}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return res.json();
+}
+
+async function apiSend(url: string, method: 'POST' | 'PATCH', body: unknown) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Request failed');
+  return res.json();
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -135,7 +150,7 @@ const InlinePlanForm: React.FC<{
     if (!desc || !targetDate) return setError('Description and target date are required.');
     setSaving(true); setError('');
     try {
-      await axios.post(`${BASE}/plans`, { studentId, conceptTagId, description: desc, resources, targetDate });
+      await apiSend(`${BASE}/plans`, 'POST', { studentId, conceptTagId, description: desc, resources, targetDate });
       onCreated();
     } catch {
       setError('Failed to save plan.');
@@ -198,8 +213,8 @@ const MasteryHeatmap: React.FC<{ studentId: string; subjects: { _id: string; nam
     if (!subjectId) return;
     setLoading(true);
     try {
-      const { data } = await axios.get(`${BASE}/mastery/student/${studentId}`, { params: { subjectId } });
-      setMastery(data.data);
+      const data = await apiGet(`${BASE}/mastery/student/${studentId}`, { subjectId });
+      setMastery(data.data ?? []);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [studentId, subjectId]);
 
@@ -260,17 +275,30 @@ const MasteryHeatmap: React.FC<{ studentId: string; subjects: { _id: string; nam
 
       {!loading && mastery.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Trend Chart</div>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={mastery.map((m) => ({ name: m.conceptTag.conceptName.slice(0, 14), avg: parseFloat(m.avgMasteryPct.toFixed(1)) }))}>
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: number) => `${v}%`} />
-              <Bar dataKey="avg" radius={[4, 4, 0, 0]}>
-                {mastery.map((m, i) => <Cell key={i} fill={masteryColor(m.avgMasteryPct)} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ fontWeight: 600, marginBottom: 12 }}>Trend Chart</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 220, padding: '16px 12px 8px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb', overflowX: 'auto' }}>
+            {mastery.map((m, i) => {
+              const pct = Math.max(0, Math.min(100, parseFloat(m.avgMasteryPct.toFixed(1))));
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 64, flex: 1, height: '100%', justifyContent: 'flex-end' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4 }}>{pct}%</div>
+                  <div
+                    style={{
+                      width: '100%',
+                      maxWidth: 40,
+                      height: `${Math.max(4, pct * 1.5)}px`,
+                      background: masteryColor(pct),
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.3s',
+                    }}
+                  />
+                  <div style={{ fontSize: 10, color: '#6b7280', marginTop: 6, textAlign: 'center', maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.conceptTag.conceptName}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -290,8 +318,8 @@ const LearningGaps: React.FC<{ studentId: string; onPlanCreated: () => void }> =
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`${BASE}/gaps/student/${studentId}`, { params: { threshold } });
-      setGaps(data.data);
+      const data = await apiGet(`${BASE}/gaps/student/${studentId}`, { threshold });
+      setGaps(data.data ?? []);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [studentId, threshold]);
 
@@ -353,15 +381,15 @@ const ImprovementPlansTab: React.FC<{ studentId: string; refresh: number }> = ({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`${BASE}/plans/student/${studentId}`);
-      setPlans(data.data);
+      const data = await apiGet(`${BASE}/plans/student/${studentId}`);
+      setPlans(data.data ?? []);
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [studentId]);
 
   useEffect(() => { load(); }, [load, refresh]);
 
   const updateStatus = async (id: string, status: 'completed' | 'cancelled') => {
-    await axios.patch(`${BASE}/plans/${id}`, { status });
+    await apiSend(`${BASE}/plans/${id}`, 'PATCH', { status });
     load();
   };
 
@@ -438,11 +466,11 @@ const AcademicIntelligence: React.FC = () => {
       setLoadingMeta(true);
       try {
         const [secRes, subRes] = await Promise.all([
-          axios.get('/api/v1/sections?includeStudents=true'),
-          axios.get('/api/v1/subjects'),
+          apiGet('/api/v1/sections', { includeStudents: 'true' }),
+          apiGet('/api/v1/subjects'),
         ]);
-        setSections(secRes.data.data ?? secRes.data);
-        setSubjects(subRes.data.data ?? subRes.data);
+        setSections(secRes.data ?? secRes);
+        setSubjects(subRes.data ?? subRes);
       } catch { /* ignore */ } finally { setLoadingMeta(false); }
     };
     fetchMeta();
