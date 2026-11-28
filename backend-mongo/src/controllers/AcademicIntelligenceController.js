@@ -236,6 +236,7 @@ class AcademicIntelligenceController {
     const { studentId } = req.params;
 
     const plans = await ImprovementPlan.find({ studentId, status: 'active' })
+      .populate('studentId', 'studentName medium standard division photoUrl')
       .populate('conceptTagId', 'conceptName chapterName chapterNumber subjectId')
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 })

@@ -35,6 +35,7 @@ class StudentVoiceController {
   static getMySubmissions = catchAsync(async (req, res) => {
     const list = await StudentVoice.find({ submittedBy: req.user.id })
       .sort({ createdAt: -1 })
+      .populate('studentId', 'studentName medium standard division photoUrl')
       .populate('assignedTo', 'name role');
 
     const sanitized = list.map((item) => {

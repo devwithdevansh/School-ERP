@@ -98,8 +98,8 @@ const SafeReachController = {
     if (academicYearId) filter.academicYearId = academicYearId;
 
     const consent = await SafeReachConsent.findOne(filter)
-      .populate('studentId', 'name')
-      .populate('parentId', 'name email');
+      .populate('studentId', 'studentName medium standard division photoUrl')
+      .populate('parentId', 'parentName primaryMobileNumber email');
 
     if (!consent) {
       return next(new AppError('No consent record found for this student', 404));
@@ -298,7 +298,7 @@ const SafeReachController = {
     if (studentId) filter.studentId = studentId;
 
     const trips = await TripRecord.find(filter)
-      .populate('studentId', 'name rollNumber class section')
+      .populate('studentId', 'studentName medium standard division rollNo photoUrl')
       .populate('startedBy', 'name role')
       .sort({ startTime: -1 });
 
@@ -317,7 +317,7 @@ const SafeReachController = {
     }
 
     const trips = await TripRecord.find({ studentId })
-      .populate('studentId', 'name')
+      .populate('studentId', 'studentName medium standard division rollNo photoUrl')
       .sort({ date: -1, startTime: -1 })
       .limit(Number(limit));
 

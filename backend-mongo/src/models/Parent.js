@@ -79,5 +79,15 @@ parentSchema.index(
   { unique: true, partialFilterExpression: { secondaryMobileNumber: { $type: 'string' } } }
 );
 
+// Virtual: reverse-lookup children belonging to this parent
+parentSchema.virtual('students', {
+  ref: 'Student',
+  localField: '_id',
+  foreignField: 'parentId',
+});
+
+parentSchema.set('toObject', { virtuals: true });
+parentSchema.set('toJSON',   { virtuals: true });
+
 const Parent = mongoose.model('Parent', parentSchema);
 export default Parent;

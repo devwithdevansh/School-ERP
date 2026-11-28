@@ -41,6 +41,7 @@ class CounselingController {
 
     const records = await CounselingRecord.find(filter)
       .sort({ createdAt: -1 })
+      .populate('studentId', 'studentName standard division medium photoUrl')
       .populate('createdBy', 'name email')
       .populate('closedBy', 'name');
 
@@ -51,7 +52,7 @@ class CounselingController {
   getMyRecords = catchAsync(async (req, res, next) => {
     const records = await CounselingRecord.find({ createdBy: req.user.id })
       .sort({ createdAt: -1 })
-      .populate('studentId', 'name admissionNumber')
+      .populate('studentId', 'studentName standard division medium photoUrl')
       .populate('closedBy', 'name');
 
     sendResponse(res, 200, { data: records, results: records.length });
