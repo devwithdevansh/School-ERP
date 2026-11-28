@@ -29,13 +29,13 @@ function findServiceAccountFile() {
     try {
       const files = readdirSync(dir);
       // Find any file matching firebase-adminsdk or firebase-service-account
-      const match = files.find(f => 
+      const match = files.find(f =>
         (f.includes('firebase-adminsdk') || f.includes('firebase-service-account')) && f.endsWith('.json')
       );
       if (match) {
         return join(dir, match);
       }
-    } catch (_) {}
+    } catch (_) { }
   }
   return null;
 }
@@ -58,10 +58,10 @@ export function getFirebaseAdmin() {
         if (!envVal.trim().startsWith('{') && !envVal.trim().startsWith('\\{')) {
           envVal = Buffer.from(envVal, 'base64').toString('utf8');
         } else if (envVal.includes('\\"')) {
-           // Fallback just in case they leave it as JSON with Hostinger's weird escapes
-           envVal = envVal.replace(/\\"/g, '"').replace(/\\\\n/g, '\\n');
-           if (envVal.startsWith('\\{')) envVal = envVal.substring(1);
-           if (envVal.endsWith('\\}')) envVal = envVal.substring(0, envVal.length - 1) + '}';
+          // Fallback just in case they leave it as JSON with Hostinger's weird escapes
+          envVal = envVal.replace(/\\"/g, '"').replace(/\\\\n/g, '\\n');
+          if (envVal.startsWith('\\{')) envVal = envVal.substring(1);
+          if (envVal.endsWith('\\}')) envVal = envVal.substring(0, envVal.length - 1) + '}';
         }
         serviceAccount = JSON.parse(envVal);
       }

@@ -223,7 +223,7 @@ class ProfileView extends StatelessWidget {
                               color: AppColors.primaryMid,
                             ),
                             value: ThemeController.to.isDark.value,
-                            activeThumbColor: AppColors.primaryMid,
+                            activeColor: AppColors.primaryMid,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             onChanged: (_) => ThemeController.to.toggleTheme(),
                           )),
@@ -234,7 +234,7 @@ class ProfileView extends StatelessWidget {
                             title: Text('App Sounds', style: AppTextStyles.bodyMedium),
                             secondary: Icon(Icons.volume_up_rounded, color: AppColors.primaryMid),
                             value: SoundService.instance.soundEnabled,
-                            activeThumbColor: AppColors.primaryMid,
+                            activeColor: AppColors.primaryMid,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             onChanged: (val) async {
                               SoundService.instance.play(AppSound.toggle);

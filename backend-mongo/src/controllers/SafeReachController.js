@@ -2,7 +2,7 @@ import SafeReachConsent from '../models/SafeReachConsent.js';
 import TripRecord from '../models/TripRecord.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/AppError.js';
-import sendResponse from '../utils/sendResponse.js';
+import sendResponse from '../utils/response.js';
 
 // ---------------------------------------------------------------------------
 // Helpers

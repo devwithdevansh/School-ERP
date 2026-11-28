@@ -1,7 +1,7 @@
 import express from 'express';
 import ctrl from '../controllers/AcademicIntelligenceController.js';
-import authenticate from '../middlewares/authenticate.js';
-import authorize from '../middlewares/authorize.js';
+import authenticate from '../middlewares/auth.middleware.js';
+import authorize from '../middlewares/authorize.middleware.js';
 
 const router = express.Router();
 

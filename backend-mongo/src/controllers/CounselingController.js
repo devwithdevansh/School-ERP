@@ -1,7 +1,7 @@
 import CounselingRecord from '../models/CounselingRecord.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/AppError.js';
-import sendResponse from '../utils/sendResponse.js';
+import sendResponse from '../utils/response.js';
 
 class CounselingController {
   // POST /counseling

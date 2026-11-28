@@ -3,7 +3,7 @@ import MasteryRecord from '../models/MasteryRecord.js';
 import ImprovementPlan from '../models/ImprovementPlan.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/AppError.js';
-import sendResponse from '../utils/sendResponse.js';
+import sendResponse from '../utils/response.js';
 
 class AcademicIntelligenceController {
   // ─── Concept Tags ───────────────────────────────────────────────────────────
